@@ -21,7 +21,6 @@ async function getMediaItems() {
       guestName: ['Aunt Fatima', 'Cousin Mike', 'Sarah Smith', 'John Doe', 'Jane Doe', 'Uncle Bob'][index % 6],
     }));
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
     return mediaItems;
 }
 
@@ -29,7 +28,7 @@ function GridSkeleton() {
     return (
         <div className="space-y-10">
             {/* Pulsing R&A monogram — the "expensive" loading state */}
-            <div className="flex flex-col items-center py-12">
+            <div className="flex flex-col items-center py-12 glass-card !rounded-2xl">
                 <LuxuryLoader label="Developing..." size="lg" />
             </div>
             {/* Ghost card grid below the monogram */}
@@ -69,11 +68,13 @@ async function MediaGrid() {
 export default function LiveWallPage() {
     return (
         <div className="p-4 sm:p-6 lg:p-8">
-            <header className="text-center mb-8">
-                <h1 className="font-headline text-4xl md:text-5xl font-bold italic text-aurora-soft-gold/90">
+            <header className="text-center mb-10 relative overflow-hidden glass-card !p-7">
+                <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_8%,rgba(212,175,55,0.18),transparent_40%)]" />
+                <h1 className="relative font-headline text-4xl md:text-5xl font-bold italic text-luxe-gradient drop-shadow-[0_0_18px_rgba(212,175,55,0.28)]">
                     Live Memory Wall
                 </h1>
-                <p className="text-muted-foreground tracking-wide mt-2">Memories from the union of Razia & Abduraziq</p>
+                <p className="relative text-muted-foreground tracking-[0.25em] uppercase text-xs mt-3">Memories from the union of Razia & Abduraziq</p>
+                <div className="relative mt-4 luxe-divider max-w-sm mx-auto" />
             </header>
              <Suspense fallback={<GridSkeleton />}>
                 <MediaGrid />

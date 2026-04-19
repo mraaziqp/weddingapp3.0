@@ -6,6 +6,8 @@ import { EnvelopeReveal } from '@/components/envelope-reveal';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LuxuryLoader } from '@/components/luxury-loader';
+import { motion } from 'framer-motion';
 
 export default function InvitePage() {
   const params = useParams();
@@ -33,8 +35,15 @@ export default function InvitePage() {
   // Show a loading skeleton while we decide which route to show
   if (isLoading) {
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-[#FAF9F6]">
-            <Skeleton className="h-32 w-32 rounded-full" />
+        <div className="flex h-screen w-full items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.14),transparent_35%),linear-gradient(145deg,#fffdf9_0%,#f8f2e6_100%)]">
+            <motion.div
+              className="glass-card !bg-white/55 !border-[#d4af37]/20 w-[300px] text-center"
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+            >
+              <LuxuryLoader label="Preparing your invitation..." size="lg" />
+            </motion.div>
         </div>
     )
   }

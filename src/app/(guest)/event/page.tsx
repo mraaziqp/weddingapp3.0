@@ -143,11 +143,18 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
   return (
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center p-8 overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at 50% 40%, #0d2318 0%, #030a06 100%)' }}
+      style={{ background: 'radial-gradient(ellipse at 50% 35%, #124735 0%, #06221a 42%, #020706 100%)' }}
       animate={phase === 'exit' ? { y: '-100%' } : { y: '0%' }}
       transition={{ duration: 1.0, ease: [0.76, 0, 0.24, 1] }}
       onAnimationComplete={() => { if (phase === 'exit') onComplete(); }}
     >
+      <motion.div
+        className="absolute -top-28 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.26) 0%, rgba(212,175,55,0.02) 70%, transparent 100%)', filter: 'blur(20px)' }}
+        animate={{ x: [0, 14, -10, 0], y: [0, 12, -8, 0], scale: [1, 1.04, 0.96, 1] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
       {/* Gold dust particles */}
       {Array.from({ length: 40 }).map((_, i) => (
         <motion.div
@@ -181,7 +188,7 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
           >
             {/* Monogram */}
             <motion.p
-              className="font-headline text-6xl md:text-7xl italic text-[#d4af37]"
+              className="font-headline text-6xl md:text-7xl italic text-luxe-gradient"
               initial={{ scale: 0.4, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8, type: 'spring', stiffness: 120 }}
@@ -198,7 +205,7 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
             />
 
             <motion.h1
-              className="font-headline text-3xl md:text-4xl italic text-[#d4af37]/90"
+              className="font-headline text-3xl md:text-4xl italic text-luxe-gradient"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.8 }}
@@ -249,9 +256,9 @@ function EventPageContent() {
 
   if (!guestId || !household) {
     return (
-      <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-6 bg-[#FAF9F6] text-[#1C1C1C] p-8 text-center">
+      <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-6 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(145deg,#fffdf8,#f7f0e4)] text-[#1C1C1C] p-8 text-center">
         <motion.span
-          className="font-headline text-6xl text-[#d4af37]"
+          className="font-headline text-6xl text-luxe-gradient"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           style={{ textShadow: '0 0 30px rgba(212,175,55,0.3)' }}
@@ -285,7 +292,7 @@ export default function EventPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-[#FAF9F6]">
+        <div className="flex h-screen w-full items-center justify-center bg-[radial-gradient(circle_at_22%_18%,rgba(212,175,55,0.14),transparent_34%),linear-gradient(145deg,#fffdf9,#f5ecdd)]">
           <LuxuryLoader label="Curating..." size="lg" />
         </div>
       }
