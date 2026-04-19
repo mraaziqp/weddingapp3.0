@@ -36,8 +36,12 @@
 
     --aurora-emerald: #064e3b;
     --aurora-emerald-deep: #022c22;
+    --aurora-midnight: #031a26;
+    --aurora-peacock: #0f766e;
     --aurora-gold: #d4af37;
     --aurora-soft-gold: #f6e7b7;
+    --aurora-copper: #c97a45;
+    --aurora-rose: #b96a8e;
     --cream: 54 83% 95%; /* #fefce8 - Soft Cream */
 
     --chart-1: 158 44% 28%;
@@ -77,7 +81,11 @@
   }
   body {
     @apply bg-transparent text-foreground;
-    background: radial-gradient(circle at 20% 20%, var(--aurora-emerald) 0%, var(--aurora-emerald-deep) 40%, #000 100%);
+    background:
+      radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--aurora-peacock) 30%, transparent) 0%, transparent 34%),
+      radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--aurora-gold) 22%, transparent) 0%, transparent 30%),
+      radial-gradient(circle at 80% 84%, color-mix(in srgb, var(--aurora-rose) 18%, transparent) 0%, transparent 28%),
+      linear-gradient(140deg, var(--aurora-midnight) 0%, var(--aurora-emerald-deep) 38%, #010305 100%);
     background-attachment: fixed;
   }
 
@@ -88,7 +96,37 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)] transition-all duration-300 hover:bg-white/10 hover:scale-[1.02];
+    @apply relative overflow-hidden bg-white/[0.055] backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-[0_18px_55px_rgba(0,0,0,0.38)] transition-all duration-500 hover:bg-white/[0.09] hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)];
+  }
+
+  .glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(212,175,55,0.08) 0%, transparent 42%, rgba(15,118,110,0.08) 100%);
+    opacity: 0.8;
+  }
+
+  .aurora-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(36px);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.35;
+    animation: orbFloat 14s ease-in-out infinite;
+  }
+
+  .luxe-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.55) 35%, rgba(246,231,183,0.75) 50%, rgba(15,118,110,0.5) 65%, transparent 100%);
+  }
+
+  .text-luxe-gradient {
+    background: linear-gradient(140deg, #f9e8b6 8%, #d4af37 52%, #b56f3f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .glossy-sweep {
@@ -147,6 +185,12 @@
   @keyframes auroraShift {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
+  }
+
+  @keyframes orbFloat {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33% { transform: translate3d(16px, -18px, 0) scale(1.06); }
+    66% { transform: translate3d(-18px, 14px, 0) scale(0.94); }
   }
 }
 

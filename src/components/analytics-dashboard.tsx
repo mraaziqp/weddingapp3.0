@@ -24,8 +24,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } },
+    hidden: { opacity: 0, y: 28, scale: 0.985, filter: 'blur(6px)' },
+    visible: { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 90, damping: 16 } },
 };
 
 const MotionCard = motion(Card);
@@ -89,7 +89,12 @@ const CountdownCard = () => {
     }, []);
 
     return (
-        <MotionCard variants={itemVariants} className="glass-card md:col-span-2 row-span-2 !p-0 relative overflow-hidden flex flex-col items-center justify-center gap-6">
+        <MotionCard
+            variants={itemVariants}
+            whileHover={{ y: -4, scale: 1.008 }}
+            transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+            className="glass-card md:col-span-2 row-span-2 !p-0 relative overflow-hidden flex flex-col items-center justify-center gap-6"
+        >
             <Image
                 src="https://images.unsplash.com/photo-1596789390299-b42743899351?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTcyMDgwODQxNnww&ixlib=rb-4.1.0&q=80&w=1080"
                 alt="Couple"
@@ -105,6 +110,12 @@ const CountdownCard = () => {
                 animate={{ opacity: [0.04, 0.1, 0.04] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.25) 0%, transparent 70%)' }}
+            />
+            <motion.div
+                className="absolute -top-24 -right-20 z-10 h-48 w-48 rounded-full"
+                style={{ background: 'radial-gradient(circle, rgba(185,106,142,0.24) 0%, rgba(185,106,142,0) 72%)', filter: 'blur(12px)' }}
+                animate={{ x: [0, 16, -10, 0], y: [0, 10, -14, 0] }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
             />
 
             <motion.p
@@ -162,7 +173,12 @@ const QuickActions = () => {
     };
     
     return (
-        <MotionCard variants={itemVariants} className="glass-card md:col-span-1 row-span-2 flex flex-col justify-center gap-4">
+        <MotionCard
+            variants={itemVariants}
+            whileHover={{ y: -3, scale: 1.008 }}
+            transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+            className="glass-card md:col-span-1 row-span-2 flex flex-col justify-center gap-4"
+        >
             <CardTitle className="text-center mb-4 text-base font-normal uppercase tracking-widest text-muted-foreground">Quick Actions</CardTitle>
             <Button asChild size="lg" className="w-full glossy-sweep bg-gradient-to-r from-aurora-soft-gold to-aurora-gold text-black font-bold text-lg">
                 <Link href="/qr-scanner">
@@ -212,7 +228,12 @@ const QuickActions = () => {
 };
 
 const MusicWidget = () => (
-    <MotionCard variants={itemVariants} className="glass-card">
+    <MotionCard
+        variants={itemVariants}
+        whileHover={{ y: -3, scale: 1.01 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+        className="glass-card"
+    >
         <CardHeader>
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vibe Check</CardTitle>
         </CardHeader>
@@ -248,7 +269,12 @@ const RSVPStatus = () => {
     }, [percentage, circumference]);
 
     return (
-        <MotionCard variants={itemVariants} className="glass-card flex flex-col items-center justify-center">
+        <MotionCard
+            variants={itemVariants}
+            whileHover={{ y: -3, scale: 1.01 }}
+            transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+            className="glass-card flex flex-col items-center justify-center"
+        >
             <CardHeader className="p-4 pb-0">
                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">RSVP Status</CardTitle>
             </CardHeader>
@@ -284,7 +310,12 @@ const RSVPStatus = () => {
 };
 
 const LatestGift = () => (
-    <MotionCard variants={itemVariants} className="glass-card">
+    <MotionCard
+        variants={itemVariants}
+        whileHover={{ y: -3, scale: 1.01 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+        className="glass-card"
+    >
          <CardHeader>
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Latest Gift</CardTitle>
             <Gift className="absolute right-6 top-6 h-4 w-4 text-muted-foreground"/>
@@ -302,7 +333,12 @@ const LatestGift = () => (
 );
 
 const SeatingMiniMap = () => (
-    <MotionCard variants={itemVariants} className="glass-card md:col-span-3">
+    <MotionCard
+        variants={itemVariants}
+        whileHover={{ y: -3, scale: 1.006 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+        className="glass-card md:col-span-3"
+    >
          <CardHeader>
             <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Seating Mini-Map</CardTitle>
              <Map className="absolute right-6 top-6 h-4 w-4 text-muted-foreground"/>
@@ -321,7 +357,7 @@ const SeatingMiniMap = () => (
 export function AnalyticsDashboard() {
   return (
     <motion.div 
-      className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(180px,auto)]"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(180px,auto)]"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
