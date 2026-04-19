@@ -1,5 +1,10 @@
-# Firebase Studio
+# weddingapp3.0
 
-This is a NextJS starter in Firebase Studio.
+Wedu 3.0 is a Next.js wedding experience platform with guest invite flows,
+live wall, admin planning suite, and cinematic event interactions.
 
-To get started, take a look at src/app/page.tsx.
+## Scripts
+
+- `npm run dev` - start development server
+- `npm run build` - production build (Vercel-ready)
+- `npm run start` - run production server
