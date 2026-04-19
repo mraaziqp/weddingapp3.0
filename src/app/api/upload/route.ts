@@ -7,6 +7,15 @@ import { NextResponse } from 'next/server';
 // import { mediaTable } from '@/lib/db/schema';
 
 export async function POST(request: Request): Promise<NextResponse> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      {
+        error: 'Vercel Blob is not configured. Please set BLOB_READ_WRITE_TOKEN in project environment variables.',
+      },
+      { status: 500 }
+    );
+  }
+
   const body = await request.json();
 
   try {

@@ -4,13 +4,10 @@
  * Strategy: stale-while-revalidate for static assets, network-first for API/data.
  */
 
-const CACHE_NAME = 'wedu-3-v1';
+const CACHE_NAME = 'wedu-3-v2';
 
 // Assets to pre-cache on install (app shell)
-const PRECACHE_URLS = [
-  '/',
-  '/manifest.json',
-];
+const PRECACHE_URLS = ['/manifest.json', '/RA-logo.svg'];
 
 // ── Install: pre-cache app shell ───────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -19,6 +16,12 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ── Activate: clean up old caches ─────────────────────────────────────────
@@ -36,19 +39,39 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  // Let browser/extensions handle non-http(s) requests.
+  if (!event.request.url.startsWith('http')) return;
+
   const url = new URL(event.request.url);
+
+  // Never cache navigation requests. Keep HTML fresh to avoid stale chunk references.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   // Network-only for API routes and Next.js internals
   if (
     url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/') ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
     url.pathname.includes('__nextjs')
   ) {
-    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Stale-while-revalidate for everything else
+  // Cache-first only for static assets (images, fonts, icons, manifest, media files).
+  const isStaticAsset =
+    /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf|css|js|mp3|wav|ogg|mp4)$/i.test(url.pathname) ||
+    url.pathname === '/manifest.json';
+
+  if (!isStaticAsset) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Stale-while-revalidate for static assets only.
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cached = await cache.match(event.request);
@@ -59,7 +82,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached ?? new Response('', { status: 503 }));
+        .catch(() => cached ?? Response.error());
 
       return cached ?? networkFetch;
     })

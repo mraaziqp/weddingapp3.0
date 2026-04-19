@@ -164,11 +164,15 @@ const QuickActions = () => {
     return (
         <MotionCard variants={itemVariants} className="glass-card md:col-span-1 row-span-2 flex flex-col justify-center gap-4">
             <CardTitle className="text-center mb-4 text-base font-normal uppercase tracking-widest text-muted-foreground">Quick Actions</CardTitle>
-            <Button size="lg" className="w-full glossy-sweep bg-gradient-to-r from-aurora-soft-gold to-aurora-gold text-black font-bold text-lg">
-                <QrCode className="mr-2"/> Scan Ticket
+            <Button asChild size="lg" className="w-full glossy-sweep bg-gradient-to-r from-aurora-soft-gold to-aurora-gold text-black font-bold text-lg">
+                <Link href="/qr-scanner">
+                    <QrCode className="mr-2"/> Scan Ticket
+                </Link>
             </Button>
-            <Button size="lg" variant="outline" className="w-full border-white/20 bg-white/10 hover:bg-white/20 hover:text-white">
-                <UserPlus className="mr-2"/> Add Guest
+            <Button asChild size="lg" variant="outline" className="w-full border-white/20 bg-white/10 hover:bg-white/20 hover:text-white">
+                <Link href="/guests">
+                    <UserPlus className="mr-2"/> Add Guest
+                </Link>
             </Button>
             {/* Party Mode Toggle */}
             <Button
