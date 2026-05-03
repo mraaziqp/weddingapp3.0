@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface LuxuryLoaderProps {
-  label?: 'Curating...' | 'Developing...' | 'Saving...' | 'Uploading...';
+  label?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }

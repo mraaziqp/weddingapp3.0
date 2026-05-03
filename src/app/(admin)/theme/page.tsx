@@ -249,11 +249,11 @@ export default function ThemeStudioPage() {
                 className="bg-zinc-900 rounded-[30px] overflow-hidden"
                 style={themeStyle}
                 animate={{
-                  '--aurora-emerald': theme.primaryColor,
-                  '--aurora-gold': theme.accentColor,
-                  '--aurora-soft-gold': theme.foregroundColor,
-                  '--wedu-heading-font': `'${theme.headingFont}', serif`,
-                } as CSSProperties}
+                  '--aurora-emerald': theme.primaryColor as string,
+                  '--aurora-gold': theme.accentColor as string,
+                  '--aurora-soft-gold': theme.foregroundColor as string,
+                  '--wedu-heading-font': `'${theme.headingFont}', serif` as string,
+                } as Record<string, string>}
               >
                 <div className="h-[530px] w-full relative" style={{ background: stylePreviewBackground(envelopeStyle, theme.primaryColor) }}>
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.08),transparent_45%)]" />

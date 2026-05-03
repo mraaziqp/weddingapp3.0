@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Gamepad2, GalleryHorizontal } from 'lucide-react';
@@ -9,6 +9,7 @@ import { GalleryFeed } from './guest-hub/gallery-feed';
 import { CaptureView } from './guest-hub/capture-view';
 import { Skeleton } from './ui/skeleton';
 import { usePartyMode } from '@/hooks/use-party-mode';
+import { useRouter } from 'next/navigation';
 
 // Lazy-load the Games module so it doesn't block initial page paint
 const GamesView = dynamic(
@@ -38,6 +39,7 @@ const MORNING_AFTER_DATE = new Date('2026-09-07T06:00:00');
 
 export function GuestEventHub({ guestId }: { guestId: string }) {
   const { partyMode } = usePartyMode();
+  const router = useRouter();
   // Computed once at mount — the date won't change during a browser session
   const isMorningAfter = new Date() > MORNING_AFTER_DATE;
 
@@ -49,6 +51,28 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
   const [prevTab, setPrevTab] = useState('gallery');
   const [activeQuest, setActiveQuest] = useState<string | null>(null);
   const [completedQuests, setCompletedQuests] = useState<string[]>([]);
+
+  // ── Secret 7-tap admin shortcut on the R&A monogram ──────────────────────
+  const secretTapCount = useRef(0);
+  const secretTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [secretFlash, setSecretFlash] = useState(false);
+
+  const handleSecretTap = useCallback(() => {
+    secretTapCount.current += 1;
+    if (secretTapTimer.current) clearTimeout(secretTapTimer.current);
+    secretTapTimer.current = setTimeout(() => {
+      secretTapCount.current = 0;
+    }, 3000);
+    if (secretTapCount.current >= 7) {
+      secretTapCount.current = 0;
+      if (secretTapTimer.current) clearTimeout(secretTapTimer.current);
+      setSecretFlash(true);
+      setTimeout(() => {
+        setSecretFlash(false);
+        router.push('/dashboard');
+      }, 600);
+    }
+  }, [router]);
 
   const direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(prevTab) ? 1 : -1;
 
@@ -95,6 +119,17 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
       animate={{ backgroundColor: partyMode ? '#022c22' : '#FAF9F6' }}
       transition={{ duration: 2.5, ease: 'easeInOut' }}
     >
+      {/* Secret admin flash overlay */}
+      <AnimatePresence>
+        {secretFlash && (
+          <motion.div
+            className="fixed inset-0 z-[999] bg-white pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 0.6, times: [0, 0.3, 1] }}
+          />
+        )}
+      </AnimatePresence>
       {/* Party Mode ambient gold radial shimmer — fades in behind content */}
       <AnimatePresence>
         {partyMode && (
@@ -122,7 +157,8 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
         }}
       >
         <motion.span
-          className="font-headline italic text-lg text-[#d4af37]"
+          onClick={handleSecretTap}
+          className="font-headline italic text-lg text-[#d4af37] cursor-default select-none"
           animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           style={{

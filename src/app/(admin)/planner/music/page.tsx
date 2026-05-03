@@ -136,7 +136,7 @@ function KanbanColumn({
   onAdd: (title: string, artist: string, col: TrackColumn) => void;
   onRemove: (id: string) => void;
 }) {
-  const { setNodeRef, isOver } = useSortable ? { setNodeRef: null, isOver: false } : { setNodeRef: null, isOver: false };
+  const { setNodeRef, isOver } = typeof useSortable === 'function' ? { setNodeRef: null, isOver: false } : { setNodeRef: null, isOver: false };
 
   return (
     <div

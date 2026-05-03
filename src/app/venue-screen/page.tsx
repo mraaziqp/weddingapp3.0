@@ -53,7 +53,7 @@ export default function VenueScreenPage() {
   const [direction, setDirection]     = useState(1);
   const [newCapture, setNewCapture]   = useState<SlideItem | null>(null);
   const seenIds   = useRef<Set<string>>(new Set());
-  const slideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const slideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Lock body scroll for full-bleed cast experience
   useEffect(() => {
