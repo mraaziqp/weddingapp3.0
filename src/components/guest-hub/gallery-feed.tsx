@@ -20,7 +20,7 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
     const mediaItems = PlaceHolderImages.filter(p => p.id.startsWith('gallery-')).map((p, index) => ({
       ...p,
       id: p.id + '-' + index,
-      guestName: ['Aunt Fatima', 'Cousin Mike', 'Sarah Smith', 'John Doe', 'Jane Doe', 'Uncle Bob'][index % 6],
+      guestName: 'A Guest',
       likes: Math.floor(Math.random() * 50),
     }));
 

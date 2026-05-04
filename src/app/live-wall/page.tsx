@@ -18,7 +18,7 @@ async function getMediaItems() {
     const mediaItems = PlaceHolderImages.filter(p => p.id.startsWith('gallery-') && Math.random() > 0.2).map((p, index) => ({
       ...p,
       id: p.id + '-' + index,
-      guestName: ['Aunt Fatima', 'Cousin Mike', 'Sarah Smith', 'John Doe', 'Jane Doe', 'Uncle Bob'][index % 6],
+      guestName: 'A Guest',
     }));
 
     return mediaItems;

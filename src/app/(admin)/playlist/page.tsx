@@ -7,14 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 
-const songRequests = [
-    { id: 1, title: "I Wanna Dance with Somebody", artist: "Whitney Houston", guest: "Aunt Carol", status: "pending" },
-    { id: 2, title: "Crazy Little Thing Called Love", artist: "Queen", guest: "John Doe", status: "approved" },
-    { id: 3, title: "Chicken Fried", artist: "Zac Brown Band", guest: "Cousin Mike", status: "vetoed" },
-    { id: 4, title: "Single Ladies (Put a Ring on It)", artist: "Beyoncé", guest: "Sarah Smith", status: "pending" },
-    { id: 5, title: "Don't Stop Believin'", artist: "Journey", guest: "Uncle Bob", status: "pending" },
-    { id: 6, title: "Despacito", artist: "Luis Fonsi", guest: "Maria Garcia", status: "pending" },
-];
+const songRequests: { id: number; title: string; artist: string; guest: string; status: string }[] = [];
 
 export default function PlaylistPage() {
     const [songs, setSongs] = useState(songRequests);

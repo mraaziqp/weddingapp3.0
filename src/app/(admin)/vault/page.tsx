@@ -32,7 +32,7 @@ export default function VaultPage() {
   useEffect(() => {
     const generatedMedia = PlaceHolderImages.filter(p => p.id.startsWith('gallery-')).map((p, index) => ({
       ...p,
-      guestName: ['Aunt Fatima', 'Cousin Mike', 'Sarah Smith', 'John Doe', 'Jane Doe', 'Uncle Bob'][index % 6],
+      guestName: 'A Guest',
       type: Math.random() > 0.3 ? 'image' : 'video',
       visibility: Math.random() > 0.5 ? 'public' : 'private',
       timestamp: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24),

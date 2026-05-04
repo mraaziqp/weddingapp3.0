@@ -11,10 +11,7 @@ import type { ImagePlaceholder } from '@/lib/placeholder-images';
 const SLIDE_DURATION = 6000;   // ms between auto-advances
 const POLL_INTERVAL  = 10000;  // ms between polling for new images
 
-const GUEST_NAMES = [
-  'Aunt Fatima', 'Cousin Mike', 'Sarah M.', 'John Doe',
-  'Jane Doe', 'Uncle Bob', 'Mo Khan', 'Lerato',
-];
+const GUEST_NAMES = ['A Guest'];
 
 // ── Types ─────────────────────────────────────────────────────────────────
 type SlideItem = ImagePlaceholder & { guestName: string };
