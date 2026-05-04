@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Zap, ZapOff, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { upload } from '@vercel/blob/client';
+import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -127,10 +127,25 @@ export function DisposableCameraUI({ guestId, visibility, questTag, onUploadComp
     setIsUploading(true);
 
     try {
-      const newBlob = await upload(file.name, file, {
-        access: 'public',
-        handleUploadUrl: '/api/upload',
-        clientPayload: JSON.stringify({ guestId, visibility, questTag }),
+      const path = `photos/${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('wedding-photos')
+        .upload(path, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('wedding-photos')
+        .getPublicUrl(uploadData.path);
+
+      // Save media record
+      await supabase.from('media').insert({
+        storage_path: uploadData.path,
+        public_url: publicUrl,
+        media_type: 'image',
+        visibility,
+        quest_tag: questTag ?? null,
+        guest_id: guestId,
       });
 
       toast({
@@ -138,7 +153,6 @@ export function DisposableCameraUI({ guestId, visibility, questTag, onUploadComp
         description: 'Your memory has been captured.',
       });
 
-      // Build preview for polaroid
       const src = previewSrc ?? URL.createObjectURL(file);
       setRecentShots(prev => [...prev, src]);
       setPolaroidSrc(src);
@@ -154,9 +168,8 @@ export function DisposableCameraUI({ guestId, visibility, questTag, onUploadComp
       });
 
       setShotsLeft(prev => prev - 1);
-      onUploadComplete(newBlob);
+      onUploadComplete({ url: publicUrl });
 
-      // Wind the film
       setIsWinding(true);
       setTimeout(() => setIsWinding(false), 700);
 

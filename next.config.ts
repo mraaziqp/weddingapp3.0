@@ -28,12 +28,19 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Vercel Blob — uploaded guest photos are served from this CDN hostname
+      // Vercel Blob — legacy uploaded photos
       {
         protocol: 'https',
         hostname: '*.public.blob.vercel.storage',
         port: '',
         pathname: '/**',
+      },
+      // Supabase Storage — wedding photos
+      {
+        protocol: 'https',
+        hostname: 'ljrzrlywesvpxnlbgrqr.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },

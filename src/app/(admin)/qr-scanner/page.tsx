@@ -8,7 +8,7 @@ import { BoardingPass } from '@/components/boarding-pass';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { households } from '@/lib/mock-data';
+import { lookupHouseholdByQr } from '@/lib/supabase';
 
 type GuestData = {
     name: string;
@@ -16,21 +16,6 @@ type GuestData = {
     plusOne: string | null;
     qrCodeValue: string;
 };
-
-function lookupHousehold(qrCode: string): GuestData | null {
-    const hh = households.find(h => h.qrCode === qrCode);
-    if (!hh) return null;
-    const members = hh.guests;
-    const plusOne = members.length > 1
-        ? `${members[1].firstName} ${members[1].lastName}`
-        : null;
-    return {
-        name: hh.name,
-        tableNumber: 0,
-        plusOne,
-        qrCodeValue: hh.qrCode,
-    };
-}
 
 export default function BouncerPage() {
     const [scannedData, setScannedData] = useState<GuestData | null>(null);
@@ -40,15 +25,18 @@ export default function BouncerPage() {
     const scannerDivRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
-    const handleScanResult = (result: string) => {
+    const handleScanResult = async (result: string) => {
         setIsScanning(false);
         if (scannerRef.current) {
             scannerRef.current.stop().catch(() => {});
         }
 
-        const guest = lookupHousehold(result.trim());
-        if (guest) {
-            setScannedData(guest);
+        const hh = await lookupHouseholdByQr(result.trim());
+        if (hh) {
+            const plusOne = hh.guests.length > 1
+                ? `${hh.guests[1].firstName} ${hh.guests[1].lastName}`
+                : null;
+            setScannedData({ name: hh.name, tableNumber: 0, plusOne, qrCodeValue: hh.qrCode });
             setScanError(false);
             confetti({
                 particleCount: 150,

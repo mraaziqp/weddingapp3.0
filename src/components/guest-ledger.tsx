@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy } from 'lucide-react';
-import { households as initialHouseholds } from '@/lib/mock-data';
+import { fetchHouseholds, addHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
 import type { Household } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -80,73 +80,62 @@ function HouseholdForm({
 }
 
 export function GuestLedger() {
-    const [households, setHouseholds] = useState<Household[]>(() => {
-        if (typeof window === 'undefined') return initialHouseholds;
-        try {
-            const stored = localStorage.getItem('wedu-households');
-            return stored ? JSON.parse(stored) : initialHouseholds;
-        } catch {
-            return initialHouseholds;
-        }
-    });
+    const [households, setHouseholds] = useState<Household[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
     const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
     const { toast } = useToast();
 
-    // Persist to localStorage whenever households change
+    // Load from Supabase on mount
     useEffect(() => {
-        localStorage.setItem('wedu-households', JSON.stringify(households));
-    }, [households]);
+        fetchHouseholds()
+            .then(setHouseholds)
+            .catch(() => toast({ variant: 'destructive', title: 'Could not load guests' }))
+            .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const handleAddHousehold = (data: HouseholdFormValues) => {
-        const ts = Date.now();
-        const newHousehold: Household = {
-            id: `household-${ts}`,
-            name: data.name,
-            address: 'TBD',
-            qrCode: `WEDU-HH-${ts}`,
-            guests: data.guests.map((g, i) => ({
-                id: `guest-${ts}-${i}`,
-                householdId: `household-${ts}`,
-                firstName: g.firstName,
-                lastName: g.lastName,
-                rsvpStatus: 'Pending',
-            })),
-        };
-        setHouseholds(current => [newHousehold, ...current]);
-        toast({ title: 'Household Added', description: `${data.name} has been added to the guest list.` });
-        setIsAddModalOpen(false);
+    const handleAddHousehold = async (data: HouseholdFormValues) => {
+        try {
+            const newHousehold = await addHousehold(data.name, data.guests);
+            setHouseholds(current => [newHousehold, ...current]);
+            toast({ title: 'Household Added', description: `${data.name} has been added.` });
+            setIsAddModalOpen(false);
+        } catch {
+            toast({ variant: 'destructive', title: 'Failed to add household' });
+        }
     };
 
-    const handleEditHousehold = (data: HouseholdFormValues) => {
+    const handleEditHousehold = async (data: HouseholdFormValues) => {
         if (!editingHousehold) return;
-        const updated: Household = {
-            ...editingHousehold,
-            name: data.name,
-            guests: data.guests.map((g, i) => {
-                const existing = editingHousehold.guests[i];
-                return {
-                    id: existing?.id ?? `guest-${Date.now()}-${i}`,
-                    householdId: editingHousehold.id,
-                    firstName: g.firstName,
-                    lastName: g.lastName,
-                    rsvpStatus: existing?.rsvpStatus ?? 'Pending',
-                    dietaryRestrictions: existing?.dietaryRestrictions,
-                    songRequest: existing?.songRequest,
-                    tags: existing?.tags,
-                };
-            }),
-        };
-        setHouseholds(current => current.map(h => h.id === editingHousehold.id ? updated : h));
-        toast({ title: 'Household Updated', description: `${data.name} has been saved.` });
-        setEditingHousehold(null);
+        try {
+            const guestsWithIds = data.guests.map((g, i) => ({
+                ...g,
+                id: editingHousehold.guests[i]?.id,
+                rsvpStatus: editingHousehold.guests[i]?.rsvpStatus ?? 'Pending',
+            }));
+            await updateHousehold(editingHousehold.id, data.name, guestsWithIds);
+            // Reload to get fresh state
+            const updated = await fetchHouseholds();
+            setHouseholds(updated);
+            toast({ title: 'Household Updated', description: `${data.name} has been saved.` });
+            setEditingHousehold(null);
+        } catch {
+            toast({ variant: 'destructive', title: 'Failed to update household' });
+        }
     };
 
-    const handleDeleteHousehold = (household: Household) => {
-        setHouseholds(current => current.filter(h => h.id !== household.id));
-        toast({ title: 'Household Removed', description: `${household.name} has been deleted.` });
-        setDeletingHousehold(null);
+    const handleDeleteHousehold = async (household: Household) => {
+        try {
+            await deleteHousehold(household.id);
+            setHouseholds(current => current.filter(h => h.id !== household.id));
+            toast({ title: 'Household Removed', description: `${household.name} has been deleted.` });
+        } catch {
+            toast({ variant: 'destructive', title: 'Failed to delete household' });
+        } finally {
+            setDeletingHousehold(null);
+        }
     };
 
     const handleCopyInviteLink = (household: Household) => {
@@ -156,13 +145,22 @@ export function GuestLedger() {
         });
     };
 
-    const handleRsvpChange = (guestId: string, newStatus: "Confirmed" | "Pending" | "Regret") => {
+    const handleRsvpChange = async (guestId: string, newStatus: 'Confirmed' | 'Pending' | 'Regret') => {
+        // Optimistic update
         setHouseholds(current =>
             current.map(h => ({
                 ...h,
                 guests: h.guests.map(g => g.id === guestId ? { ...g, rsvpStatus: newStatus } : g),
             }))
         );
+        try {
+            await updateGuestRsvp(guestId, newStatus);
+        } catch {
+            toast({ variant: 'destructive', title: 'Failed to update RSVP' });
+            // Revert on error
+            const fresh = await fetchHouseholds();
+            setHouseholds(fresh);
+        }
     };
 
     return (
@@ -215,14 +213,21 @@ export function GuestLedger() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {households.length === 0 && (
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                            Loading guests...
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {!loading && households.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                                             No households yet. Click <strong>Add Household</strong> to get started.
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                {households.map((household) => (
+                                {!loading && households.map((household) => (
                                     <TableRow key={household.id} className="border-white/10 hover:bg-white/5">
                                         <TableCell className="font-medium">
                                             <div>{household.name}</div>
