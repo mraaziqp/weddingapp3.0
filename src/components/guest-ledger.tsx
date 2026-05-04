@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -80,11 +80,24 @@ function HouseholdForm({
 }
 
 export function GuestLedger() {
-    const [households, setHouseholds] = useState<Household[]>(initialHouseholds);
+    const [households, setHouseholds] = useState<Household[]>(() => {
+        if (typeof window === 'undefined') return initialHouseholds;
+        try {
+            const stored = localStorage.getItem('wedu-households');
+            return stored ? JSON.parse(stored) : initialHouseholds;
+        } catch {
+            return initialHouseholds;
+        }
+    });
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
     const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
     const { toast } = useToast();
+
+    // Persist to localStorage whenever households change
+    useEffect(() => {
+        localStorage.setItem('wedu-households', JSON.stringify(households));
+    }, [households]);
 
     const handleAddHousehold = (data: HouseholdFormValues) => {
         const ts = Date.now();
