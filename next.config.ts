@@ -28,6 +28,13 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      // Vercel Blob — uploaded guest photos are served from this CDN hostname
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel.storage',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
