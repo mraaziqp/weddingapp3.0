@@ -10,7 +10,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Geist Sans', 'Inter', 'sans-serif'],
+        body: ['var(--font-geist-sans)', 'Inter', 'sans-serif'],
         headline: ['Playfair Display', 'serif'],
         code: ['monospace'],
       },

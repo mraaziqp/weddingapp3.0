@@ -12,6 +12,7 @@ const ADMIN_ROUTES = [
   "/seating",
   "/theme",
   "/vault",
+  "/save-the-date",
 ];
 
 const ADMIN_COOKIE_NAME = "wedding_admin_session";
@@ -81,5 +82,6 @@ export const config = {
     "/seating/:path*",
     "/theme/:path*",
     "/vault/:path*",
+    "/save-the-date/:path*",
   ],
 };
