@@ -7,6 +7,7 @@ import {
   Armchair,
   Bot,
   CalendarDays,
+  CalendarHeart,
   Gift,
   Heart,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/playlist", icon: <Music size={28} />, label: "Playlist" },
   { href: "/ai-secretary", icon: <Bot size={28} />, label: "AI Secretary" },
   { href: "/invites", icon: <Mail size={28} />, label: "Invite Studio" },
+  { href: "/save-the-date", icon: <CalendarHeart size={28} />, label: "Save the Date" },
   { href: "/qr-scanner", icon: <QrCode size={28} />, label: "Bouncer Mode" },
   { href: "/planner", icon: <CalendarDays size={28} />, label: "Planner Suite" },
 ];

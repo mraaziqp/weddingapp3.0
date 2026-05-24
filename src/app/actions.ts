@@ -1,6 +1,7 @@
 'use server';
 
 import { autoDraftWhatsAppMessage, type AutoDraftWhatsAppMessageInput } from "@/ai/flows/auto-draft-whatsapp-message";
+import { generateSaveDateCopy, generateSaveDateGradient, type CopyInput, type GradientInput } from "@/ai/flows/save-the-date-ai";
 import { z } from "zod";
 
 // Re-defining schema here to avoid importing the whole flow file in the client component
@@ -42,5 +43,27 @@ export async function generateMessageAction(values: AutoDraftWhatsAppMessageInpu
     } catch (error) {
         console.error(error);
         return { success: false, error: "Failed to generate message. Please try again." };
+    }
+}
+
+// ── Save the Date AI actions ──────────────────────────────────────────────────
+
+export async function generateSaveDateCopyAction(input: CopyInput) {
+    try {
+        const result = await generateSaveDateCopy(input);
+        return { success: true, text: result.text };
+    } catch (error) {
+        console.error('[STD-AI]', error);
+        return { success: false, error: 'Failed to generate copy. Check your API key.' };
+    }
+}
+
+export async function generateSaveDateGradientAction(input: GradientInput) {
+    try {
+        const result = await generateSaveDateGradient(input);
+        return { success: true, cssBackground: result.cssBackground, name: result.name };
+    } catch (error) {
+        console.error('[STD-AI]', error);
+        return { success: false, error: 'Failed to generate background.' };
     }
 }
