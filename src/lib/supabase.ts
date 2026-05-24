@@ -1,8 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Guest, Household } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Fall back to a dummy URL/key during static-generation (build) so that the
+// module can be loaded without throwing. Real env vars must be set on Vercel
+// for runtime calls to work.
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder.placeholder';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
