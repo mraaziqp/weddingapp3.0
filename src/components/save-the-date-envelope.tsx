@@ -399,6 +399,15 @@ export function SaveTheDateEnvelope() {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const sealCtrl  = useAnimationControls();
+
+  // ── Autoplay soft ambient music on mount ───────────────────────────────────
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = 0.15;
+    audioRef.current.play().catch(() => {
+      // Autoplay blocked by browser — music will start on first user interaction
+    });
+  }, []);
   const flapCtrl  = useAnimationControls();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -484,12 +493,10 @@ export function SaveTheDateEnvelope() {
     setPhase('opening');
     void track('opened');
 
-    // Start background music playback on solid user interaction
-    if (audioRef.current) {
-      audioRef.current.muted = isMuted;
-      audioRef.current.play().catch((err) => {
-        console.warn('[Audio play failed/blocked]', err);
-      });
+    // Start music if autoplay was blocked on mount
+    if (audioRef.current && audioRef.current.paused && !isMuted) {
+      audioRef.current.volume = 0.15;
+      audioRef.current.play().catch(() => {});
     }
 
     // 1. Seal: glow flash → disappear
@@ -552,7 +559,7 @@ export function SaveTheDateEnvelope() {
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
           style={{
-            filter: 'brightness(0.3) saturate(0.7) contrast(1.1)',
+            filter: 'brightness(0.55) saturate(1.2) contrast(1.05)',
             transform: 'scale(1.06)',
             transformOrigin: 'bottom right'
           }}

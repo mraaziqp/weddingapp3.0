@@ -84,8 +84,7 @@ export async function PUT(req: NextRequest) {
       .upsert({
         id: 'main',
         config: finalDbPayload,
-        updated_at: new Date().toISOString()
-      });
+      }, { onConflict: 'id' });
 
     if (error) {
       console.warn('[STD config] Supabase upsert failed:', error.message);
