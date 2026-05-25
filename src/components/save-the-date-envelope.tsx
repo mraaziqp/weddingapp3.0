@@ -539,13 +539,18 @@ export function SaveTheDateEnvelope() {
       className="relative w-full flex flex-col items-center justify-between select-none overflow-hidden bg-black"
       style={{
         minHeight: '100dvh',
-        // Safe-area insets for iPhone notch / home indicator
-        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+        // Safe-area insets for iPhone notch / Dynamic Island
+        paddingTop: 'max(1.25rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
         WebkitTapHighlightColor: 'transparent',
-      }}
+        // Font & rendering quality for Retina displays
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        // Prevent iOS rubber-band scroll bounce
+        overscrollBehavior: 'none',
+      } as React.CSSProperties}
     >
 
       {/* Background Music Audio Element */}
@@ -577,17 +582,39 @@ export function SaveTheDateEnvelope() {
       </button>
 
       {/* ── Page Background ── */}
-      {/* cover everywhere — portrait mobile centres on hands, landscape desktop shifts up to show more of the couple */}
+      {/* Responsive bg image — portrait=cover centred, landscape desktop shifts up */}
       <style>{`
         .std-bg-img {
           object-fit: cover;
           object-position: center 35%;
           filter: brightness(0.65) saturate(1.15) contrast(1.08);
+          will-change: transform;
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
         }
+        /* iPhone SE / 8 — 375×667 */
+        @media only screen and (max-width: 375px) and (max-height: 667px) {
+          .std-bg-img { object-position: center 30%; }
+        }
+        /* iPhone 11 / XR — 414×896 */
+        @media only screen and (min-width: 414px) and (min-height: 850px) and (-webkit-device-pixel-ratio: 2) {
+          .std-bg-img { object-position: center 38%; }
+        }
+        /* iPhone 12/13/14 — 390×844, 3x */
+        @media only screen and (min-width: 390px) and (max-width: 430px) and (-webkit-device-pixel-ratio: 3) {
+          .std-bg-img { object-position: center 36%; }
+        }
+        /* iPhone 15 Pro Max / Plus — 430×932 */
+        @media only screen and (min-width: 430px) and (-webkit-device-pixel-ratio: 3) {
+          .std-bg-img { object-position: center 38%; }
+        }
+        /* Retina — sharper rendering hint */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .std-bg-img { image-rendering: -webkit-optimize-contrast; }
+        }
+        /* Landscape desktop — full bleed, show upper couple area */
         @media (orientation: landscape) and (min-width: 768px) {
-          .std-bg-img {
-            object-position: center 15%;
-          }
+          .std-bg-img { object-position: center 15%; }
         }
       `}</style>
       {couple.siteBgImage ? (
