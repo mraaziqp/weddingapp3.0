@@ -757,7 +757,7 @@ export function SaveTheDateEnvelope() {
                         lineHeight: 1.2,
                       }}
                     >
-                      {couple.partner1Full}
+                      {couple.partner2Full}
                     </p>
 
                     {/* Ornate ampersand */}
@@ -784,7 +784,7 @@ export function SaveTheDateEnvelope() {
                         lineHeight: 1.2,
                       }}
                     >
-                      {couple.partner2Full}
+                      {couple.partner1Full}
                     </p>
 
                     {/* Divider */}
@@ -950,7 +950,7 @@ export function SaveTheDateEnvelope() {
                       textShadow: '0 0 20px rgba(212,175,55,0.3)',
                     }}
                   >
-                    {couple.partner1Short[0] || 'A'} &amp; {couple.partner2Short[0] || 'R'}
+                    {couple.partner2Short[0] || 'R'} &amp; {couple.partner1Short[0] || 'A'}
                   </p>
                 </motion.div>
 
@@ -1065,7 +1065,7 @@ export function SaveTheDateEnvelope() {
             textShadow: '0 0 30px rgba(212,175,55,0.25)',
           }}
         >
-          {couple.partner1Short} &amp; {couple.partner2Short}
+          {couple.partner2Short} &amp; {couple.partner1Short}
         </p>
         <p
           style={{
