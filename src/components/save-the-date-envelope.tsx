@@ -577,18 +577,29 @@ export function SaveTheDateEnvelope() {
       </button>
 
       {/* ── Page Background ── */}
+      {/* Responsive: portrait/mobile = cover (fills screen), landscape/desktop = contain (shows full photo) */}
+      <style>{`
+        .std-bg-img {
+          object-fit: cover;
+          object-position: center 35%;
+          filter: brightness(0.65) saturate(1.15) contrast(1.08);
+        }
+        @media (orientation: landscape) and (min-width: 768px) {
+          .std-bg-img {
+            object-fit: contain;
+            object-position: center center;
+          }
+        }
+      `}</style>
       {couple.siteBgImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={couple.siteBgImage}
           alt=""
           aria-hidden
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{
-            objectPosition: 'center 40%',
-            filter: 'brightness(0.65) saturate(1.15) contrast(1.08)',
-            imageRendering: 'high-quality' as React.CSSProperties['imageRendering'],
-          }}
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 w-full h-full pointer-events-none std-bg-img"
         />
       ) : (
         <div
