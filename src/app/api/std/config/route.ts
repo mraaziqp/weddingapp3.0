@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+const BUCKET = 'wedding-config';
+const FILE = 'std-config.json';
+
 const DEFAULTS = {
   partner1Short: 'Abdu-Raazig',
   partner2Short: 'Razia',
@@ -15,35 +18,38 @@ const DEFAULTS = {
   redirectToStd: true,
 };
 
+/** Ensure the storage bucket exists (safe to call even if it already exists). */
+async function ensureBucket() {
+  const { error } = await supabaseAdmin.storage.createBucket(BUCKET, {
+    public: false,
+    fileSizeLimit: 1048576, // 1 MB — more than enough for JSON config
+  });
+  // Ignore "already exists" errors
+  if (error && !error.message?.toLowerCase().includes('already exists')) {
+    console.warn('[STD config] createBucket warning:', error.message);
+  }
+}
+
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('std_config')
-      .select('config')
-      .eq('id', 'main')
-      .single();
+    const { data, error } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .download(FILE);
 
-    if (error || !data || !data.config) {
-      return NextResponse.json({
-        config: DEFAULTS,
-        designState: null
-      });
+    if (error || !data) {
+      return NextResponse.json({ config: DEFAULTS, designState: null });
     }
 
-    const dbConfig = data.config as Record<string, any>;
-    const { designState, ...restConfig } = dbConfig;
+    const stored = JSON.parse(await data.text()) as {
+      config: Record<string, unknown>;
+      designState: unknown;
+    };
 
-    const config = { ...DEFAULTS, ...restConfig };
-    return NextResponse.json({
-      config,
-      designState: designState || null
-    });
+    const config = { ...DEFAULTS, ...stored.config };
+    return NextResponse.json({ config, designState: stored.designState ?? null });
   } catch (err) {
     console.error('[STD config] GET error:', err);
-    return NextResponse.json({
-      config: DEFAULTS,
-      designState: null
-    });
+    return NextResponse.json({ config: DEFAULTS, designState: null });
   }
 }
 
@@ -52,53 +58,46 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { config: clientConfig, designState } = body;
 
-    // Fetch existing first to merge safely
-    let existingConfig: Record<string, any> = {};
+    // Read existing config to merge safely
+    let existingConfig: Record<string, unknown> = {};
+    let existingDesignState: unknown = null;
     try {
-      const { data } = await supabaseAdmin
-        .from('std_config')
-        .select('config')
-        .eq('id', 'main')
-        .single();
-      if (data?.config) {
-        existingConfig = data.config as Record<string, any>;
+      const { data } = await supabaseAdmin.storage.from(BUCKET).download(FILE);
+      if (data) {
+        const stored = JSON.parse(await data.text()) as {
+          config: Record<string, unknown>;
+          designState: unknown;
+        };
+        existingConfig = stored.config ?? {};
+        existingDesignState = stored.designState ?? null;
       }
-    } catch {
-      // ignore — table may be empty
-    }
+    } catch { /* bucket or file doesn't exist yet — that's fine */ }
 
-    const { designState: oldDesign, ...oldConfig } = existingConfig;
-    const mergedConfig = { ...DEFAULTS, ...oldConfig, ...clientConfig };
-    const finalDbPayload = {
-      ...mergedConfig,
-      designState: designState || oldDesign || null
+    const mergedConfig = { ...DEFAULTS, ...existingConfig, ...clientConfig };
+    const payload = {
+      config: mergedConfig,
+      designState: designState ?? existingDesignState ?? null,
     };
 
-    // Try upsert; if table doesn't exist, attempt to create it first
-    let { error } = await supabaseAdmin
-      .from('std_config')
-      .upsert({ id: 'main', config: finalDbPayload });
+    await ensureBucket();
 
-    if (error && error.message?.includes('does not exist')) {
-      // Table missing — try to create it via SQL then retry
-      try {
-        await supabaseAdmin.rpc('exec_sql', {
-          sql: `CREATE TABLE IF NOT EXISTS std_config (id TEXT PRIMARY KEY, config JSONB);`
-        });
-      } catch { /* ignore */ }
-
-      const retry = await supabaseAdmin
-        .from('std_config')
-        .upsert({ id: 'main', config: finalDbPayload });
-      error = retry.error;
-    }
+    const { error } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(FILE, JSON.stringify(payload), {
+        contentType: 'application/json',
+        upsert: true,
+      });
 
     if (error) {
-      console.warn('[STD config] Supabase upsert failed:', error.message);
+      console.error('[STD config] Storage upload failed:', error.message);
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, config: mergedConfig, designState });
+    return NextResponse.json({
+      ok: true,
+      config: mergedConfig,
+      designState: payload.designState,
+    });
   } catch (err) {
     console.error('[STD config] PUT error:', err);
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
