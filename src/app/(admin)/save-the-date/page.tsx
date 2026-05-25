@@ -61,7 +61,7 @@ function PosterExportButton() {
       await new Promise<void>(resolve => {
         bgImg.onload = () => resolve();
         bgImg.onerror = () => resolve();
-        bgImg.src = '/site-bg.jpg';
+        bgImg.src = '/couple-bg.jpg';
       });
 
       if (bgImg.naturalWidth > 0) {
@@ -127,7 +127,7 @@ function PosterExportButton() {
       // ── Names in Great Vibes ─────────────────────────────────────────────────
       ctx.font      = '134px "Great Vibes"';
       ctx.fillStyle = GOLD;
-      canvasText(ctx, config.partner1Full || 'Partner One', W / 2, 646, W - 80);
+      canvasText(ctx, config.partner2Full || 'Partner One', W / 2, 646, W - 80);
 
       ctx.font      = 'italic 76px "Playfair Display"';
       ctx.fillStyle = CREAM;
@@ -135,7 +135,7 @@ function PosterExportButton() {
 
       ctx.font      = '134px "Great Vibes"';
       ctx.fillStyle = GOLD;
-      canvasText(ctx, config.partner2Full || 'Partner Two', W / 2, 930, W - 80);
+      canvasText(ctx, config.partner1Full || 'Partner Two', W / 2, 930, W - 80);
 
       // ── Divider line ─────────────────────────────────────────────────────────
       ctx.strokeStyle = GOLD;
