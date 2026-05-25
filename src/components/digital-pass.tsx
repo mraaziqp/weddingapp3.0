@@ -7,7 +7,9 @@ import type { Household } from '@/lib/types';
 import { motion, useAnimationControls } from 'framer-motion';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+interface GoldDustParticle { id: number; left: number; top: number; dur: number; dly: number }
 
 // Shimmer bar that sweeps across the card (holographic effect)
 function HoloSweep() {
@@ -33,6 +35,19 @@ export function DigitalPass({ household }: { household: Household }) {
   const { toast } = useToast();
   const controls = useAnimationControls();
   const cardRef = useRef<HTMLDivElement>(null);
+  const [goldDust, setGoldDust] = useState<GoldDustParticle[]>([]);
+
+  useEffect(() => {
+    setGoldDust(
+      Array.from({ length: 30 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        dur: 2 + Math.random() * 3,
+        dly: Math.random() * 5,
+      }))
+    );
+  }, []);
 
   const downloadPass = () => {
     toast({
@@ -80,13 +95,13 @@ export function DigitalPass({ household }: { household: Household }) {
     >
       {/* Gold dust in the background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-        {Array.from({ length: 30 }).map((_, i) => (
+        {goldDust.map(p => (
           <motion.div
-            key={i}
+            key={p.id}
             className="absolute w-1 h-1 rounded-full bg-[#d4af37]"
-            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, opacity: 0 }}
+            style={{ left: `${p.left}%`, top: `${p.top}%`, opacity: 0 }}
             animate={{ opacity: [0, 0.4, 0], scale: [0, 1, 0] }}
-            transition={{ duration: 2 + Math.random() * 3, delay: Math.random() * 5, repeat: Infinity }}
+            transition={{ duration: p.dur, delay: p.dly, repeat: Infinity }}
           />
         ))}
       </div>

@@ -17,8 +17,19 @@ import {
 } from '@/lib/experience-settings';
 
 // ── Fireworks burst (CSS keyframe trigger) ────────────────────────────────
+interface SparkOffset { x: number; y: number }
 function FireworkShot({ x, delay }: { x: number; delay: number }) {
-  const sparks = Array.from({ length: 12 }, (_, i) => i);
+  const [sparks, setSparks] = useState<SparkOffset[]>([]);
+
+  useEffect(() => {
+    setSparks(
+      Array.from({ length: 12 }, (_, i) => ({
+        x: Math.cos((i / 12) * Math.PI * 2) * (40 + Math.random() * 30),
+        y: Math.sin((i / 12) * Math.PI * 2) * (40 + Math.random() * 30),
+      }))
+    );
+  }, []);
+
   return (
     <motion.div
       className="absolute bottom-0 pointer-events-none"
@@ -27,7 +38,7 @@ function FireworkShot({ x, delay }: { x: number; delay: number }) {
       animate={{ y: '-65vh', opacity: [1, 1, 0] }}
       transition={{ duration: 0.9, delay, ease: [0.2, 0, 0.8, 1] }}
     >
-      {sparks.map(i => (
+      {sparks.map((spark, i) => (
         <motion.div
           key={i}
           className="absolute w-1.5 h-1.5 rounded-full"
@@ -35,8 +46,8 @@ function FireworkShot({ x, delay }: { x: number; delay: number }) {
           initial={{ scale: 1, x: 0, y: 0, opacity: 0 }}
           animate={{
             scale: [0, 1, 0],
-            x: Math.cos((i / 12) * Math.PI * 2) * (40 + Math.random() * 30),
-            y: Math.sin((i / 12) * Math.PI * 2) * (40 + Math.random() * 30),
+            x: spark.x,
+            y: spark.y,
             opacity: [0, 1, 0],
           }}
           transition={{ duration: 0.7, delay: delay + 0.85, ease: 'easeOut' }}
@@ -47,13 +58,30 @@ function FireworkShot({ x, delay }: { x: number; delay: number }) {
 }
 
 // ── Cinematic "The day is finally here" intro ─────────────────────────────
+interface DustParticle { id: number; w: number; h: number; left: number; animY: number; dur: number; dly: number }
 const EventDayIntro = ({ household, onComplete }: { household: Household; onComplete: () => void }) => {
   const [phase, setPhase] = useState<'enter' | 'exit'>('enter');
   const [introMusic, setIntroMusic] = useState<IntroMusic>('spark-rise');
+  const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
   const introAudioCtxRef = useRef<AudioContext | null>(null);
   const titleControls = useAnimationControls();
   const subtitleControls = useAnimationControls();
   const { isMuted } = useAudio();
+
+  useEffect(() => {
+    const h = window.innerHeight;
+    setDustParticles(
+      Array.from({ length: 40 }, (_, i) => ({
+        id: i,
+        w: Math.random() * 3 + 1,
+        h: Math.random() * 3 + 1,
+        left: Math.random() * 100,
+        animY: -h * 1.1,
+        dur: Math.random() * 6 + 5,
+        dly: Math.random() * 4,
+      }))
+    );
+  }, []);
 
   useEffect(() => {
     const syncSettings = () => {
@@ -156,18 +184,13 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
       />
 
       {/* Gold dust particles */}
-      {Array.from({ length: 40 }).map((_, i) => (
+      {dustParticles.map(p => (
         <motion.div
-          key={i}
+          key={p.id}
           className="absolute rounded-full bg-[#d4af37]"
-          style={{
-            width: Math.random() * 3 + 1,
-            height: Math.random() * 3 + 1,
-            left: `${Math.random() * 100}%`,
-            bottom: '-4px',
-          }}
-          animate={{ y: [0, -(typeof window !== 'undefined' ? window.innerHeight : 700) * 1.1], opacity: [0, 0.6, 0] }}
-          transition={{ duration: Math.random() * 6 + 5, delay: Math.random() * 4, repeat: Infinity, ease: 'easeOut' }}
+          style={{ width: p.w, height: p.h, left: `${p.left}%`, bottom: '-4px' }}
+          animate={{ y: [0, p.animY], opacity: [0, 0.6, 0] }}
+          transition={{ duration: p.dur, delay: p.dly, repeat: Infinity, ease: 'easeOut' }}
         />
       ))}
 

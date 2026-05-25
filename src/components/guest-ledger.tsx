@@ -238,14 +238,14 @@ export function GuestLedger() {
                                         <TableCell>{household.guests.length}</TableCell>
                                         <TableCell>
                                             <div className="flex gap-2 items-center flex-wrap">
-                                                {household.guests.map(guest => (
+                                                {household.guests.map((guest, guestIdx) => (
                                                     <Popover key={guest.id}>
                                                         <PopoverTrigger asChild>
                                                             <button className="flex items-center gap-1 group">
                                                                 <motion.div
                                                                     className={cn("h-3 w-3 rounded-full cursor-pointer", statusColors[guest.rsvpStatus])}
                                                                     animate={{ scale: [1, 1.2, 1] }}
-                                                                    transition={{ duration: 1.5, repeat: Infinity, delay: Math.random() }}
+                                                                    transition={{ duration: 1.5, repeat: Infinity, delay: (guestIdx * 0.37) % 2 }}
                                                                 />
                                                                 <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{guest.firstName}</span>
                                                             </button>
