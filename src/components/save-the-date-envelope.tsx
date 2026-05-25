@@ -200,8 +200,9 @@ function AmbientDust() {
   const [particles, setParticles] = useState<Dust[]>([]);
   useEffect(() => {
     const colors = ['#d4af37', '#f6e7b7', '#c49a3c', '#ffffff'];
+    const count = window.innerWidth < 480 ? 26 : 55;
     setParticles(
-      Array.from({ length: 55 }, (_, i) => ({
+      Array.from({ length: count }, (_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
@@ -397,8 +398,10 @@ export function SaveTheDateEnvelope() {
   const [stageScale, setStageScale] = useState(1);
   const [isMuted, setIsMuted]     = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const sealCtrl  = useAnimationControls();
+  const audioRef    = useRef<HTMLAudioElement>(null);
+  const headingRef  = useRef<HTMLDivElement>(null);
+  const footerRef   = useRef<HTMLDivElement>(null);
+  const sealCtrl    = useAnimationControls();
 
   // ── Autoplay soft ambient music on mount ───────────────────────────────────
   useEffect(() => {
@@ -428,23 +431,25 @@ export function SaveTheDateEnvelope() {
       });
   }, []);
 
-  // ── Calculate responsive scale — constrained by BOTH width AND height ──────
+  // ── Scale: measured from actual heading + footer heights via ResizeObserver ─────
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const STAGE_W = ENV_W;
-    const STAGE_H = ENV_TOP + ENV_H;
-    // Reserve ~220px for heading+footer+padding on typical phones
-    const VERTICAL_RESERVED = 220;
-    const handleResize = () => {
+    const calc = () => {
+      const hh = headingRef.current?.offsetHeight ?? 130;
+      const fh = footerRef.current?.offsetHeight ?? 75;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const scaleW = Math.min(1, (vw - 24) / STAGE_W);
-      const scaleH = Math.min(1, (vh - VERTICAL_RESERVED) / STAGE_H);
-      setStageScale(Math.min(scaleW, scaleH));
+      const available = vh - hh - fh - 52; // 52px = ~1rem top + bottom padding allowance
+      const scaleH = available / (ENV_TOP + ENV_H);
+      const scaleW = (vw - 24) / ENV_W;
+      setStageScale(Math.max(0.48, Math.min(1, Math.min(scaleH, scaleW))));
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const ro = new ResizeObserver(calc);
+    if (headingRef.current) ro.observe(headingRef.current);
+    if (footerRef.current) ro.observe(footerRef.current);
+    window.addEventListener('resize', calc);
+    calc();
+    return () => { ro.disconnect(); window.removeEventListener('resize', calc); };
   }, []);
 
   // ── Deduped tracking ────────────────────────────────────────────────────────
@@ -535,10 +540,10 @@ export function SaveTheDateEnvelope() {
       style={{
         minHeight: '100dvh',
         // Safe-area insets for iPhone notch / home indicator
-        paddingTop: 'max(2rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -578,11 +583,12 @@ export function SaveTheDateEnvelope() {
           src={couple.siteBgImage}
           alt=""
           aria-hidden
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{
+            objectPosition: 'center 35%',
             filter: 'brightness(0.55) saturate(1.2) contrast(1.05)',
             transform: 'scale(1.06)',
-            transformOrigin: 'bottom right'
+            transformOrigin: 'center 35%',
           }}
         />
       ) : (
@@ -611,7 +617,8 @@ export function SaveTheDateEnvelope() {
 
       {/* ── SAVE THE DATE heading ── */}
       <motion.div
-        className="relative z-10 text-center pt-2"
+        ref={headingRef}
+        className="relative z-10 text-center pt-1"
         initial={{ opacity: 0, y: -22 }}
         animate={{ opacity: phase !== 'loading' ? 1 : 0, y: 0 }}
         transition={{ duration: 1.2, delay: 0.4 }}
@@ -636,7 +643,7 @@ export function SaveTheDateEnvelope() {
             transition={{ delay: 0.35 + i * 0.3, duration: 1 }}
             style={{
               fontFamily: "'Cinzel', serif",
-              fontSize: word === 'THE' ? 'clamp(0.75rem, 2.5vw, 1.1rem)' : 'clamp(2rem, 8vw, 3.4rem)',
+              fontSize: word === 'THE' ? 'clamp(0.5rem, 1.8vw, 1.1rem)' : 'clamp(1.45rem, 6.2vw, 3.4rem)',
               fontWeight: word === 'THE' ? 400 : 700,
               color: '#ffffff',
               lineHeight: word === 'THE' ? 1.6 : 1.05,
@@ -658,31 +665,15 @@ export function SaveTheDateEnvelope() {
       </motion.div>
 
       {/* ── Envelope + Card stage wrapper ── */}
-      {/* Outer div takes the SCALED height so flex layout is correct */}
+      {/* CSS zoom scales layout dimensions too — no offset math needed */}
       <div
         style={{
-          height: (ENV_TOP + ENV_H) * stageScale,
-          width: ENV_W * stageScale,
-          position: 'relative',
+          zoom: stageScale,
+          width: ENV_W,
+          height: ENV_TOP + ENV_H,
           flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
-        {/* Inner div is the actual stage, scaled from its center */}
-        <div
-          style={{
-            transform: `scale(${stageScale})`,
-            transformOrigin: 'center center',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: ENV_W,
-            height: ENV_TOP + ENV_H,
-            flexShrink: 0,
-          }}
-        >
         {/* Stage Container */}
         <div
           className="relative z-10"
@@ -712,6 +703,7 @@ export function SaveTheDateEnvelope() {
                     height: CARD_H,
                     background: 'linear-gradient(175deg, #fdfaf4 0%, #f8efd0 50%, #f4e4b5 100%)',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15)',
+                    willChange: 'transform',
                   }}
                   initial={{ y: CARD_H }}
                   animate={{ y: phase === 'revealed' ? 40 : CARD_H - 30 }}
@@ -1052,12 +1044,12 @@ export function SaveTheDateEnvelope() {
             )}
           </AnimatePresence>
         </div>
-        </div>{/* /inner scale div */}
-      </div>{/* /outer size wrapper */}
+      </div>{/* /stage zoom wrapper */}
 
       {/* ── Couple names + date (bottom) ── */}
       <motion.div
-        className="relative z-10 text-center pb-2"
+        ref={footerRef}
+        className="relative z-10 text-center pb-1"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: phase !== 'loading' ? 1 : 0, y: 0 }}
         transition={{ delay: 2.8, duration: 1.1 }}
@@ -1065,7 +1057,7 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Great Vibes', cursive",
-            fontSize: 'clamp(1.6rem, 6vw, 2.5rem)',
+            fontSize: 'clamp(1.25rem, 5.5vw, 2.5rem)',
             color: 'rgba(212,175,55,0.92)',
             textShadow: '0 0 30px rgba(212,175,55,0.25)',
           }}
@@ -1075,7 +1067,7 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Cinzel', serif",
-            fontSize: 'clamp(0.75rem, 3vw, 1.15rem)',
+            fontSize: 'clamp(0.62rem, 2.5vw, 1.15rem)',
             color: '#ffffff',
             letterSpacing: '0.25em',
             fontWeight: 600,
