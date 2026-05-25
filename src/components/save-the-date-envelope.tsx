@@ -36,7 +36,7 @@ const DEFAULTS = {
   venue: 'Tuscany in Rylands',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
-  siteBgImage: '',
+  siteBgImage: '/couple-bg.jpg',
 };
 
 type CoupleConfig = typeof DEFAULTS;

@@ -11,7 +11,7 @@ const DEFAULTS = {
   venue: 'Tuscany in Rylands',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
-  siteBgImage: '/site-bg.jpg',
+  siteBgImage: '/couple-bg.jpg',
   redirectToStd: true,
 };
 
