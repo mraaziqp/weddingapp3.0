@@ -17,7 +17,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid event' }, { status: 400 });
     }
 
-    const { error } = await supabase.from('std_opens').insert({
+    const { error } = await supabaseAdmin.from('std_opens').insert({
       event_type: event,
       user_agent: req.headers.get('user-agent')?.slice(0, 255) ?? null,
     });
@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     const [{ count: views }, { count: opens }] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from('std_opens')
         .select('*', { count: 'exact', head: true })
         .eq('event_type', 'view'),
-      supabase
+      supabaseAdmin
         .from('std_opens')
         .select('*', { count: 'exact', head: true })
         .eq('event_type', 'opened'),

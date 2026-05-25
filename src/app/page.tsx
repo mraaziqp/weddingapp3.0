@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   let redirectToStd = true; // default: redirect to Save the Date
   try {
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('std_config')
       .select('config')
       .eq('id', 'main')

@@ -246,8 +246,8 @@ export function SaveTheDateEditor() {
       const config = {
         partner1Short: partner1El?.content ?? 'Abdu-Raazig',
         partner2Short: partner2El?.content ?? 'Razia',
-        partner1Full: (partner1El?.content ?? 'Abdu-Raazig') + ' Sarber',
-        partner2Full: (partner2El?.content ?? 'Razia') + ' Shade',
+        partner1Full: partner1El?.content ?? 'Abdu-Raazig',
+        partner2Full: partner2El?.content ?? 'Razia',
         date: dateText,
         venue,
         city,

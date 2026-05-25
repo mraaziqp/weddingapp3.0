@@ -21,6 +21,7 @@ import {
   useAnimationControls,
 } from 'framer-motion';
 import QRCode from 'react-qr-code';
+import { Volume2, VolumeX } from 'lucide-react';
 import { STICKERS } from '@/components/save-the-date/stickers';
 import type { DesignState, TextElement, ImageElement, QRElement, StickerElement } from '@/components/save-the-date/types';
 
@@ -391,10 +392,12 @@ type Phase = 'loading' | 'intro' | 'idle' | 'opening' | 'revealed';
 export function SaveTheDateEnvelope() {
   const [phase, setPhase]         = useState<Phase>('loading');
   const [showBurst, setShowBurst] = useState(false);
-  const [couple, setCouple]       = useState<CoupleConfig>(DEFAULTS);
+  const [couple, setCouple]       = useState<CoupleConfig>({ ...DEFAULTS, siteBgImage: '/site-bg.jpg' });
   const [designState, setDesignState] = useState<DesignState | null>(null);
   const [stageScale, setStageScale] = useState(1);
+  const [isMuted, setIsMuted]     = useState(false);
 
+  const audioRef = useRef<HTMLAudioElement>(null);
   const sealCtrl  = useAnimationControls();
   const flapCtrl  = useAnimationControls();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -481,6 +484,14 @@ export function SaveTheDateEnvelope() {
     setPhase('opening');
     void track('opened');
 
+    // Start background music playback on solid user interaction
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+      audioRef.current.play().catch((err) => {
+        console.warn('[Audio play failed/blocked]', err);
+      });
+    }
+
     // 1. Seal: glow flash → disappear
     setShowBurst(true);
     void sealCtrl.start({
@@ -512,6 +523,26 @@ export function SaveTheDateEnvelope() {
   return (
     <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between py-8 px-4 select-none overflow-hidden bg-black">
 
+      {/* Background Music Audio Element */}
+      <audio ref={audioRef} src="/save-the-date.mp3" loop preload="auto" />
+
+      {/* Floating glassmorphic mute/unmute button */}
+      <button
+        onClick={() => {
+          if (audioRef.current) {
+            audioRef.current.muted = !isMuted;
+            setIsMuted(!isMuted);
+            if (audioRef.current.paused) {
+              audioRef.current.play().catch(() => {});
+            }
+          }
+        }}
+        className="absolute top-4 right-4 z-50 flex items-center justify-center w-11 h-11 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl backdrop-blur-md cursor-pointer"
+        title={isMuted ? "Unmute Music" : "Mute Music"}
+      >
+        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+      </button>
+
       {/* ── Page Background ── */}
       {couple.siteBgImage ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -520,7 +551,11 @@ export function SaveTheDateEnvelope() {
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-          style={{ filter: 'brightness(0.3) saturate(0.7) contrast(1.1)' }}
+          style={{
+            filter: 'brightness(0.3) saturate(0.7) contrast(1.1)',
+            transform: 'scale(1.06)',
+            transformOrigin: 'bottom right'
+          }}
         />
       ) : (
         <div
@@ -528,6 +563,9 @@ export function SaveTheDateEnvelope() {
           style={{ background: 'linear-gradient(160deg, #070c15 0%, #0d1727 50%, #03060a 100%)' }}
         />
       )}
+
+      {/* Bottom gradient overlay to hide watermark */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none z-10" />
 
       {/* Vignette overlay */}
       <div
@@ -626,165 +664,157 @@ export function SaveTheDateEnvelope() {
                 <motion.div
                   className="absolute top-0 left-0 right-0 rounded-2xl shadow-2xl"
                   style={{
-                    height: calculatedCardH,
-                    background: designState ? 'transparent' : 'linear-gradient(175deg, #fdfaf4 0%, #f8efd0 50%, #f4e4b5 100%)',
+                    height: CARD_H,
+                    background: 'linear-gradient(175deg, #fdfaf4 0%, #f8efd0 50%, #f4e4b5 100%)',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15)',
                   }}
-                  initial={{ y: calculatedCardH }}
-                  animate={{ y: phase === 'revealed' ? 40 : calculatedCardH - 30 }}
-                  exit={{ y: calculatedCardH, transition: { duration: 0.3 } }}
+                  initial={{ y: CARD_H }}
+                  animate={{ y: phase === 'revealed' ? 40 : CARD_H - 30 }}
+                  exit={{ y: CARD_H, transition: { duration: 0.3 } }}
                   transition={{ type: 'spring', stiffness: 42, damping: 14, delay: 0.5 }}
                 >
-                  {designState ? (
-                    /* Render custom canvas layout synchronized from Admin editor */
-                    <CustomDesignCard designState={designState} cardWidth={CARD_W} />
-                  ) : (
-                    /* Fallback to premium hand-crafted fallback card */
-                    <>
-                      <LaceTop width={CARD_W} />
+                  <LaceTop width={CARD_W} />
 
-                      {/* Gold border on card */}
-                      <div
-                        className="absolute inset-3 rounded-xl pointer-events-none"
-                        style={{ border: '1px solid rgba(180,140,50,0.25)' }}
-                      />
-                      <div
-                        className="absolute inset-5 rounded-lg pointer-events-none"
-                        style={{ border: '0.5px solid rgba(180,140,50,0.12)' }}
-                      />
+                  {/* Gold border on card */}
+                  <div
+                    className="absolute inset-3 rounded-xl pointer-events-none"
+                    style={{ border: '1px solid rgba(180,140,50,0.25)' }}
+                  />
+                  <div
+                    className="absolute inset-5 rounded-lg pointer-events-none"
+                    style={{ border: '0.5px solid rgba(180,140,50,0.12)' }}
+                  />
 
-                      {/* Card content */}
-                      <motion.div
-                        className="flex flex-col items-center justify-center h-full pt-8 pb-10 px-8 text-center gap-3"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: phase === 'revealed' ? 1 : 0 }}
-                        transition={{ delay: 1.4, duration: 1 }}
+                  {/* Card content */}
+                  <motion.div
+                    className="flex flex-col items-center justify-center h-full pt-8 pb-10 px-8 text-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: phase === 'revealed' ? 1 : 0 }}
+                    transition={{ delay: 1.4, duration: 1 }}
+                  >
+                    {/* Top ornamental line */}
+                    <div className="flex items-center gap-3 w-full max-w-[240px]" style={{ opacity: 0.3 }}>
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
+                      <span style={{ color: '#7b1d2e', fontSize: '0.45rem' }}>✦</span>
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
+                    </div>
+
+                    <p
+                      style={{
+                        fontFamily: "'Cinzel', serif",
+                        fontSize: '0.58rem',
+                        color: '#7b1d2e',
+                        letterSpacing: '0.25em',
+                        opacity: 0.55,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Together with their families
+                    </p>
+
+                    <p
+                      style={{
+                        fontFamily: "'Great Vibes', cursive",
+                        fontSize: '2.4rem',
+                        color: '#7b1d2e',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {couple.partner1Full}
+                    </p>
+
+                    {/* Ornate ampersand */}
+                    <div className="flex items-center gap-3 w-full max-w-[180px]">
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(123,29,46,0.3))' }} />
+                      <p
+                        style={{
+                          fontFamily: "'Great Vibes', cursive",
+                          fontSize: '1.6rem',
+                          color: '#d4af37',
+                          textShadow: '0 0 12px rgba(212,175,55,0.3)',
+                        }}
                       >
-                        {/* Top ornamental line */}
-                        <div className="flex items-center gap-3 w-full max-w-[240px]" style={{ opacity: 0.3 }}>
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
-                          <span style={{ color: '#7b1d2e', fontSize: '0.45rem' }}>✦</span>
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
-                        </div>
+                        &amp;
+                      </p>
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(123,29,46,0.3))' }} />
+                    </div>
 
-                        <p
-                          style={{
-                            fontFamily: "'Cinzel', serif",
-                            fontSize: '0.58rem',
-                            color: '#7b1d2e',
-                            letterSpacing: '0.25em',
-                            opacity: 0.55,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          Together with their families
-                        </p>
+                    <p
+                      style={{
+                        fontFamily: "'Great Vibes', cursive",
+                        fontSize: '2.4rem',
+                        color: '#7b1d2e',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {couple.partner2Full}
+                    </p>
 
-                        <p
-                          style={{
-                            fontFamily: "'Great Vibes', cursive",
-                            fontSize: '2.4rem',
-                            color: '#7b1d2e',
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {couple.partner1Full}
-                        </p>
+                    {/* Divider */}
+                    <div className="flex items-center gap-2 my-1 w-full max-w-[200px]" style={{ opacity: 0.2 }}>
+                      <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
+                      <span style={{ color: '#d4af37', fontSize: '0.5rem' }}>◆</span>
+                      <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
+                    </div>
 
-                        {/* Ornate ampersand */}
-                        <div className="flex items-center gap-3 w-full max-w-[180px]">
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(123,29,46,0.3))' }} />
-                          <p
-                            style={{
-                              fontFamily: "'Great Vibes', cursive",
-                              fontSize: '1.6rem',
-                              color: '#d4af37',
-                              textShadow: '0 0 12px rgba(212,175,55,0.3)',
-                            }}
-                          >
-                            &amp;
-                          </p>
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(123,29,46,0.3))' }} />
-                        </div>
+                    <p
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontSize: '0.78rem',
+                        color: '#7b1d2e',
+                        lineHeight: 1.9,
+                        opacity: 0.85,
+                      }}
+                    >
+                      Request the pleasure of your presence
+                      <br />
+                      at their wedding
+                    </p>
 
-                        <p
-                          style={{
-                            fontFamily: "'Great Vibes', cursive",
-                            fontSize: '2.4rem',
-                            color: '#7b1d2e',
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {couple.partner2Full}
-                        </p>
+                    <p
+                      style={{
+                        fontFamily: "'Great Vibes', cursive",
+                        fontSize: '2rem',
+                        color: '#7b1d2e',
+                        marginTop: 4,
+                      }}
+                    >
+                      {couple.date}
+                    </p>
 
-                        {/* Divider */}
-                        <div className="flex items-center gap-2 my-1 w-full max-w-[200px]" style={{ opacity: 0.2 }}>
-                          <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
-                          <span style={{ color: '#d4af37', fontSize: '0.5rem' }}>◆</span>
-                          <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
-                        </div>
+                    <p
+                      style={{
+                        fontFamily: "'Cinzel', serif",
+                        fontSize: '0.65rem',
+                        color: '#7b1d2e',
+                        letterSpacing: '0.2em',
+                        opacity: 0.55,
+                        marginTop: 2,
+                      }}
+                    >
+                      {couple.venue} · {couple.city}
+                    </p>
 
-                        <p
-                          style={{
-                            fontFamily: "'Playfair Display', serif",
-                            fontSize: '0.78rem',
-                            color: '#7b1d2e',
-                            lineHeight: 1.9,
-                            opacity: 0.85,
-                          }}
-                        >
-                          Request the pleasure of your presence
-                          <br />
-                          at their wedding
-                        </p>
+                    {/* Bottom ornamental line */}
+                    <div className="flex items-center gap-3 w-full max-w-[240px] mt-2" style={{ opacity: 0.3 }}>
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
+                      <span style={{ color: '#d4af37', fontSize: '0.45rem' }}>✦</span>
+                      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
+                    </div>
 
-                        <p
-                          style={{
-                            fontFamily: "'Great Vibes', cursive",
-                            fontSize: '2rem',
-                            color: '#7b1d2e',
-                            marginTop: 4,
-                          }}
-                        >
-                          {couple.date}
-                        </p>
-
-                        <p
-                          style={{
-                            fontFamily: "'Cinzel', serif",
-                            fontSize: '0.65rem',
-                            color: '#7b1d2e',
-                            letterSpacing: '0.2em',
-                            opacity: 0.55,
-                            marginTop: 2,
-                          }}
-                        >
-                          {couple.venue} · {couple.city}
-                        </p>
-
-                        {/* Bottom ornamental line */}
-                        <div className="flex items-center gap-3 w-full max-w-[240px] mt-2" style={{ opacity: 0.3 }}>
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
-                          <span style={{ color: '#d4af37', fontSize: '0.45rem' }}>✦</span>
-                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
-                        </div>
-
-                        <p
-                          style={{
-                            fontFamily: "'Cinzel', serif",
-                            fontSize: '0.5rem',
-                            color: 'rgba(123,29,46,0.4)',
-                            letterSpacing: '0.3em',
-                            textTransform: 'uppercase',
-                            marginTop: 4,
-                          }}
-                        >
-                          Formal invitation to follow
-                        </p>
-                      </motion.div>
-                    </>
-                  )}
+                    <p
+                      style={{
+                        fontFamily: "'Cinzel', serif",
+                        fontSize: '0.5rem',
+                        color: 'rgba(123,29,46,0.4)',
+                        letterSpacing: '0.3em',
+                        textTransform: 'uppercase',
+                        marginTop: 4,
+                      }}
+                    >
+                      Formal invitation to follow
+                    </p>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -928,11 +958,14 @@ export function SaveTheDateEnvelope() {
 
                 {/* ── Envelope flap (3-D) ── */}
                 <motion.div
-                  className="absolute top-0 left-0 right-0"
+                  className="absolute top-0 left-0 right-0 overflow-hidden"
                   style={{
-                    height: FLAP_H,
-                    background: 'linear-gradient(155deg, #1e3c74 0%, #142c58 60%, #1a3060 100%)',
-                    clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                    height: ENV_H, // Use full envelope height for seamless aspect ratio matching
+                    backgroundImage: couple.bgImage ? `url(${couple.bgImage})` : 'linear-gradient(155deg, #1e3c74 0%, #142c58 100%)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center', // Align center exactly like front body cover image
+                    filter: 'brightness(0.65) contrast(1.1) saturate(0.9)', // Match the brightness/filter of envelope body!
+                    clipPath: `polygon(0 0, 100% 0, 50% ${FLAP_H}px)`, // Precise triangle clip-path based on FLAP_H
                     borderTopLeftRadius: '1rem',
                     borderTopRightRadius: '1rem',
                     transformOrigin: 'top center',
@@ -942,18 +975,22 @@ export function SaveTheDateEnvelope() {
                   }}
                   animate={flapCtrl}
                   initial={{ rotateX: 0 }}
-                />
+                >
+                  {/* Subtle luxury flap overlay shading */}
+                  <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+                </motion.div>
 
                 {/* Flap inner face — visible after 90° rotation */}
                 <div
                   className="absolute top-0 left-0 right-0"
                   style={{
                     height: FLAP_H,
-                    background: 'linear-gradient(180deg, #253f70 0%, #1e3868 100%)',
+                    background: 'linear-gradient(180deg, #fdfaf4 0%, #f4e4b5 100%)',
                     clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
                     borderTopLeftRadius: '1rem',
                     borderTopRightRadius: '1rem',
                     zIndex: 2,
+                    border: '1px solid rgba(212,175,55,0.15)',
                   }}
                 />
 

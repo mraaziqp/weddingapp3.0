@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const DEFAULTS = {
   partner1Short: 'Abdu-Raazig',
@@ -11,29 +11,32 @@ const DEFAULTS = {
   venue: 'The Grand Pavilion',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
-  siteBgImage: '',
+  siteBgImage: '/site-bg.jpg',
   redirectToStd: true,
 };
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('std_config')
-      .select('config, design_state')
+      .select('config')
       .eq('id', 'main')
       .single();
 
-    if (error || !data) {
+    if (error || !data || !data.config) {
       return NextResponse.json({
         config: DEFAULTS,
         designState: null
       });
     }
 
-    const config = { ...DEFAULTS, ...(data.config as object) };
+    const dbConfig = data.config as Record<string, any>;
+    const { designState, ...restConfig } = dbConfig;
+
+    const config = { ...DEFAULTS, ...restConfig };
     return NextResponse.json({
       config,
-      designState: data.design_state || null
+      designState: designState || null
     });
   } catch (err) {
     console.error('[STD config] GET error:', err);
@@ -49,29 +52,38 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { config: clientConfig, designState } = body;
 
-    // Fetch existing first to merge
-    let existingConfig = {};
+    // Fetch existing first to merge safely
+    let existingConfig: Record<string, any> = {};
     try {
-      const { data } = await supabase
+      const { data } = await supabaseAdmin
         .from('std_config')
         .select('config')
         .eq('id', 'main')
         .single();
       if (data?.config) {
-        existingConfig = data.config;
+        existingConfig = data.config as Record<string, any>;
       }
     } catch {
       // ignore
     }
 
-    const mergedConfig = { ...DEFAULTS, ...existingConfig, ...clientConfig };
+    const { designState: oldDesign, ...oldConfig } = existingConfig;
 
-    const { error } = await supabase
+    // Merge standard configs
+    const mergedConfig = { ...DEFAULTS, ...oldConfig, ...clientConfig };
+
+    // Package both standard config and design state into the single 'config' JSONB column
+    // This is extremely robust and avoids missing-column database errors!
+    const finalDbPayload = {
+      ...mergedConfig,
+      designState: designState || oldDesign || null
+    };
+
+    const { error } = await supabaseAdmin
       .from('std_config')
       .upsert({
         id: 'main',
-        config: mergedConfig,
-        design_state: designState || null,
+        config: finalDbPayload,
         updated_at: new Date().toISOString()
       });
 
