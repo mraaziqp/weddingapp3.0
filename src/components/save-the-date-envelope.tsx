@@ -585,10 +585,9 @@ export function SaveTheDateEnvelope() {
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{
-            objectPosition: 'center 35%',
-            filter: 'brightness(0.55) saturate(1.2) contrast(1.05)',
-            transform: 'scale(1.06)',
-            transformOrigin: 'center 35%',
+            objectPosition: 'center 40%',
+            filter: 'brightness(0.65) saturate(1.15) contrast(1.08)',
+            imageRendering: 'high-quality' as React.CSSProperties['imageRendering'],
           }}
         />
       ) : (
