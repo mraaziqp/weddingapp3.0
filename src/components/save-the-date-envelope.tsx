@@ -35,16 +35,17 @@ const DEFAULTS = {
   venue: 'The Grand Pavilion',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
+  siteBgImage: '',
 };
 
 type CoupleConfig = typeof DEFAULTS;
 
 // ── Dimensions — BIGGER envelope ──────────────────────────────────────────────
-const ENV_W   = 420;
-const ENV_H   = 275;
-const FLAP_H  = 175; // V-flap height (≈ 64 % of ENV_H)
-const CARD_W  = 370;
-const CARD_H  = 500;
+const ENV_W   = 460;
+const ENV_H   = 300;
+const FLAP_H  = 190; // V-flap height (≈ 64 % of ENV_H)
+const CARD_W  = 390;
+const CARD_H  = 546;
 const ENV_TOP = 320; // px above envelope in the stage (clip-zone height)
 
 // ── Wax seal — intricate golden seal ──────────────────────────────────────────
@@ -511,20 +512,20 @@ export function SaveTheDateEnvelope() {
   return (
     <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between py-8 px-4 select-none overflow-hidden bg-black">
 
-      {/* ── Background ── */}
-      {couple.bgImage ? (
+      {/* ── Page Background ── */}
+      {couple.siteBgImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={couple.bgImage}
+          src={couple.siteBgImage}
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-          style={{ filter: 'brightness(0.4) saturate(0.8) contrast(1.1)' }}
+          style={{ filter: 'brightness(0.3) saturate(0.7) contrast(1.1)' }}
         />
       ) : (
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(160deg, #091422 0%, #152240 45%, #091a14 100%)' }}
+          style={{ background: 'linear-gradient(160deg, #070c15 0%, #0d1727 50%, #03060a 100%)' }}
         />
       )}
 
@@ -630,7 +631,7 @@ export function SaveTheDateEnvelope() {
                     boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15)',
                   }}
                   initial={{ y: calculatedCardH }}
-                  animate={{ y: phase === 'revealed' ? ENV_TOP - calculatedCardH + 60 : calculatedCardH - 30 }}
+                  animate={{ y: phase === 'revealed' ? 40 : calculatedCardH - 30 }}
                   exit={{ y: calculatedCardH, transition: { duration: 0.3 } }}
                   transition={{ type: 'spring', stiffness: 42, damping: 14, delay: 0.5 }}
                 >
@@ -803,17 +804,33 @@ export function SaveTheDateEnvelope() {
                 {/* Inside (lighter shade, revealed when flap opens) */}
                 <div
                   className="absolute inset-0 rounded-2xl"
-                  style={{ background: 'linear-gradient(180deg, #253f6e 0%, #1c3462 100%)' }}
+                  style={{ background: 'linear-gradient(180deg, #fdfaf4 0%, #f4e4b5 100%)', border: '1px solid rgba(212,175,55,0.2)' }}
                 />
 
-                {/* Front body with rich gradient */}
+                {/* Front body with couple image cover */}
                 <div
-                  className="absolute inset-0 rounded-2xl"
+                  className="absolute inset-0 rounded-2xl overflow-hidden"
                   style={{
-                    background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 35%, #0f2248 70%, #1a3264 100%)',
                     boxShadow: '0 28px 80px rgba(0,0,0,0.65), inset 0 -2px 0 rgba(255,255,255,0.05), inset 0 1px 0 rgba(212,175,55,0.08)',
                   }}
-                />
+                >
+                  {couple.bgImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={couple.bgImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      style={{ filter: 'brightness(0.65) contrast(1.1) saturate(0.9)' }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 100%)' }}
+                    />
+                  )}
+                  {/* Luxury card-like dark vignette inside envelope cover */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50 pointer-events-none" />
+                </div>
 
                 {/* Gold rim border */}
                 <div

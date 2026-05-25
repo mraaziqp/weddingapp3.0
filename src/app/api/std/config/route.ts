@@ -11,6 +11,7 @@ const DEFAULTS = {
   venue: 'The Grand Pavilion',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
+  siteBgImage: '',
   redirectToStd: true,
 };
 
