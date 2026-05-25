@@ -4,7 +4,7 @@
  * Strategy: stale-while-revalidate for static assets, network-first for API/data.
  */
 
-const CACHE_NAME = 'wedu-3-v3';
+const CACHE_NAME = 'wedu-3-v4';
 
 // Assets to pre-cache on install (app shell)
 const PRECACHE_URLS = ['/manifest.json', '/RA-logo.svg'];
