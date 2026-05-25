@@ -13,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import {
   generateSaveDateCopyAction,
@@ -95,6 +96,8 @@ const INITIAL_STATE: DesignState = {
 
 function designReducer(state: DesignState, action: EditorAction): DesignState {
   switch (action.type) {
+    case 'LOAD_DESIGN':
+      return action.design;
     case 'ADD_ELEMENT':
       return { ...state, elements: [...state.elements, action.element] };
     case 'UPDATE_ELEMENT':
@@ -134,6 +137,9 @@ function historyReducer(
   state: EditorHistoryState,
   action: EditorAction
 ): EditorHistoryState {
+  if (action.type === 'LOAD_DESIGN') {
+    return { past: [], present: action.design, future: [] };
+  }
   if (action.type === 'UNDO') {
     if (state.past.length === 0) return state;
     const previous = state.past[state.past.length - 1];
@@ -189,10 +195,82 @@ export function SaveTheDateEditor() {
   const [familyverseKey, setFamilyverseKey] = useState('');
   const [familyverseUrl, setFamilyverseUrl] = useState('https://api.familyverse.app');
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [redirectToStd, setRedirectToStd] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const canvasAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Load design and redirect settings from Supabase config API on mount
+  useEffect(() => {
+    fetch('/api/std/config')
+      .then(r => r.json())
+      .then((data) => {
+        if (data.designState) {
+          dispatch({ type: 'LOAD_DESIGN', design: data.designState });
+        }
+        if (data.config && typeof data.config.redirectToStd === 'boolean') {
+          setRedirectToStd(data.config.redirectToStd);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Editor] failed to load dynamic config:', err);
+      });
+  }, [dispatch]);
+
+  // Publish live design to Supabase config
+  const publishLive = async () => {
+    setIsPublishing(true);
+    try {
+      const partner1El = design.elements.find(e => e.id === 'el-name1') as TextElement | undefined;
+      const partner2El = design.elements.find(e => e.id === 'el-name2') as TextElement | undefined;
+      const dateEl = design.elements.find(e => e.id === 'el-date') as TextElement | undefined;
+      const venueEl = design.elements.find(e => e.id === 'el-venue') as TextElement | undefined;
+
+      const dateText = dateEl?.content ?? '06.09.2026';
+      const venueText = venueEl?.content ?? 'The Grand Pavilion';
+
+      let venue = venueText;
+      let city = 'Cape Town';
+      if (venueText.includes('·')) {
+        const parts = venueText.split('·');
+        venue = parts[0].trim();
+        city = parts[1].trim();
+      } else if (venueText.includes(',')) {
+        const parts = venueText.split(',');
+        venue = parts[0].trim();
+        city = parts[1].trim();
+      }
+
+      const config = {
+        partner1Short: partner1El?.content ?? 'Abdu-Raazig',
+        partner2Short: partner2El?.content ?? 'Razia',
+        partner1Full: (partner1El?.content ?? 'Abdu-Raazig') + ' Sarber',
+        partner2Full: (partner2El?.content ?? 'Razia') + ' Shade',
+        date: dateText,
+        venue,
+        city,
+        redirectToStd
+      };
+
+      const res = await fetch('/api/std/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config, designState: design }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast({ title: 'Published Successfully!', description: 'Your custom Save the Date is now live for all guests!' });
+      } else {
+        toast({ title: 'Publish failed', description: data.error || 'Unknown error', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Publish failed', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   // Hydrate website URL
   useEffect(() => {
@@ -322,22 +400,64 @@ export function SaveTheDateEditor() {
     setSelectedId(null);
   }, [dispatch]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const src = ev.target?.result as string;
+
+    toast({ title: 'Uploading image...', description: 'Sending image to Supabase storage...' });
+
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const bucketName = 'wedding-assets';
+
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(`save-the-date/${filename}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(`save-the-date/${filename}`);
+
       const el: ImageElement = {
         id: uid(), type: 'image',
         x: 40, y: 40, width: 200, height: 200,
         rotation: 0, opacity: 1, locked: false, zIndex: Date.now() % 10000,
-        src, borderRadius: 0, objectFit: 'cover',
+        src: publicUrl, borderRadius: 0, objectFit: 'cover',
       };
+
       dispatch({ type: 'ADD_ELEMENT', element: el });
       setSelectedId(el.id);
-    };
-    reader.readAsDataURL(file);
+      toast({ title: 'Upload Complete!', description: 'Image successfully published to Supabase storage.' });
+    } catch (err: any) {
+      console.warn('[Upload to Supabase failed]', err);
+      toast({
+        title: 'Saved locally',
+        description: 'Using offline local copy. Please make sure a public Supabase Storage bucket named "wedding-assets" is created.',
+      });
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const src = ev.target?.result as string;
+        const el: ImageElement = {
+          id: uid(), type: 'image',
+          x: 40, y: 40, width: 200, height: 200,
+          rotation: 0, opacity: 1, locked: false, zIndex: Date.now() % 10000,
+          src, borderRadius: 0, objectFit: 'cover',
+        };
+        dispatch({ type: 'ADD_ELEMENT', element: el });
+        setSelectedId(el.id);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // ── FamilyVerse QR ──
@@ -372,7 +492,6 @@ export function SaveTheDateEditor() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] rounded-2xl overflow-hidden border border-white/10">
-      {/* ── Top toolbar ── */}
       <TopBar
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}
@@ -384,6 +503,10 @@ export function SaveTheDateEditor() {
         onExport={handleExport}
         onNewDesign={handleNewDesign}
         isDirty={history.past.length > 0}
+        redirectToStd={redirectToStd}
+        onToggleRedirect={setRedirectToStd}
+        isPublishing={isPublishing}
+        onPublish={publishLive}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -484,6 +607,7 @@ export function SaveTheDateEditor() {
 // ── Top bar ───────────────────────────────────────────────────────────────────
 function TopBar({
   canUndo, canRedo, onUndo, onRedo, showGrid, onToggleGrid, onPrint, onExport, onNewDesign, isDirty,
+  redirectToStd, onToggleRedirect, isPublishing, onPublish,
 }: {
   canUndo: boolean; canRedo: boolean;
   onUndo: () => void; onRedo: () => void;
@@ -491,6 +615,10 @@ function TopBar({
   onPrint: () => void; onExport: () => void;
   onNewDesign: () => void;
   isDirty: boolean;
+  redirectToStd: boolean;
+  onToggleRedirect: (checked: boolean) => void;
+  isPublishing: boolean;
+  onPublish: () => void;
 }) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10 bg-black/20 backdrop-blur-sm print:hidden">
@@ -516,12 +644,19 @@ function TopBar({
           <Check size={9} /> saved
         </span>
       )}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
+          <span className="text-[11px] text-gray-300 font-medium tracking-wide uppercase">Redirect guests to STD:</span>
+          <Switch checked={redirectToStd} onCheckedChange={onToggleRedirect} />
+        </div>
         <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-white/15" onClick={onPrint}>
           <Printer size={13} /> Print
         </Button>
-        <Button size="sm" className="h-8 gap-1.5 text-xs bg-[#d4af37] text-black hover:bg-[#f6e7b7]" onClick={onExport}>
-          <Download size={13} /> Export PNG
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-white/15" onClick={onExport}>
+          <Download size={13} /> Export
+        </Button>
+        <Button size="sm" className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/20 font-semibold" onClick={onPublish} disabled={isPublishing}>
+          <Check size={13} /> {isPublishing ? 'Publishing...' : 'Publish to Live Site'}
         </Button>
       </div>
     </div>

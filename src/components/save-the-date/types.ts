@@ -90,7 +90,8 @@ export type EditorAction =
   | { type: 'REORDER'; id: string; dir: 'up' | 'down' | 'top' | 'bottom' }
   | { type: 'UNDO' }
   | { type: 'REDO' }
-  | { type: 'RESET_TO_DEFAULT' };
+  | { type: 'RESET_TO_DEFAULT' }
+  | { type: 'LOAD_DESIGN'; design: DesignState };
 
 // ── History-aware state ────────────────────────────────────────────────────────
 export interface EditorHistoryState {

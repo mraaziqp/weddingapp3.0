@@ -12,8 +12,6 @@
  *
  * Tracks views and opens via /api/std/track (deduplicated with localStorage).
  * ─────────────────────────────────────────────────────
- * To customise: edit the COUPLE constant below.
- * Place your couple photo at /public/couple-bg.jpg (or set bgImage to '').
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -22,9 +20,12 @@ import {
   AnimatePresence,
   useAnimationControls,
 } from 'framer-motion';
+import QRCode from 'react-qr-code';
+import { STICKERS } from '@/components/save-the-date/stickers';
+import type { DesignState, TextElement, ImageElement, QRElement, StickerElement } from '@/components/save-the-date/types';
 
-// ── Couple details — edit here ────────────────────────────────────────────────
-const COUPLE = {
+// ── Default couple details (fallback when API is loading/fails) ───────────────
+const DEFAULTS = {
   partner1Short: 'Abdu-Raazig',
   partner2Short: 'Razia',
   partner1Full: 'Abdu-Raazig Sarber',
@@ -33,9 +34,10 @@ const COUPLE = {
   dateVerbose: 'Saturday, 6th September 2026',
   venue: 'The Grand Pavilion',
   city: 'Cape Town',
-  /** Path to couple photo under /public — leave '' for gradient-only bg */
   bgImage: '/couple-bg.jpg',
 };
+
+type CoupleConfig = typeof DEFAULTS;
 
 // ── Dimensions — BIGGER envelope ──────────────────────────────────────────────
 const ENV_W   = 420;
@@ -181,7 +183,7 @@ function LaceTop({ width }: { width: number }) {
       viewBox={`0 0 ${width} 18`}
       className="absolute top-0 left-0"
       aria-hidden
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: 'none', zIndex: 5 }}
     >
       {Array.from({ length: count }, (_, i) => (
         <circle key={i} cx={i * STEP + STEP / 2} cy={0} r={STEP / 2} fill="#fdfaf4" />
@@ -237,16 +239,198 @@ function EnvelopeCorner({ className }: { className?: string }) {
   );
 }
 
+// ── Custom Dynamic Card from Canva Editor ──────────────────────────────────────
+function CustomDesignCard({ designState, cardWidth }: { designState: DesignState; cardWidth: number }) {
+  const scale = cardWidth / 480; // Scale canvas down to card container width (ratio 480 x 672)
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 480,
+        height: 672,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        background: designState.background.cssBackground,
+        overflow: 'hidden',
+        borderRadius: 20,
+      }}
+    >
+      {[...designState.elements]
+        .sort((a, b) => a.zIndex - b.zIndex)
+        .map(el => {
+          if (el.type === 'text') {
+            const textEl = el as TextElement;
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  transform: `rotate(${el.rotation}deg)`,
+                  opacity: el.opacity,
+                  zIndex: el.zIndex,
+                  fontFamily: textEl.fontFamily,
+                  fontSize: textEl.fontSize,
+                  fontWeight: textEl.fontWeight,
+                  fontStyle: textEl.fontStyle,
+                  textDecoration: textEl.textDecoration,
+                  textAlign: textEl.textAlign,
+                  color: textEl.color,
+                  lineHeight: textEl.lineHeight,
+                  letterSpacing: `${textEl.letterSpacing / 100}em`,
+                  textShadow: textEl.shadow ? '0 2px 12px rgba(0,0,0,0.6)' : undefined,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  overflow: 'hidden',
+                }}
+              >
+                {textEl.content}
+              </div>
+            );
+          }
+          if (el.type === 'image') {
+            const imgEl = el as ImageElement;
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={el.id}
+                src={imgEl.src}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  transform: `rotate(${el.rotation}deg)`,
+                  opacity: el.opacity,
+                  zIndex: el.zIndex,
+                  objectFit: imgEl.objectFit,
+                  borderRadius: imgEl.borderRadius,
+                }}
+              />
+            );
+          }
+          if (el.type === 'qr') {
+            const qrEl = el as QRElement;
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  transform: `rotate(${el.rotation}deg)`,
+                  opacity: el.opacity,
+                  zIndex: el.zIndex,
+                  background: qrEl.bgColor,
+                  borderRadius: qrEl.borderRadius,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 8,
+                }}
+              >
+                <QRCode
+                  value={qrEl.value || 'https://raziaraaziq.co.za'}
+                  size={Math.min(el.width, el.height) - 16}
+                  bgColor={qrEl.bgColor}
+                  fgColor={qrEl.fgColor}
+                  level="H"
+                />
+              </div>
+            );
+          }
+          if (el.type === 'sticker') {
+            const stickerEl = el as StickerElement;
+            const def = STICKERS.find(s => s.id === stickerEl.stickerId);
+            if (!def) return null;
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  transform: `rotate(${el.rotation}deg)`,
+                  opacity: el.opacity,
+                  zIndex: el.zIndex,
+                }}
+              >
+                <svg
+                  viewBox={def.viewBox}
+                  fill={stickerEl.color}
+                  style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+                >
+                  <path d={def.svgPath} />
+                </svg>
+              </div>
+            );
+          }
+          return null;
+        })}
+    </div>
+  );
+}
+
 // ── Phase type ────────────────────────────────────────────────────────────────
 type Phase = 'loading' | 'intro' | 'idle' | 'opening' | 'revealed';
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function SaveTheDateEnvelope() {
-  const [phase, setPhase]       = useState<Phase>('loading');
+  const [phase, setPhase]         = useState<Phase>('loading');
   const [showBurst, setShowBurst] = useState(false);
+  const [couple, setCouple]       = useState<CoupleConfig>(DEFAULTS);
+  const [designState, setDesignState] = useState<DesignState | null>(null);
+  const [stageScale, setStageScale] = useState(1);
+
   const sealCtrl  = useAnimationControls();
   const flapCtrl  = useAnimationControls();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // ── Load live database config & design state ──────────────────────────────────
+  useEffect(() => {
+    fetch('/api/std/config')
+      .then(r => r.json())
+      .then((data) => {
+        if (data.config) {
+          setCouple(prev => ({ ...prev, ...data.config }));
+        }
+        if (data.designState) {
+          setDesignState(data.designState);
+        }
+      })
+      .catch((err) => {
+        console.warn('[STD envelope] failed to load dynamic config:', err);
+      });
+  }, []);
+
+  // ── Calculate responsive scale to fit viewport width on mobile ───────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const targetW = 460; // stage width with safety margin
+      if (width < targetW) {
+        setStageScale((width - 32) / targetW);
+      } else {
+        setStageScale(1);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Deduped tracking ────────────────────────────────────────────────────────
   const track = useCallback(async (event: 'view' | 'opened') => {
@@ -321,14 +505,17 @@ export function SaveTheDateEnvelope() {
   const showCard     = phase === 'opening' || phase === 'revealed';
   const showEnvelope = phase !== 'revealed';
 
+  // Scaled card height to match aspect ratio if custom design is used
+  const calculatedCardH = designState ? Math.round(672 * (CARD_W / 480)) : CARD_H; // ≈ 518px
+
   return (
-    <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between py-8 px-4 select-none overflow-hidden">
+    <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between py-8 px-4 select-none overflow-hidden bg-black">
 
       {/* ── Background ── */}
-      {COUPLE.bgImage ? (
+      {couple.bgImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={COUPLE.bgImage}
+          src={couple.bgImage}
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
@@ -403,351 +590,369 @@ export function SaveTheDateEnvelope() {
         />
       </motion.div>
 
-      {/* ── Envelope + Card stage ── */}
+      {/* ── Envelope + Card stage wrapper (scales down to fit mobile screens) ── */}
       <div
-        className="relative z-10"
-        style={{ width: ENV_W, height: ENV_TOP + ENV_H }}
+        style={{
+          transform: `scale(${stageScale})`,
+          transformOrigin: 'center center',
+          margin: '2rem 0',
+        }}
       >
-
-        {/*
-         * Card clip zone — overflow:hidden restricts the card to only
-         * the region ABOVE the envelope while it slides up.
-         */}
+        {/* Stage Container */}
         <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: (ENV_W - CARD_W) / 2,
-            width: CARD_W,
-            height: ENV_TOP,
-            overflow: 'hidden',
-            zIndex: 9,
-          }}
+          className="relative z-10"
+          style={{ width: ENV_W, height: ENV_TOP + ENV_H }}
         >
-          <AnimatePresence>
-            {showCard && (
-              <motion.div
-                className="absolute top-0 left-0 right-0 rounded-2xl shadow-2xl"
-                style={{
-                  height: CARD_H,
-                  background: 'linear-gradient(175deg, #fdfaf4 0%, #f8efd0 50%, #f4e4b5 100%)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15)',
-                }}
-                initial={{ y: CARD_H }}
-                animate={{ y: phase === 'revealed' ? ENV_TOP - CARD_H + 60 : CARD_H - 30 }}
-                exit={{ y: CARD_H, transition: { duration: 0.3 } }}
-                transition={{ type: 'spring', stiffness: 42, damping: 14, delay: 0.5 }}
-              >
-                <LaceTop width={CARD_W} />
 
-                {/* Gold border on card */}
-                <div
-                  className="absolute inset-3 rounded-xl pointer-events-none"
-                  style={{ border: '1px solid rgba(180,140,50,0.25)' }}
-                />
-                <div
-                  className="absolute inset-5 rounded-lg pointer-events-none"
-                  style={{ border: '0.5px solid rgba(180,140,50,0.12)' }}
-                />
-
-                {/* Card content */}
+          {/*
+           * Card clip zone — overflow is hidden while sliding up so the card
+           * emerges elegantly out of the envelope. It changes to visible once
+           * revealed so the top part of the card is NEVER clipped on smaller screens!
+           */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: (ENV_W - CARD_W) / 2,
+              width: CARD_W,
+              height: ENV_TOP,
+              overflow: phase === 'revealed' ? 'visible' : 'hidden',
+              zIndex: 9,
+            }}
+          >
+            <AnimatePresence>
+              {showCard && (
                 <motion.div
-                  className="flex flex-col items-center justify-center h-full pt-8 pb-10 px-8 text-center gap-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: phase === 'revealed' ? 1 : 0 }}
-                  transition={{ delay: 1.4, duration: 1 }}
+                  className="absolute top-0 left-0 right-0 rounded-2xl shadow-2xl"
+                  style={{
+                    height: calculatedCardH,
+                    background: designState ? 'transparent' : 'linear-gradient(175deg, #fdfaf4 0%, #f8efd0 50%, #f4e4b5 100%)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15)',
+                  }}
+                  initial={{ y: calculatedCardH }}
+                  animate={{ y: phase === 'revealed' ? ENV_TOP - calculatedCardH + 60 : calculatedCardH - 30 }}
+                  exit={{ y: calculatedCardH, transition: { duration: 0.3 } }}
+                  transition={{ type: 'spring', stiffness: 42, damping: 14, delay: 0.5 }}
                 >
-                  {/* Top ornamental line */}
-                  <div className="flex items-center gap-3 w-full max-w-[240px]" style={{ opacity: 0.3 }}>
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
-                    <span style={{ color: '#7b1d2e', fontSize: '0.45rem' }}>✦</span>
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
-                  </div>
+                  {designState ? (
+                    /* Render custom canvas layout synchronized from Admin editor */
+                    <CustomDesignCard designState={designState} cardWidth={CARD_W} />
+                  ) : (
+                    /* Fallback to premium hand-crafted fallback card */
+                    <>
+                      <LaceTop width={CARD_W} />
 
-                  <p
-                    style={{
-                      fontFamily: "'Cinzel', serif",
-                      fontSize: '0.58rem',
-                      color: '#7b1d2e',
-                      letterSpacing: '0.25em',
-                      opacity: 0.55,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Together with their families
-                  </p>
+                      {/* Gold border on card */}
+                      <div
+                        className="absolute inset-3 rounded-xl pointer-events-none"
+                        style={{ border: '1px solid rgba(180,140,50,0.25)' }}
+                      />
+                      <div
+                        className="absolute inset-5 rounded-lg pointer-events-none"
+                        style={{ border: '0.5px solid rgba(180,140,50,0.12)' }}
+                      />
 
+                      {/* Card content */}
+                      <motion.div
+                        className="flex flex-col items-center justify-center h-full pt-8 pb-10 px-8 text-center gap-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: phase === 'revealed' ? 1 : 0 }}
+                        transition={{ delay: 1.4, duration: 1 }}
+                      >
+                        {/* Top ornamental line */}
+                        <div className="flex items-center gap-3 w-full max-w-[240px]" style={{ opacity: 0.3 }}>
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
+                          <span style={{ color: '#7b1d2e', fontSize: '0.45rem' }}>✦</span>
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
+                        </div>
+
+                        <p
+                          style={{
+                            fontFamily: "'Cinzel', serif",
+                            fontSize: '0.58rem',
+                            color: '#7b1d2e',
+                            letterSpacing: '0.25em',
+                            opacity: 0.55,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Together with their families
+                        </p>
+
+                        <p
+                          style={{
+                            fontFamily: "'Great Vibes', cursive",
+                            fontSize: '2.4rem',
+                            color: '#7b1d2e',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {couple.partner1Full}
+                        </p>
+
+                        {/* Ornate ampersand */}
+                        <div className="flex items-center gap-3 w-full max-w-[180px]">
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(123,29,46,0.3))' }} />
+                          <p
+                            style={{
+                              fontFamily: "'Great Vibes', cursive",
+                              fontSize: '1.6rem',
+                              color: '#d4af37',
+                              textShadow: '0 0 12px rgba(212,175,55,0.3)',
+                            }}
+                          >
+                            &amp;
+                          </p>
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(123,29,46,0.3))' }} />
+                        </div>
+
+                        <p
+                          style={{
+                            fontFamily: "'Great Vibes', cursive",
+                            fontSize: '2.4rem',
+                            color: '#7b1d2e',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {couple.partner2Full}
+                        </p>
+
+                        {/* Divider */}
+                        <div className="flex items-center gap-2 my-1 w-full max-w-[200px]" style={{ opacity: 0.2 }}>
+                          <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
+                          <span style={{ color: '#d4af37', fontSize: '0.5rem' }}>◆</span>
+                          <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
+                        </div>
+
+                        <p
+                          style={{
+                            fontFamily: "'Playfair Display', serif",
+                            fontSize: '0.78rem',
+                            color: '#7b1d2e',
+                            lineHeight: 1.9,
+                            opacity: 0.85,
+                          }}
+                        >
+                          Request the pleasure of your presence
+                          <br />
+                          at their wedding
+                        </p>
+
+                        <p
+                          style={{
+                            fontFamily: "'Great Vibes', cursive",
+                            fontSize: '2rem',
+                            color: '#7b1d2e',
+                            marginTop: 4,
+                          }}
+                        >
+                          {couple.date}
+                        </p>
+
+                        <p
+                          style={{
+                            fontFamily: "'Cinzel', serif",
+                            fontSize: '0.65rem',
+                            color: '#7b1d2e',
+                            letterSpacing: '0.2em',
+                            opacity: 0.55,
+                            marginTop: 2,
+                          }}
+                        >
+                          {couple.venue} · {couple.city}
+                        </p>
+
+                        {/* Bottom ornamental line */}
+                        <div className="flex items-center gap-3 w-full max-w-[240px] mt-2" style={{ opacity: 0.3 }}>
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
+                          <span style={{ color: '#d4af37', fontSize: '0.45rem' }}>✦</span>
+                          <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
+                        </div>
+
+                        <p
+                          style={{
+                            fontFamily: "'Cinzel', serif",
+                            fontSize: '0.5rem',
+                            color: 'rgba(123,29,46,0.4)',
+                            letterSpacing: '0.3em',
+                            textTransform: 'uppercase',
+                            marginTop: 4,
+                          }}
+                        >
+                          Formal invitation to follow
+                        </p>
+                      </motion.div>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── Envelope ── */}
+          <AnimatePresence>
+            {showEnvelope && (
+              <motion.div
+                className="absolute"
+                style={{ top: ENV_TOP, left: 0, width: ENV_W, height: ENV_H, zIndex: 10 }}
+                initial={{ y: 70, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 35, opacity: 0, scale: 0.94, transition: { duration: 0.5 } }}
+                transition={{ delay: 1.7, duration: 1.0, type: 'spring', stiffness: 70, damping: 17 }}
+              >
+                {/* Inside (lighter shade, revealed when flap opens) */}
+                <div
+                  className="absolute inset-0 rounded-2xl"
+                  style={{ background: 'linear-gradient(180deg, #253f6e 0%, #1c3462 100%)' }}
+                />
+
+                {/* Front body with rich gradient */}
+                <div
+                  className="absolute inset-0 rounded-2xl"
+                  style={{
+                    background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 35%, #0f2248 70%, #1a3264 100%)',
+                    boxShadow: '0 28px 80px rgba(0,0,0,0.65), inset 0 -2px 0 rgba(255,255,255,0.05), inset 0 1px 0 rgba(212,175,55,0.08)',
+                  }}
+                />
+
+                {/* Gold rim border */}
+                <div
+                  className="absolute inset-[1px] rounded-2xl pointer-events-none"
+                  style={{ border: '1px solid rgba(212,175,55,0.28)' }}
+                />
+
+                {/* Inner gold border */}
+                <div
+                  className="absolute rounded-xl pointer-events-none"
+                  style={{
+                    top: 8, left: 8, right: 8, bottom: 8,
+                    border: '0.5px solid rgba(212,175,55,0.12)',
+                  }}
+                />
+
+                {/* Corner flourishes */}
+                <EnvelopeCorner className="absolute top-1 left-1 w-10 h-10 text-[#d4af37]" />
+                <EnvelopeCorner className="absolute top-1 right-1 w-10 h-10 text-[#d4af37] scale-x-[-1]" />
+                <EnvelopeCorner className="absolute bottom-1 left-1 w-10 h-10 text-[#d4af37] scale-y-[-1]" />
+                <EnvelopeCorner className="absolute bottom-1 right-1 w-10 h-10 text-[#d4af37] scale-[-1]" />
+
+                {/* Shimmer effect on envelope */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(115deg, transparent 30%, rgba(212,175,55,0.06) 45%, rgba(255,255,255,0.04) 50%, rgba(212,175,55,0.06) 55%, transparent 70%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  animate={{ backgroundPosition: ['200% 0%', '-200% 0%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'linear', delay: 3 }}
+                />
+
+                {/* Monogram initials */}
+                <motion.div
+                  className="absolute"
+                  style={{ top: '12%', left: '50%', translateX: '-50%', zIndex: 12, whiteSpace: 'nowrap' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 2.4, duration: 1 }}
+                >
                   <p
                     style={{
                       fontFamily: "'Great Vibes', cursive",
-                      fontSize: '2.4rem',
-                      color: '#7b1d2e',
-                      lineHeight: 1.2,
+                      fontSize: '1.8rem',
+                      color: 'rgba(212,175,55,0.85)',
+                      letterSpacing: '0.06em',
+                      textShadow: '0 0 20px rgba(212,175,55,0.3)',
                     }}
                   >
-                    {COUPLE.partner1Full}
-                  </p>
-
-                  {/* Ornate ampersand */}
-                  <div className="flex items-center gap-3 w-full max-w-[180px]">
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(123,29,46,0.3))' }} />
-                    <p
-                      style={{
-                        fontFamily: "'Great Vibes', cursive",
-                        fontSize: '1.6rem',
-                        color: '#d4af37',
-                        textShadow: '0 0 12px rgba(212,175,55,0.3)',
-                      }}
-                    >
-                      &amp;
-                    </p>
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(123,29,46,0.3))' }} />
-                  </div>
-
-                  <p
-                    style={{
-                      fontFamily: "'Great Vibes', cursive",
-                      fontSize: '2.4rem',
-                      color: '#7b1d2e',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {COUPLE.partner2Full}
-                  </p>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-2 my-1 w-full max-w-[200px]" style={{ opacity: 0.2 }}>
-                    <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
-                    <span style={{ color: '#d4af37', fontSize: '0.5rem' }}>◆</span>
-                    <div className="flex-1 h-px" style={{ background: '#7b1d2e' }} />
-                  </div>
-
-                  <p
-                    style={{
-                      fontFamily: "'Playfair Display', serif",
-                      fontSize: '0.78rem',
-                      color: '#7b1d2e',
-                      lineHeight: 1.9,
-                      opacity: 0.85,
-                    }}
-                  >
-                    Request the pleasure of your presence
-                    <br />
-                    at their wedding
-                  </p>
-
-                  <p
-                    style={{
-                      fontFamily: "'Great Vibes', cursive",
-                      fontSize: '2rem',
-                      color: '#7b1d2e',
-                      marginTop: 4,
-                    }}
-                  >
-                    {COUPLE.date}
-                  </p>
-
-                  <p
-                    style={{
-                      fontFamily: "'Cinzel', serif",
-                      fontSize: '0.65rem',
-                      color: '#7b1d2e',
-                      letterSpacing: '0.2em',
-                      opacity: 0.55,
-                      marginTop: 2,
-                    }}
-                  >
-                    {COUPLE.venue} · {COUPLE.city}
-                  </p>
-
-                  {/* Bottom ornamental line */}
-                  <div className="flex items-center gap-3 w-full max-w-[240px] mt-2" style={{ opacity: 0.3 }}>
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #7b1d2e)' }} />
-                    <span style={{ color: '#d4af37', fontSize: '0.45rem' }}>✦</span>
-                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #7b1d2e)' }} />
-                  </div>
-
-                  <p
-                    style={{
-                      fontFamily: "'Cinzel', serif",
-                      fontSize: '0.5rem',
-                      color: 'rgba(123,29,46,0.4)',
-                      letterSpacing: '0.3em',
-                      textTransform: 'uppercase',
-                      marginTop: 4,
-                    }}
-                  >
-                    Formal invitation to follow
+                    {couple.partner1Short[0] || 'A'} &amp; {couple.partner2Short[0] || 'R'}
                   </p>
                 </motion.div>
+
+                {/* Wax seal — bigger! */}
+                <motion.div
+                  className="absolute cursor-pointer"
+                  style={{ top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', zIndex: 20 }}
+                  animate={sealCtrl}
+                  whileTap={phase === 'idle' ? { scale: 0.86 } : {}}
+                  onClick={handleSealClick}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Tap the wax seal to open"
+                  onKeyDown={(e) => e.key === 'Enter' && void handleSealClick()}
+                >
+                  <div className="relative">
+                    {showBurst && <GoldBurst />}
+                    <WaxSeal size={110} />
+                  </div>
+                </motion.div>
+
+                {/* Tap hint */}
+                <AnimatePresence>
+                  {phase === 'idle' && (
+                    <motion.div
+                      className="absolute"
+                      style={{ bottom: '8%', left: '50%', translateX: '-50%', zIndex: 15 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: 1.0 }}
+                    >
+                      <motion.p
+                        className="text-[11px] uppercase tracking-[0.35em] whitespace-nowrap"
+                        style={{ color: 'rgba(212,175,55,0.75)', fontFamily: "'Cinzel', serif" }}
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 2.2, repeat: Infinity }}
+                      >
+                        Tap the seal to open
+                      </motion.p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Envelope flap (3-D) ── */}
+                <motion.div
+                  className="absolute top-0 left-0 right-0"
+                  style={{
+                    height: FLAP_H,
+                    background: 'linear-gradient(155deg, #1e3c74 0%, #142c58 60%, #1a3060 100%)',
+                    clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                    borderTopLeftRadius: '1rem',
+                    borderTopRightRadius: '1rem',
+                    transformOrigin: 'top center',
+                    transformPerspective: 1000,
+                    zIndex: 14,
+                    boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.06)',
+                  }}
+                  animate={flapCtrl}
+                  initial={{ rotateX: 0 }}
+                />
+
+                {/* Flap inner face — visible after 90° rotation */}
+                <div
+                  className="absolute top-0 left-0 right-0"
+                  style={{
+                    height: FLAP_H,
+                    background: 'linear-gradient(180deg, #253f70 0%, #1e3868 100%)',
+                    clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                    borderTopLeftRadius: '1rem',
+                    borderTopRightRadius: '1rem',
+                    zIndex: 2,
+                  }}
+                />
+
+                {/* Gold edge on flap fold line */}
+                <div
+                  className="absolute top-0 left-0 right-0 pointer-events-none"
+                  style={{
+                    height: 1,
+                    background: 'linear-gradient(90deg, transparent 5%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 95%)',
+                    zIndex: 15,
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {/* ── Envelope ── */}
-        <AnimatePresence>
-          {showEnvelope && (
-            <motion.div
-              className="absolute"
-              style={{ top: ENV_TOP, left: 0, width: ENV_W, height: ENV_H, zIndex: 10 }}
-              initial={{ y: 70, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 35, opacity: 0, scale: 0.94, transition: { duration: 0.5 } }}
-              transition={{ delay: 1.7, duration: 1.0, type: 'spring', stiffness: 70, damping: 17 }}
-            >
-              {/* Inside (lighter shade, revealed when flap opens) */}
-              <div
-                className="absolute inset-0 rounded-2xl"
-                style={{ background: 'linear-gradient(180deg, #253f6e 0%, #1c3462 100%)' }}
-              />
-
-              {/* Front body with rich gradient */}
-              <div
-                className="absolute inset-0 rounded-2xl"
-                style={{
-                  background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 35%, #0f2248 70%, #1a3264 100%)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.65), inset 0 -2px 0 rgba(255,255,255,0.05), inset 0 1px 0 rgba(212,175,55,0.08)',
-                }}
-              />
-
-              {/* Gold rim border */}
-              <div
-                className="absolute inset-[1px] rounded-2xl pointer-events-none"
-                style={{ border: '1px solid rgba(212,175,55,0.28)' }}
-              />
-
-              {/* Inner gold border */}
-              <div
-                className="absolute rounded-xl pointer-events-none"
-                style={{
-                  top: 8, left: 8, right: 8, bottom: 8,
-                  border: '0.5px solid rgba(212,175,55,0.12)',
-                }}
-              />
-
-              {/* Corner flourishes */}
-              <EnvelopeCorner className="absolute top-1 left-1 w-10 h-10 text-[#d4af37]" />
-              <EnvelopeCorner className="absolute top-1 right-1 w-10 h-10 text-[#d4af37] scale-x-[-1]" />
-              <EnvelopeCorner className="absolute bottom-1 left-1 w-10 h-10 text-[#d4af37] scale-y-[-1]" />
-              <EnvelopeCorner className="absolute bottom-1 right-1 w-10 h-10 text-[#d4af37] scale-[-1]" />
-
-              {/* Shimmer effect on envelope */}
-              <motion.div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                  background: 'linear-gradient(115deg, transparent 30%, rgba(212,175,55,0.06) 45%, rgba(255,255,255,0.04) 50%, rgba(212,175,55,0.06) 55%, transparent 70%)',
-                  backgroundSize: '200% 100%',
-                }}
-                animate={{ backgroundPosition: ['200% 0%', '-200% 0%'] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear', delay: 3 }}
-              />
-
-              {/* Monogram initials */}
-              <motion.div
-                className="absolute"
-                style={{ top: '12%', left: '50%', translateX: '-50%', zIndex: 12, whiteSpace: 'nowrap' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.4, duration: 1 }}
-              >
-                <p
-                  style={{
-                    fontFamily: "'Great Vibes', cursive",
-                    fontSize: '1.8rem',
-                    color: 'rgba(212,175,55,0.85)',
-                    letterSpacing: '0.06em',
-                    textShadow: '0 0 20px rgba(212,175,55,0.3)',
-                  }}
-                >
-                  {COUPLE.partner1Short[0]} &amp; {COUPLE.partner2Short[0]}
-                </p>
-              </motion.div>
-
-              {/* Wax seal — bigger! */}
-              <motion.div
-                className="absolute cursor-pointer"
-                style={{ top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', zIndex: 20 }}
-                animate={sealCtrl}
-                whileTap={phase === 'idle' ? { scale: 0.86 } : {}}
-                onClick={handleSealClick}
-                role="button"
-                tabIndex={0}
-                aria-label="Tap the wax seal to open"
-                onKeyDown={(e) => e.key === 'Enter' && void handleSealClick()}
-              >
-                <div className="relative">
-                  {showBurst && <GoldBurst />}
-                  <WaxSeal size={110} />
-                </div>
-              </motion.div>
-
-              {/* Tap hint */}
-              <AnimatePresence>
-                {phase === 'idle' && (
-                  <motion.div
-                    className="absolute"
-                    style={{ bottom: '8%', left: '50%', translateX: '-50%', zIndex: 15 }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: 1.0 }}
-                  >
-                    <motion.p
-                      className="text-[11px] uppercase tracking-[0.35em] whitespace-nowrap"
-                      style={{ color: 'rgba(212,175,55,0.75)', fontFamily: "'Cinzel', serif" }}
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 2.2, repeat: Infinity }}
-                    >
-                      Tap the seal to open
-                    </motion.p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Envelope flap (3-D) ── */}
-              <motion.div
-                className="absolute top-0 left-0 right-0"
-                style={{
-                  height: FLAP_H,
-                  background: 'linear-gradient(155deg, #1e3c74 0%, #142c58 60%, #1a3060 100%)',
-                  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                  borderTopLeftRadius: '1rem',
-                  borderTopRightRadius: '1rem',
-                  transformOrigin: 'top center',
-                  transformPerspective: 1000,
-                  zIndex: 14,
-                  boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.06)',
-                }}
-                animate={flapCtrl}
-                initial={{ rotateX: 0 }}
-              />
-
-              {/* Flap inner face — visible after 90° rotation */}
-              <div
-                className="absolute top-0 left-0 right-0"
-                style={{
-                  height: FLAP_H,
-                  background: 'linear-gradient(180deg, #253f70 0%, #1e3868 100%)',
-                  clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                  borderTopLeftRadius: '1rem',
-                  borderTopRightRadius: '1rem',
-                  zIndex: 2,
-                }}
-              />
-
-              {/* Gold edge on flap fold line */}
-              <div
-                className="absolute top-0 left-0 right-0 pointer-events-none"
-                style={{
-                  height: 1,
-                  background: 'linear-gradient(90deg, transparent 5%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 95%)',
-                  zIndex: 15,
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── Couple names + date (bottom) ── */}
@@ -765,7 +970,7 @@ export function SaveTheDateEnvelope() {
             textShadow: '0 0 30px rgba(212,175,55,0.25)',
           }}
         >
-          {COUPLE.partner1Short} &amp; {COUPLE.partner2Short}
+          {couple.partner1Short} &amp; {couple.partner2Short}
         </p>
         <p
           style={{
@@ -777,11 +982,11 @@ export function SaveTheDateEnvelope() {
             textShadow: '0 2px 10px rgba(0,0,0,0.5)',
           }}
         >
-          {COUPLE.date}
+          {couple.date}
         </p>
       </motion.div>
 
-      {/* ── "Formal invitation to follow" ── */}
+      {/* ── \"Formal invitation to follow\" ── */}
       <AnimatePresence>
         {phase === 'revealed' && (
           <motion.p
