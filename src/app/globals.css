@@ -87,6 +87,15 @@
       radial-gradient(circle at 80% 84%, color-mix(in srgb, var(--aurora-rose) 18%, transparent) 0%, transparent 28%),
       linear-gradient(140deg, var(--aurora-midnight) 0%, var(--aurora-emerald-deep) 38%, #010305 100%);
     background-attachment: fixed;
+    /* Prevent iOS rubber-band scroll on the envelope page */
+    overscroll-behavior: none;
+  }
+
+  /* Prevent iOS callout/selection on long press */
+  .select-none {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   .font-headline {

@@ -428,17 +428,19 @@ export function SaveTheDateEnvelope() {
       });
   }, []);
 
-  // ── Calculate responsive scale to fit viewport width on mobile ───────────────
+  // ── Calculate responsive scale — constrained by BOTH width AND height ──────
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const STAGE_W = ENV_W;
+    const STAGE_H = ENV_TOP + ENV_H;
+    // Reserve ~220px for heading+footer+padding on typical phones
+    const VERTICAL_RESERVED = 220;
     const handleResize = () => {
-      const width = window.innerWidth;
-      const targetW = 460; // stage width with safety margin
-      if (width < targetW) {
-        setStageScale((width - 32) / targetW);
-      } else {
-        setStageScale(1);
-      }
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const scaleW = Math.min(1, (vw - 24) / STAGE_W);
+      const scaleH = Math.min(1, (vh - VERTICAL_RESERVED) / STAGE_H);
+      setStageScale(Math.min(scaleW, scaleH));
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -528,7 +530,18 @@ export function SaveTheDateEnvelope() {
   const calculatedCardH = designState ? Math.round(672 * (CARD_W / 480)) : CARD_H; // ≈ 518px
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between py-8 px-4 select-none overflow-hidden bg-black">
+    <div
+      className="relative w-full flex flex-col items-center justify-between select-none overflow-hidden bg-black"
+      style={{
+        minHeight: '100dvh',
+        // Safe-area insets for iPhone notch / home indicator
+        paddingTop: 'max(2rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
 
       {/* Background Music Audio Element */}
       <audio ref={audioRef} src="/save-the-date.mp3" loop preload="auto" />
@@ -544,7 +557,15 @@ export function SaveTheDateEnvelope() {
             }
           }
         }}
-        className="absolute top-4 right-4 z-50 flex items-center justify-center w-11 h-11 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl backdrop-blur-md cursor-pointer"
+        className="absolute z-50 flex items-center justify-center w-12 h-12 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 active:scale-95 transition-all duration-300 shadow-2xl backdrop-blur-md cursor-pointer"
+        style={{
+          top: 'max(1rem, env(safe-area-inset-top, 0px))',
+          right: 'max(1rem, env(safe-area-inset-right, 0px))',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
+          // Make tap target comfortably large (44px min per Apple HIG)
+          minWidth: 44, minHeight: 44,
+        }}
         title={isMuted ? "Unmute Music" : "Mute Music"}
       >
         {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
@@ -615,7 +636,7 @@ export function SaveTheDateEnvelope() {
             transition={{ delay: 0.35 + i * 0.3, duration: 1 }}
             style={{
               fontFamily: "'Cinzel', serif",
-              fontSize: word === 'THE' ? '1.1rem' : '3.4rem',
+              fontSize: word === 'THE' ? 'clamp(0.75rem, 2.5vw, 1.1rem)' : 'clamp(2rem, 8vw, 3.4rem)',
               fontWeight: word === 'THE' ? 400 : 700,
               color: '#ffffff',
               lineHeight: word === 'THE' ? 1.6 : 1.05,
@@ -636,22 +657,39 @@ export function SaveTheDateEnvelope() {
         />
       </motion.div>
 
-      {/* ── Envelope + Card stage wrapper (scales down to fit mobile screens) ── */}
+      {/* ── Envelope + Card stage wrapper ── */}
+      {/* Outer div takes the SCALED height so flex layout is correct */}
       <div
         style={{
-          transform: `scale(${stageScale})`,
-          transformOrigin: 'center center',
-          margin: '2rem 0',
+          height: (ENV_TOP + ENV_H) * stageScale,
+          width: ENV_W * stageScale,
+          position: 'relative',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
+        {/* Inner div is the actual stage, scaled from its center */}
+        <div
+          style={{
+            transform: `scale(${stageScale})`,
+            transformOrigin: 'center center',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: ENV_W,
+            height: ENV_TOP + ENV_H,
+            flexShrink: 0,
+          }}
+        >
         {/* Stage Container */}
         <div
           className="relative z-10"
           style={{ width: ENV_W, height: ENV_TOP + ENV_H }}
         >
 
-          {/*
-           * Card clip zone — overflow is hidden while sliding up so the card
+          {/* Card clip zone — overflow is hidden while sliding up so the card
            * emerges elegantly out of the envelope. It changes to visible once
            * revealed so the top part of the card is NEVER clipped on smaller screens!
            */}
@@ -925,7 +963,7 @@ export function SaveTheDateEnvelope() {
                 {/* Wax seal — bigger! */}
                 <motion.div
                   className="absolute cursor-pointer"
-                  style={{ top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', zIndex: 20 }}
+                  style={{ top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', zIndex: 20, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   animate={sealCtrl}
                   whileTap={phase === 'idle' ? { scale: 0.86 } : {}}
                   onClick={handleSealClick}
@@ -1014,7 +1052,8 @@ export function SaveTheDateEnvelope() {
             )}
           </AnimatePresence>
         </div>
-      </div>
+        </div>{/* /inner scale div */}
+      </div>{/* /outer size wrapper */}
 
       {/* ── Couple names + date (bottom) ── */}
       <motion.div
@@ -1026,7 +1065,7 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Great Vibes', cursive",
-            fontSize: '2.5rem',
+            fontSize: 'clamp(1.6rem, 6vw, 2.5rem)',
             color: 'rgba(212,175,55,0.92)',
             textShadow: '0 0 30px rgba(212,175,55,0.25)',
           }}
@@ -1036,7 +1075,7 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Cinzel', serif",
-            fontSize: '1.15rem',
+            fontSize: 'clamp(0.75rem, 3vw, 1.15rem)',
             color: '#ffffff',
             letterSpacing: '0.25em',
             fontWeight: 600,
