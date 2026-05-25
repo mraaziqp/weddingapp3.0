@@ -3,9 +3,120 @@
 import { useEffect, useState } from 'react';
 import { SaveTheDateEditor } from '@/components/save-the-date/editor';
 import { Badge } from '@/components/ui/badge';
-import { CalendarHeart, Sparkles, Eye, MailOpen, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CalendarHeart, Sparkles, Eye, MailOpen, ExternalLink, Settings2, ChevronDown, ChevronUp, Save, Loader2 } from 'lucide-react';
 
 interface StdStats { views: number; opens: number }
+
+interface StdConfig {
+  partner1Short: string;
+  partner2Short: string;
+  partner1Full: string;
+  partner2Full: string;
+  date: string;
+  dateVerbose: string;
+  venue: string;
+  city: string;
+}
+
+function QuickConfigPanel() {
+  const [open, setOpen] = useState(false);
+  const [config, setConfig] = useState<StdConfig>({
+    partner1Short: '', partner2Short: '',
+    partner1Full: '', partner2Full: '',
+    date: '', dateVerbose: '', venue: '', city: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'ok' | 'error'>('idle');
+
+  useEffect(() => {
+    fetch('/api/std/config')
+      .then(r => r.json())
+      .then((d: { config: StdConfig }) => {
+        if (d?.config) setConfig(c => ({ ...c, ...d.config }));
+      })
+      .catch(() => {});
+  }, []);
+
+  const field = (key: keyof StdConfig, label: string, placeholder?: string) => (
+    <div className="flex flex-col gap-1">
+      <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</Label>
+      <Input
+        value={config[key]}
+        onChange={e => setConfig(c => ({ ...c, [key]: e.target.value }))}
+        placeholder={placeholder}
+        className="h-8 text-sm bg-white/5 border-white/10"
+      />
+    </div>
+  );
+
+  const save = async () => {
+    setSaving(true);
+    setStatus('idle');
+    try {
+      const res = await fetch('/api/std/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config }),
+      });
+      setStatus(res.ok ? 'ok' : 'error');
+      if (!res.ok) console.error(await res.text());
+    } catch {
+      setStatus('error');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+
+  return (
+    <div className="border border-white/10 rounded-xl bg-white/[0.03] flex-shrink-0">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-white/5 transition-colors rounded-xl"
+      >
+        <span className="flex items-center gap-2">
+          <Settings2 size={14} className="text-accent" />
+          Quick Config — Edit Names, Date &amp; Venue
+        </span>
+        {open ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-4 border-t border-white/10 pt-4">
+          <div className="grid grid-cols-2 gap-3">
+            {field('partner1Full', "Partner 1 — Full Name", "e.g. Abdu-Raazig Sarber")}
+            {field('partner2Full', "Partner 2 — Full Name", "e.g. Razia Shade")}
+            {field('partner1Short', "Partner 1 — Short Name", "e.g. Abdu-Raazig")}
+            {field('partner2Short', "Partner 2 — Short Name", "e.g. Razia")}
+            {field('date', "Date (short)", "e.g. 06.09.2026")}
+            {field('dateVerbose', "Date (full text)", "e.g. Saturday, 6th September 2026")}
+            {field('venue', "Venue Name", "e.g. The Grand Pavilion")}
+            {field('city', "City", "e.g. Cape Town")}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={save}
+              disabled={saving}
+              size="sm"
+              className="bg-accent hover:bg-accent/90 text-black font-semibold"
+            >
+              {saving
+                ? <><Loader2 size={13} className="animate-spin mr-1.5" />Saving…</>
+                : <><Save size={13} className="mr-1.5" />Save &amp; Publish</>}
+            </Button>
+            {status === 'ok' && <span className="text-xs text-emerald-400">Saved successfully!</span>}
+            {status === 'error' && <span className="text-xs text-red-400">Save failed — check console</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 function StdAnalyticsBanner() {
   const [stats, setStats] = useState<StdStats | null>(null);
@@ -88,6 +199,9 @@ export default function SaveTheDatePage() {
 
       {/* Analytics banner for the /std envelope page */}
       <StdAnalyticsBanner />
+
+      {/* Quick text config */}
+      <QuickConfigPanel />
 
       {/* Editor fills remaining space */}
       <div className="flex-1 min-h-0">

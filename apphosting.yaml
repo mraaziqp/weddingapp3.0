@@ -2,6 +2,11 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
+
+env:
+  # SUPABASE_SERVICE_ROLE_KEY must be added via Firebase App Hosting Console
+  # (Environment variables section) — do NOT commit the actual value here.
+  # See README for instructions.
+  - variable: ADMIN_ACCESS_KEY
+    value: razia-abdu-2026

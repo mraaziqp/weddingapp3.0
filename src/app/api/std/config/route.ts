@@ -64,27 +64,34 @@ export async function PUT(req: NextRequest) {
         existingConfig = data.config as Record<string, any>;
       }
     } catch {
-      // ignore
+      // ignore — table may be empty
     }
 
     const { designState: oldDesign, ...oldConfig } = existingConfig;
-
-    // Merge standard configs
     const mergedConfig = { ...DEFAULTS, ...oldConfig, ...clientConfig };
-
-    // Package both standard config and design state into the single 'config' JSONB column
-    // This is extremely robust and avoids missing-column database errors!
     const finalDbPayload = {
       ...mergedConfig,
       designState: designState || oldDesign || null
     };
 
-    const { error } = await supabaseAdmin
+    // Try upsert; if table doesn't exist, attempt to create it first
+    let { error } = await supabaseAdmin
       .from('std_config')
-      .upsert({
-        id: 'main',
-        config: finalDbPayload,
-      }, { onConflict: 'id' });
+      .upsert({ id: 'main', config: finalDbPayload });
+
+    if (error && error.message?.includes('does not exist')) {
+      // Table missing — try to create it via SQL then retry
+      try {
+        await supabaseAdmin.rpc('exec_sql', {
+          sql: `CREATE TABLE IF NOT EXISTS std_config (id TEXT PRIMARY KEY, config JSONB);`
+        });
+      } catch { /* ignore */ }
+
+      const retry = await supabaseAdmin
+        .from('std_config')
+        .upsert({ id: 'main', config: finalDbPayload });
+      error = retry.error;
+    }
 
     if (error) {
       console.warn('[STD config] Supabase upsert failed:', error.message);

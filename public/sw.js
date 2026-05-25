@@ -4,7 +4,7 @@
  * Strategy: stale-while-revalidate for static assets, network-first for API/data.
  */
 
-const CACHE_NAME = 'wedu-3-v2';
+const CACHE_NAME = 'wedu-3-v3';
 
 // Assets to pre-cache on install (app shell)
 const PRECACHE_URLS = ['/manifest.json', '/RA-logo.svg'];
@@ -77,7 +77,7 @@ self.addEventListener('fetch', (event) => {
       const cached = await cache.match(event.request);
       const networkFetch = fetch(event.request)
         .then((response) => {
-          if (response.ok && response.type !== 'opaque') {
+          if (response.ok && response.status !== 206 && response.type !== 'opaque') {
             cache.put(event.request, response.clone());
           }
           return response;
