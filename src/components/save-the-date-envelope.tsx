@@ -577,7 +577,7 @@ export function SaveTheDateEnvelope() {
       </button>
 
       {/* ── Page Background ── */}
-      {/* Responsive: portrait/mobile = cover (fills screen), landscape/desktop = contain (shows full photo) */}
+      {/* cover everywhere — portrait mobile centres on hands, landscape desktop shifts up to show more of the couple */}
       <style>{`
         .std-bg-img {
           object-fit: cover;
@@ -586,8 +586,7 @@ export function SaveTheDateEnvelope() {
         }
         @media (orientation: landscape) and (min-width: 768px) {
           .std-bg-img {
-            object-fit: contain;
-            object-position: center center;
+            object-position: center 15%;
           }
         }
       `}</style>
