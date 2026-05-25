@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.raziaraaziq.co.za');
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -23,6 +23,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/std`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.9,
     },
   ];
 }

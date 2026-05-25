@@ -11,7 +11,12 @@ import { ExperienceSettingsSync } from '@/components/experience-settings-sync';
 export const metadata: Metadata = {
   title: 'Wedu 3.0 — The Union of Razia & Abduraziq',
   description: 'Your exclusive digital invitation and event companion.',
+  metadataBase: new URL('https://www.raziaraaziq.co.za'),
   manifest: '/manifest.json',
+  openGraph: {
+    siteName: 'Razia & Abdu-Raazig Wedding',
+    type: 'website',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
