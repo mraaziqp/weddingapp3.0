@@ -5,8 +5,11 @@ runConfig:
   maxInstances: 1
 
 env:
-  # SUPABASE_SERVICE_ROLE_KEY must be added via Firebase App Hosting Console
-  # (Environment variables section) — do NOT commit the actual value here.
-  # See README for instructions.
   - variable: ADMIN_ACCESS_KEY
     value: razia-abdu-2026
+  # SUPABASE_SERVICE_ROLE_KEY is stored in Google Cloud Secret Manager.
+  # Run once to create the secret:
+  #   gcloud secrets create supabase-service-role-key --data-file=- (then paste the key)
+  # OR use Firebase Console > App Hosting > your backend > Environment variables > Add.
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: supabase-service-role-key

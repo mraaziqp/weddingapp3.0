@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import { SaveTheDateEditor } from '@/components/save-the-date/editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarHeart, Sparkles, Eye, MailOpen, ExternalLink, Settings2, ChevronDown, ChevronUp, Save, Loader2 } from 'lucide-react';
+import { CalendarHeart, Sparkles, Eye, MailOpen, ExternalLink, Settings2, ChevronDown, ChevronUp, Save, Loader2, Download } from 'lucide-react';
 
 interface StdStats { views: number; opens: number }
 
@@ -20,6 +21,215 @@ interface StdConfig {
   venue: string;
   city: string;
 }
+
+// ── Helper: draw text wrapping at maxWidth on canvas ─────────────────────────
+function canvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth?: number,
+) {
+  if (!text) return;
+  if (maxWidth) {
+    ctx.fillText(text, x, y, maxWidth);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+// ── Poster export ─────────────────────────────────────────────────────────────
+function PosterExportButton() {
+  const [generating, setGenerating] = useState(false);
+
+  const exportPoster = async () => {
+    setGenerating(true);
+    try {
+      // Fetch latest published config
+      const res = await fetch('/api/std/config');
+      const { config } = (await res.json()) as { config: StdConfig };
+
+      const W = 1080, H = 1920;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d')!;
+
+      // ── Background image ────────────────────────────────────────────────────
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      await new Promise<void>(resolve => {
+        bgImg.onload = () => resolve();
+        bgImg.onerror = () => resolve();
+        bgImg.src = '/site-bg.jpg';
+      });
+
+      if (bgImg.naturalWidth > 0) {
+        const scale = Math.max(W / bgImg.naturalWidth, H / bgImg.naturalHeight);
+        const sw = bgImg.naturalWidth * scale;
+        const sh = bgImg.naturalHeight * scale;
+        ctx.drawImage(bgImg, (W - sw) / 2, (H - sh) / 2, sw, sh);
+      } else {
+        ctx.fillStyle = '#080808';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // ── Gradient overlay ─────────────────────────────────────────────────────
+      const overlay = ctx.createLinearGradient(0, 0, 0, H);
+      overlay.addColorStop(0,   'rgba(0,0,0,0.82)');
+      overlay.addColorStop(0.45,'rgba(0,0,0,0.52)');
+      overlay.addColorStop(0.72,'rgba(0,0,0,0.62)');
+      overlay.addColorStop(1,   'rgba(0,0,0,0.90)');
+      ctx.fillStyle = overlay;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Ensure web-fonts are loaded ───────────────────────────────────────────
+      await Promise.allSettled([
+        document.fonts.load('bold 80px Cinzel'),
+        document.fonts.load('80px "Great Vibes"'),
+        document.fonts.load('italic 50px "Playfair Display"'),
+      ]);
+
+      const GOLD  = '#c9a96e';
+      const WHITE = '#ffffff';
+      const CREAM = 'rgba(255,248,235,0.92)';
+      const DIM   = 'rgba(255,248,235,0.50)';
+
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'alphabetic';
+
+      // ── "YOU ARE INVITED TO" ─────────────────────────────────────────────────
+      ctx.font      = '500 36px Cinzel';
+      ctx.fillStyle = GOLD;
+      canvasText(ctx, 'YOU  ARE  INVITED  TO', W / 2, 158);
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(160, 184); ctx.lineTo(W - 160, 184); ctx.stroke();
+
+      // ── SAVE THE DATE ────────────────────────────────────────────────────────
+      ctx.font      = 'bold 120px Cinzel';
+      ctx.fillStyle = WHITE;
+      canvasText(ctx, 'SAVE THE DATE', W / 2, 340, W - 80);
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(160, 368); ctx.lineTo(W - 160, 368); ctx.stroke();
+
+      // ── Diamond ornament ─────────────────────────────────────────────────────
+      ctx.fillStyle = GOLD;
+      ctx.save();
+      ctx.translate(W / 2, 408);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-9, -9, 18, 18);
+      ctx.restore();
+
+      // ── Names in Great Vibes ─────────────────────────────────────────────────
+      ctx.font      = '134px "Great Vibes"';
+      ctx.fillStyle = GOLD;
+      canvasText(ctx, config.partner1Full || 'Partner One', W / 2, 646, W - 80);
+
+      ctx.font      = 'italic 76px "Playfair Display"';
+      ctx.fillStyle = CREAM;
+      canvasText(ctx, '\u0026', W / 2, 762);
+
+      ctx.font      = '134px "Great Vibes"';
+      ctx.fillStyle = GOLD;
+      canvasText(ctx, config.partner2Full || 'Partner Two', W / 2, 930, W - 80);
+
+      // ── Divider line ─────────────────────────────────────────────────────────
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(220, 978); ctx.lineTo(W - 220, 978); ctx.stroke();
+
+      // ── Date & venue ─────────────────────────────────────────────────────────
+      ctx.font      = '58px Cinzel';
+      ctx.fillStyle = WHITE;
+      canvasText(ctx, config.dateVerbose || config.date || 'TBD', W / 2, 1066, W - 80);
+
+      ctx.font      = '44px "Playfair Display"';
+      ctx.fillStyle = CREAM;
+      canvasText(ctx, config.venue || '', W / 2, 1136, W - 80);
+
+      ctx.font      = '36px Cinzel';
+      ctx.fillStyle = DIM;
+      canvasText(ctx, config.city || '', W / 2, 1192);
+
+      // ── Scan label ────────────────────────────────────────────────────────────
+      ctx.font      = '36px Cinzel';
+      ctx.fillStyle = CREAM;
+      canvasText(ctx, 'SCAN  TO  VIEW  YOUR  INVITATION', W / 2, 1290);
+
+      // ── QR Code ────────────────────────────────────────────────────────────────
+      const QR_SIZE = 340;
+      const qrCanvas = document.createElement('canvas');
+      await QRCode.toCanvas(qrCanvas, 'https://www.raziaraaziq.co.za/std', {
+        width: QR_SIZE,
+        margin: 2,
+        color: { dark: '#1a0e00', light: '#f5e8d0' },
+      });
+
+      const qrX = (W - QR_SIZE - 40) / 2;
+      const qrY = 1318;
+
+      // Cream card backing
+      ctx.fillStyle = '#f5e8d0';
+      ctx.beginPath();
+      (ctx as CanvasRenderingContext2D & { roundRect?: (...a: unknown[]) => void }).roundRect
+        ? (ctx as any).roundRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18)
+        : ctx.rect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40);
+      ctx.fill();
+
+      // Gold border
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth   = 3;
+      ctx.beginPath();
+      (ctx as any).roundRect
+        ? (ctx as any).roundRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18)
+        : ctx.rect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40);
+      ctx.stroke();
+
+      ctx.drawImage(qrCanvas, qrX, qrY, QR_SIZE, QR_SIZE);
+
+      // URL below QR
+      ctx.font      = '36px Cinzel';
+      ctx.fillStyle = GOLD;
+      canvasText(ctx, 'raziaraaziq.co.za/std', W / 2, qrY + QR_SIZE + 68);
+
+      // ── Bottom caption ───────────────────────────────────────────────────────
+      ctx.font      = 'italic 32px "Playfair Display"';
+      ctx.fillStyle = DIM;
+      canvasText(ctx, 'With love \u2014 please keep this date free \u2665', W / 2, 1876);
+
+      // ── Download ─────────────────────────────────────────────────────────────
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href     = url;
+        a.download = 'razia-abduraziq-save-the-date.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={exportPoster}
+      disabled={generating}
+      size="sm"
+      className="bg-gradient-to-r from-[#c9a96e] to-[#e2c98a] text-black font-semibold hover:opacity-90 flex-shrink-0 gap-1.5"
+    >
+      {generating
+        ? <><Loader2 size={13} className="animate-spin" />Generating…</>
+        : <><Download size={13} />Export Poster</>}
+    </Button>
+  );
+}
+
 
 function QuickConfigPanel() {
   const [open, setOpen] = useState(false);
@@ -197,8 +407,11 @@ export default function SaveTheDatePage() {
         </div>
       </div>
 
-      {/* Analytics banner for the /std envelope page */}
-      <StdAnalyticsBanner />
+      {/* Analytics banner + poster export */}
+      <div className="flex items-center gap-3 flex-wrap flex-shrink-0">
+        <StdAnalyticsBanner />
+        <PosterExportButton />
+      </div>
 
       {/* Quick text config */}
       <QuickConfigPanel />

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-    <title>R&A Logo</title>
+    <title>R&amp;A Logo</title>
     <path d="M85.36,14.64A49.5,49.5,0,0,0,50,5,49.5,49.5,0,0,0,14.64,85.36,49.5,49.5,0,0,0,85.36,14.64Z" style="fill:none;stroke:currentColor;stroke-miterlimit:10;stroke-width:2px"/>
     <text transform="translate(25.5 65)" style="font-size:36px;fill:currentColor;font-family:PlayfairDisplay-Italic, Playfair Display;font-style:italic">R</text>
     <text transform="translate(45.5 65)" style="font-size:36px;fill:currentColor;font-family:PlayfairDisplay-Italic, Playfair Display;font-style:italic">&amp;</text>

@@ -50,6 +50,17 @@ const FONTS = [
   { label: 'Arial (Clean)', value: 'Arial, sans-serif' },
 ];
 
+// ── Color utility: HTML <input type="color"> only accepts #rrggbb ─────────────
+function toHexColor(color: string): string {
+  if (!color) return '#ffffff';
+  if (color.startsWith('#')) return color.slice(0, 7); // strip alpha channel if #rrggbbaa
+  const m = color.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+  if (m) {
+    return `#${(+m[1]).toString(16).padStart(2, '0')}${(+m[2]).toString(16).padStart(2, '0')}${(+m[3]).toString(16).padStart(2, '0')}`;
+  }
+  return '#ffffff';
+}
+
 // ── Default element factories ─────────────────────────────────────────────────
 const makeText = (overrides: Partial<TextElement> = {}): TextElement => ({
   id: uid(), type: 'text',
@@ -816,7 +827,7 @@ function TextPanel({ onAdd, selectedEl, dispatch }: {
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Color</Label>
             <div className="flex items-center gap-2">
-              <input type="color" value={el.color} onChange={e => upd({ color: e.target.value })}
+              <input type="color" value={toHexColor(el.color)} onChange={e => upd({ color: e.target.value })}
                 className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" />
               <Input value={el.color} onChange={e => upd({ color: e.target.value })}
                 className="h-8 text-xs bg-white/5 border-white/10 font-mono" />
@@ -1217,13 +1228,13 @@ function RightPanel({ element, dispatch, onDeselect, onDuplicate }: {
           <div className="grid grid-cols-2 gap-1.5">
             <div>
               <Label className="text-[9px] text-muted-foreground">Foreground</Label>
-              <input type="color" value={(element as QRElement).fgColor}
+              <input type="color" value={toHexColor((element as QRElement).fgColor)}
                 onChange={e => upd({ fgColor: e.target.value } as Partial<QRElement>)}
                 className="w-full h-7 rounded-lg cursor-pointer border-0" />
             </div>
             <div>
               <Label className="text-[9px] text-muted-foreground">Background</Label>
-              <input type="color" value={(element as QRElement).bgColor}
+              <input type="color" value={toHexColor((element as QRElement).bgColor)}
                 onChange={e => upd({ bgColor: e.target.value } as Partial<QRElement>)}
                 className="w-full h-7 rounded-lg cursor-pointer border-0" />
             </div>
@@ -1236,7 +1247,7 @@ function RightPanel({ element, dispatch, onDeselect, onDuplicate }: {
           <Separator className="border-white/10" />
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Sticker Color</Label>
           <div className="flex items-center gap-2">
-            <input type="color" value={(element as StickerElement).color}
+            <input type="color" value={toHexColor((element as StickerElement).color)}
               onChange={e => upd({ color: e.target.value } as Partial<StickerElement>)}
               className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" />
             <Input value={(element as StickerElement).color}
