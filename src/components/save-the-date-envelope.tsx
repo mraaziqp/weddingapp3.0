@@ -27,13 +27,13 @@ import type { DesignState, TextElement, ImageElement, QRElement, StickerElement 
 
 // ── Default couple details (fallback when API is loading/fails) ───────────────
 const DEFAULTS = {
-  partner1Short: 'Abdu-Raazig',
+  partner1Short: 'Abduraziq',
   partner2Short: 'Razia',
-  partner1Full: 'Abdu-Raazig Sarber',
+  partner1Full: 'Abduraziq Parker',
   partner2Full: 'Razia Shade',
   date: '06.09.2026',
   dateVerbose: 'Saturday, 6th September 2026',
-  venue: 'The Grand Pavilion',
+  venue: 'Tuscany in Rylands',
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
   siteBgImage: '',
@@ -42,12 +42,12 @@ const DEFAULTS = {
 type CoupleConfig = typeof DEFAULTS;
 
 // ── Dimensions — BIGGER envelope ──────────────────────────────────────────────
-const ENV_W   = 460;
-const ENV_H   = 300;
-const FLAP_H  = 190; // V-flap height (≈ 64 % of ENV_H)
-const CARD_W  = 390;
-const CARD_H  = 546;
-const ENV_TOP = 320; // px above envelope in the stage (clip-zone height)
+const ENV_W   = 520;
+const ENV_H   = 340;
+const FLAP_H  = 220; // V-flap height (≈ 65 % of ENV_H)
+const CARD_W  = 440;
+const CARD_H  = 616;
+const ENV_TOP = 360; // px above envelope in the stage (clip-zone height)
 
 // ── Wax seal — intricate golden seal ──────────────────────────────────────────
 function WaxSeal({ size = 110 }: { size?: number }) {
@@ -887,7 +887,7 @@ export function SaveTheDateEnvelope() {
                       src={couple.bgImage}
                       alt=""
                       className="w-full h-full object-cover"
-                      style={{ filter: 'brightness(0.65) contrast(1.1) saturate(0.9)' }}
+                      style={{ filter: 'brightness(0.88) contrast(1.08) saturate(1.15)', objectPosition: 'center 30%' }}
                     />
                   ) : (
                     <div
@@ -895,8 +895,10 @@ export function SaveTheDateEnvelope() {
                       style={{ background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 100%)' }}
                     />
                   )}
+                  {/* Navy-blue tint overlay — preserves the beautiful blue while photo shows through */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(12,28,72,0.38)' }} />
                   {/* Luxury card-like dark vignette inside envelope cover */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40 pointer-events-none" />
                 </div>
 
                 {/* Gold rim border */}
@@ -1000,8 +1002,9 @@ export function SaveTheDateEnvelope() {
                     height: ENV_H, // Use full envelope height for seamless aspect ratio matching
                     backgroundImage: couple.bgImage ? `url(${couple.bgImage})` : 'linear-gradient(155deg, #1e3c74 0%, #142c58 100%)',
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center', // Align center exactly like front body cover image
-                    filter: 'brightness(0.65) contrast(1.1) saturate(0.9)', // Match the brightness/filter of envelope body!
+                    backgroundPosition: 'center 30%',
+                    filter: 'brightness(0.88) contrast(1.08) saturate(1.15)',
+                    // Match the brightness/filter of envelope body
                     clipPath: `polygon(0 0, 100% 0, 50% ${FLAP_H}px)`, // Precise triangle clip-path based on FLAP_H
                     borderTopLeftRadius: '1rem',
                     borderTopRightRadius: '1rem',
