@@ -65,21 +65,23 @@ function PosterExportButton() {
       });
 
       if (bgImg.naturalWidth > 0) {
+        // Cover fill — Math.ceil avoids sub-pixel gaps that show as black lines
         const scale = Math.max(W / bgImg.naturalWidth, H / bgImg.naturalHeight);
-        const sw = bgImg.naturalWidth * scale;
-        const sh = bgImg.naturalHeight * scale;
-        ctx.drawImage(bgImg, (W - sw) / 2, (H - sh) / 2, sw, sh);
+        const sw = Math.ceil(bgImg.naturalWidth * scale) + 2;
+        const sh = Math.ceil(bgImg.naturalHeight * scale) + 2;
+        ctx.drawImage(bgImg, Math.floor((W - sw) / 2), Math.floor((H - sh) / 2), sw, sh);
       } else {
         ctx.fillStyle = '#080808';
         ctx.fillRect(0, 0, W, H);
       }
 
-      // ── Gradient overlay ─────────────────────────────────────────────────────
+      // ── Gradient overlay — lighter at edges so photo shows through ───────────
       const overlay = ctx.createLinearGradient(0, 0, 0, H);
-      overlay.addColorStop(0,   'rgba(0,0,0,0.82)');
-      overlay.addColorStop(0.45,'rgba(0,0,0,0.52)');
-      overlay.addColorStop(0.72,'rgba(0,0,0,0.62)');
-      overlay.addColorStop(1,   'rgba(0,0,0,0.90)');
+      overlay.addColorStop(0,    'rgba(0,0,0,0.48)');
+      overlay.addColorStop(0.18, 'rgba(0,0,0,0.28)');
+      overlay.addColorStop(0.50, 'rgba(0,0,0,0.35)');
+      overlay.addColorStop(0.80, 'rgba(0,0,0,0.40)');
+      overlay.addColorStop(1,    'rgba(0,0,0,0.55)');
       ctx.fillStyle = overlay;
       ctx.fillRect(0, 0, W, H);
 
