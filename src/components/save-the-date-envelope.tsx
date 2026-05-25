@@ -393,7 +393,7 @@ type Phase = 'loading' | 'intro' | 'idle' | 'opening' | 'revealed';
 export function SaveTheDateEnvelope() {
   const [phase, setPhase]         = useState<Phase>('loading');
   const [showBurst, setShowBurst] = useState(false);
-  const [couple, setCouple]       = useState<CoupleConfig>({ ...DEFAULTS, siteBgImage: '/site-bg.jpg' });
+  const [couple, setCouple]       = useState<CoupleConfig>({ ...DEFAULTS, siteBgImage: '/couple-bg.jpg' });
   const [designState, setDesignState] = useState<DesignState | null>(null);
   const [stageScale, setStageScale] = useState(1);
   const [isMuted, setIsMuted]     = useState(false);
@@ -881,24 +881,13 @@ export function SaveTheDateEnvelope() {
                     boxShadow: '0 28px 80px rgba(0,0,0,0.65), inset 0 -2px 0 rgba(255,255,255,0.05), inset 0 1px 0 rgba(212,175,55,0.08)',
                   }}
                 >
-                  {couple.bgImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={couple.bgImage}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      style={{ filter: 'brightness(0.88) contrast(1.08) saturate(1.15)', objectPosition: 'center 30%' }}
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full"
-                      style={{ background: 'linear-gradient(148deg, #1e3c74 0%, #152c5c 100%)' }}
-                    />
-                  )}
-                  {/* Navy-blue tint overlay — preserves the beautiful blue while photo shows through */}
-                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(12,28,72,0.38)' }} />
-                  {/* Luxury card-like dark vignette inside envelope cover */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40 pointer-events-none" />
+                  {/* Stunning solid navy blue envelope body */}
+                  <div
+                    className="w-full h-full"
+                    style={{ background: 'linear-gradient(148deg, #1e3a72 0%, #162d60 45%, #0f2148 100%)' }}
+                  />
+                  {/* Subtle sheen overlay */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%, rgba(0,0,0,0.15) 100%)' }} />
                 </div>
 
                 {/* Gold rim border */}
@@ -1000,11 +989,9 @@ export function SaveTheDateEnvelope() {
                   className="absolute top-0 left-0 right-0 overflow-hidden"
                   style={{
                     height: ENV_H, // Use full envelope height for seamless aspect ratio matching
-                    backgroundImage: couple.bgImage ? `url(${couple.bgImage})` : 'linear-gradient(155deg, #1e3c74 0%, #142c58 100%)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center 30%',
-                    filter: 'brightness(0.88) contrast(1.08) saturate(1.15)',
-                    // Match the brightness/filter of envelope body
+                    backgroundImage: 'none',
+                    background: 'linear-gradient(148deg, #1e3a72 0%, #162d60 45%, #0f2148 100%)',
+                    // Match solid navy of envelope body
                     clipPath: `polygon(0 0, 100% 0, 50% ${FLAP_H}px)`, // Precise triangle clip-path based on FLAP_H
                     borderTopLeftRadius: '1rem',
                     borderTopRightRadius: '1rem',
