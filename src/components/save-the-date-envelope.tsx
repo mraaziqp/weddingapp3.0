@@ -587,7 +587,7 @@ export function SaveTheDateEnvelope() {
         .std-bg-img {
           object-fit: cover;
           object-position: center 35%;
-          filter: brightness(0.65) saturate(1.15) contrast(1.08);
+          filter: brightness(0.82) saturate(1.1) contrast(1.05);
           will-change: transform;
           -webkit-transform: translateZ(0);
           transform: translateZ(0);
@@ -634,19 +634,16 @@ export function SaveTheDateEnvelope() {
         />
       )}
 
-      {/* Bottom gradient overlay to hide watermark */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none z-10" />
-
-      {/* Vignette overlay */}
+      {/* Vignette overlay — softened so photo fills top & bottom */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 40%, transparent 25%, rgba(0,0,0,0.7) 100%)' }}
+        style={{ background: 'radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.28) 100%)' }}
       />
 
       {/* Warm overlay tint to blend with photo */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(180deg, rgba(10,15,30,0.4) 0%, rgba(20,10,5,0.3) 50%, rgba(5,5,15,0.5) 100%)' }}
+        style={{ background: 'linear-gradient(180deg, rgba(10,15,30,0.18) 0%, rgba(20,10,5,0.1) 50%, rgba(5,5,15,0.2) 100%)' }}
       />
 
       <AmbientDust />
