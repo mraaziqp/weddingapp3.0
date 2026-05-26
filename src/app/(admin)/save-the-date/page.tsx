@@ -83,10 +83,10 @@ function PosterExportButton() {
       };
 
       const drawShadowText = (text: string, x: number, y: number, maxWidth?: number) => {
-        ctx.shadowColor = 'rgba(0,0,0,0.72)';
-        ctx.shadowBlur = 28;
+        ctx.shadowColor = 'rgba(0,0,0,0.50)';
+        ctx.shadowBlur = 18;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetY = 2;
         canvasText(ctx, text, x, y, maxWidth);
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
@@ -129,15 +129,30 @@ function PosterExportButton() {
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, W, H);
 
-      // Main legibility panel for heading + names + event details
-      ctx.fillStyle = 'rgba(8, 12, 20, 0.34)';
+      // Main legibility panel for heading + names + event details (lighter glass)
+      const mainPanel = ctx.createLinearGradient(0, 96, 0, 1216);
+      mainPanel.addColorStop(0, 'rgba(255,245,225,0.20)');
+      mainPanel.addColorStop(0.55, 'rgba(250,236,210,0.14)');
+      mainPanel.addColorStop(1, 'rgba(248,230,200,0.18)');
+      ctx.fillStyle = mainPanel;
       drawRoundedRect(72, 96, W - 144, 1120, 30);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(230,197,138,0.32)';
+      ctx.lineWidth = 1.5;
+      drawRoundedRect(72, 96, W - 144, 1120, 30);
+      ctx.stroke();
 
-      // QR region panel to separate scan CTA from busy photo background
-      ctx.fillStyle = 'rgba(6, 8, 14, 0.36)';
+      // QR region panel to separate scan CTA from busy photo background (lighter glass)
+      const qrPanel = ctx.createLinearGradient(0, 1230, 0, 1870);
+      qrPanel.addColorStop(0, 'rgba(255,245,225,0.22)');
+      qrPanel.addColorStop(1, 'rgba(245,225,190,0.16)');
+      ctx.fillStyle = qrPanel;
       drawRoundedRect(136, 1230, W - 272, 640, 26);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(230,197,138,0.30)';
+      ctx.lineWidth = 1.25;
+      drawRoundedRect(136, 1230, W - 272, 640, 26);
+      ctx.stroke();
 
       // ── Ensure web-fonts are loaded ───────────────────────────────────────────
       await Promise.allSettled([
