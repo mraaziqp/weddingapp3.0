@@ -442,7 +442,7 @@ export function SaveTheDateEnvelope() {
       const available = vh - hh - fh - 52; // 52px = ~1rem top + bottom padding allowance
       const scaleH = available / (ENV_TOP + ENV_H);
       const scaleW = (vw - 24) / ENV_W;
-      setStageScale(Math.max(0.48, Math.min(1, Math.min(scaleH, scaleW))));
+      setStageScale(Math.max(0.62, Math.min(1, Math.min(scaleH, scaleW))));
     };
     const ro = new ResizeObserver(calc);
     if (headingRef.current) ro.observe(headingRef.current);
@@ -772,10 +772,10 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Cinzel', serif",
-                        fontSize: '0.58rem',
+                        fontSize: '1.0rem',
                         color: '#7b1d2e',
-                        letterSpacing: '0.25em',
-                        opacity: 0.55,
+                        letterSpacing: '0.18em',
+                        opacity: 0.6,
                         textTransform: 'uppercase',
                       }}
                     >
@@ -785,9 +785,9 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Great Vibes', cursive",
-                        fontSize: '2.4rem',
+                        fontSize: '3.2rem',
                         color: '#7b1d2e',
-                        lineHeight: 1.2,
+                        lineHeight: 1.15,
                       }}
                     >
                       {couple.partner2Full}
@@ -799,7 +799,7 @@ export function SaveTheDateEnvelope() {
                       <p
                         style={{
                           fontFamily: "'Great Vibes', cursive",
-                          fontSize: '1.6rem',
+                          fontSize: '2.2rem',
                           color: '#d4af37',
                           textShadow: '0 0 12px rgba(212,175,55,0.3)',
                         }}
@@ -812,9 +812,9 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Great Vibes', cursive",
-                        fontSize: '2.4rem',
+                        fontSize: '3.2rem',
                         color: '#7b1d2e',
-                        lineHeight: 1.2,
+                        lineHeight: 1.15,
                       }}
                     >
                       {couple.partner1Full}
@@ -830,9 +830,9 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Playfair Display', serif",
-                        fontSize: '0.78rem',
+                        fontSize: '1.1rem',
                         color: '#7b1d2e',
-                        lineHeight: 1.9,
+                        lineHeight: 1.8,
                         opacity: 0.85,
                       }}
                     >
@@ -844,7 +844,7 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Great Vibes', cursive",
-                        fontSize: '2rem',
+                        fontSize: '2.6rem',
                         color: '#7b1d2e',
                         marginTop: 4,
                       }}
@@ -855,10 +855,10 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Cinzel', serif",
-                        fontSize: '0.65rem',
+                        fontSize: '1.0rem',
                         color: '#7b1d2e',
-                        letterSpacing: '0.2em',
-                        opacity: 0.55,
+                        letterSpacing: '0.15em',
+                        opacity: 0.6,
                         marginTop: 2,
                       }}
                     >
@@ -875,9 +875,9 @@ export function SaveTheDateEnvelope() {
                     <p
                       style={{
                         fontFamily: "'Cinzel', serif",
-                        fontSize: '0.5rem',
-                        color: 'rgba(123,29,46,0.4)',
-                        letterSpacing: '0.3em',
+                        fontSize: '0.8rem',
+                        color: 'rgba(123,29,46,0.45)',
+                        letterSpacing: '0.25em',
                         textTransform: 'uppercase',
                         marginTop: 4,
                       }}
@@ -1072,7 +1072,7 @@ export function SaveTheDateEnvelope() {
       {/* ── Couple names + date (bottom) ── */}
       <motion.div
         ref={footerRef}
-        className="relative z-10 text-center pb-1"
+        className="relative z-10 text-center pb-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: phase !== 'loading' ? 1 : 0, y: 0 }}
         transition={{ delay: 2.8, duration: 1.1 }}
@@ -1080,9 +1080,9 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Great Vibes', cursive",
-            fontSize: 'clamp(1.25rem, 5.5vw, 2.5rem)',
-            color: 'rgba(212,175,55,0.92)',
-            textShadow: '0 0 30px rgba(212,175,55,0.25)',
+            fontSize: 'clamp(1.6rem, 6.5vw, 3rem)',
+            color: 'rgba(212,175,55,0.95)',
+            textShadow: '0 0 30px rgba(212,175,55,0.35), 0 2px 12px rgba(0,0,0,0.7)',
           }}
         >
           {couple.partner2Short} &amp; {couple.partner1Short}
@@ -1090,37 +1090,36 @@ export function SaveTheDateEnvelope() {
         <p
           style={{
             fontFamily: "'Cinzel', serif",
-            fontSize: 'clamp(0.62rem, 2.5vw, 1.15rem)',
+            fontSize: 'clamp(0.75rem, 3vw, 1.3rem)',
             color: '#ffffff',
-            letterSpacing: '0.25em',
+            letterSpacing: '0.28em',
             fontWeight: 600,
-            textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 10px rgba(0,0,0,0.6)',
           }}
         >
           {couple.date}
         </p>
+        <AnimatePresence>
+          {phase === 'revealed' && (
+            <motion.p
+              style={{
+                fontFamily: "'Great Vibes', cursive",
+                fontSize: 'clamp(0.9rem, 3.5vw, 1.4rem)',
+                color: 'rgba(255,255,255,0.55)',
+                textShadow: '0 1px 8px rgba(0,0,0,0.5)',
+                marginTop: 2,
+              }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 2.2, duration: 1.0 }}
+            >
+              With love — please keep this date free ♥
+            </motion.p>
+          )}
+        </AnimatePresence>
       </motion.div>
 
-      {/* ── \"Formal invitation to follow\" ── */}
-      <AnimatePresence>
-        {phase === 'revealed' && (
-          <motion.p
-            className="absolute bottom-5 left-0 right-0 text-center z-10"
-            style={{
-              fontFamily: "'Great Vibes', cursive",
-              fontSize: '1.4rem',
-              color: 'rgba(255,255,255,0.6)',
-              textShadow: '0 0 20px rgba(0,0,0,0.5)',
-            }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 2.0, duration: 1.2 }}
-          >
-            Formal invitation to follow
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
