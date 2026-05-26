@@ -55,6 +55,45 @@ function PosterExportButton() {
       canvas.height = H;
       const ctx = canvas.getContext('2d')!;
 
+      const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        if ((ctx as CanvasRenderingContext2D & { roundRect?: (...a: unknown[]) => void }).roundRect) {
+          (ctx as CanvasRenderingContext2D & { roundRect: (...a: unknown[]) => void }).roundRect(x, y, w, h, r);
+        } else {
+          ctx.rect(x, y, w, h);
+        }
+      };
+
+      const fitFontSize = (
+        text: string,
+        maxWidth: number,
+        start: number,
+        min: number,
+        family: string,
+        weight = 400,
+        style = 'normal',
+      ) => {
+        let size = start;
+        while (size > min) {
+          ctx.font = `${style} ${weight} ${size}px ${family}`;
+          if (ctx.measureText(text).width <= maxWidth) break;
+          size -= 2;
+        }
+        return size;
+      };
+
+      const drawShadowText = (text: string, x: number, y: number, maxWidth?: number) => {
+        ctx.shadowColor = 'rgba(0,0,0,0.72)';
+        ctx.shadowBlur = 28;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 3;
+        canvasText(ctx, text, x, y, maxWidth);
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      };
+
       // ── Background image ────────────────────────────────────────────────────
       const bgImg = new Image();
       bgImg.crossOrigin = 'anonymous';
@@ -75,15 +114,30 @@ function PosterExportButton() {
         ctx.fillRect(0, 0, W, H);
       }
 
-      // ── Gradient overlay — lighter at edges so photo shows through ───────────
+      // ── Atmospheric overlays for readability ─────────────────────────────────
       const overlay = ctx.createLinearGradient(0, 0, 0, H);
-      overlay.addColorStop(0,    'rgba(0,0,0,0.48)');
-      overlay.addColorStop(0.18, 'rgba(0,0,0,0.28)');
-      overlay.addColorStop(0.50, 'rgba(0,0,0,0.35)');
-      overlay.addColorStop(0.80, 'rgba(0,0,0,0.40)');
-      overlay.addColorStop(1,    'rgba(0,0,0,0.55)');
+      overlay.addColorStop(0,    'rgba(2,8,18,0.62)');
+      overlay.addColorStop(0.22, 'rgba(6,12,24,0.34)');
+      overlay.addColorStop(0.55, 'rgba(10,12,18,0.38)');
+      overlay.addColorStop(1,    'rgba(2,6,14,0.66)');
       ctx.fillStyle = overlay;
       ctx.fillRect(0, 0, W, H);
+
+      const glow = ctx.createRadialGradient(W / 2, H * 0.42, 130, W / 2, H * 0.42, 700);
+      glow.addColorStop(0, 'rgba(255,215,160,0.18)');
+      glow.addColorStop(1, 'rgba(255,215,160,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      // Main legibility panel for heading + names + event details
+      ctx.fillStyle = 'rgba(8, 12, 20, 0.34)';
+      drawRoundedRect(72, 96, W - 144, 1120, 30);
+      ctx.fill();
+
+      // QR region panel to separate scan CTA from busy photo background
+      ctx.fillStyle = 'rgba(6, 8, 14, 0.36)';
+      drawRoundedRect(136, 1230, W - 272, 640, 26);
+      ctx.fill();
 
       // ── Ensure web-fonts are loaded ───────────────────────────────────────────
       await Promise.allSettled([
@@ -92,7 +146,8 @@ function PosterExportButton() {
         document.fonts.load('italic 50px "Playfair Display"'),
       ]);
 
-      const GOLD  = '#c9a96e';
+      const GOLD  = '#e2c98a';
+      const GOLD_DEEP = '#c9a96e';
       const WHITE = '#ffffff';
       const CREAM = 'rgba(255,248,235,0.92)';
       const DIM   = 'rgba(255,248,235,0.50)';
@@ -101,18 +156,18 @@ function PosterExportButton() {
       ctx.textBaseline = 'alphabetic';
 
       // ── "YOU ARE INVITED TO" ─────────────────────────────────────────────────
-      ctx.font      = '500 36px Cinzel';
+      ctx.font      = '500 40px Cinzel';
       ctx.fillStyle = GOLD;
-      canvasText(ctx, 'YOU  ARE  INVITED  TO', W / 2, 158);
+      drawShadowText('YOU  ARE  INVITED  TO', W / 2, 168);
 
       ctx.strokeStyle = GOLD;
       ctx.lineWidth   = 1;
       ctx.beginPath(); ctx.moveTo(160, 184); ctx.lineTo(W - 160, 184); ctx.stroke();
 
       // ── SAVE THE DATE ────────────────────────────────────────────────────────
-      ctx.font      = 'bold 120px Cinzel';
+      ctx.font      = '700 132px Cinzel';
       ctx.fillStyle = WHITE;
-      canvasText(ctx, 'SAVE THE DATE', W / 2, 340, W - 80);
+      drawShadowText('SAVE THE DATE', W / 2, 352, W - 100);
 
       ctx.strokeStyle = GOLD;
       ctx.lineWidth   = 1;
@@ -127,17 +182,23 @@ function PosterExportButton() {
       ctx.restore();
 
       // ── Names in Great Vibes ─────────────────────────────────────────────────
-      ctx.font      = '134px "Great Vibes"';
-      ctx.fillStyle = GOLD;
-      canvasText(ctx, config.partner2Full || 'Partner One', W / 2, 646, W - 80);
+      const maxNameWidth = W - 140;
+      const name1 = config.partner2Full || 'Partner One';
+      const name2 = config.partner1Full || 'Partner Two';
+      const nameSize1 = fitFontSize(name1, maxNameWidth, 140, 92, '"Great Vibes"');
+      const nameSize2 = fitFontSize(name2, maxNameWidth, 140, 92, '"Great Vibes"');
 
-      ctx.font      = 'italic 76px "Playfair Display"';
+      ctx.font      = `normal 400 ${nameSize1}px "Great Vibes"`;
+      ctx.fillStyle = GOLD;
+      drawShadowText(name1, W / 2, 670, maxNameWidth);
+
+      ctx.font      = 'italic 82px "Playfair Display"';
       ctx.fillStyle = CREAM;
-      canvasText(ctx, '\u0026', W / 2, 762);
+      drawShadowText('\u0026', W / 2, 792);
 
-      ctx.font      = '134px "Great Vibes"';
+      ctx.font      = `normal 400 ${nameSize2}px "Great Vibes"`;
       ctx.fillStyle = GOLD;
-      canvasText(ctx, config.partner1Full || 'Partner Two', W / 2, 930, W - 80);
+      drawShadowText(name2, W / 2, 952, maxNameWidth);
 
       // ── Divider line ─────────────────────────────────────────────────────────
       ctx.strokeStyle = GOLD;
@@ -145,22 +206,26 @@ function PosterExportButton() {
       ctx.beginPath(); ctx.moveTo(220, 978); ctx.lineTo(W - 220, 978); ctx.stroke();
 
       // ── Date & venue ─────────────────────────────────────────────────────────
-      ctx.font      = '58px Cinzel';
+      const dateLine = config.dateVerbose || config.date || 'TBD';
+      const dateFontSize = fitFontSize(dateLine, W - 140, 62, 48, 'Cinzel', 600);
+      ctx.font      = `normal 600 ${dateFontSize}px Cinzel`;
       ctx.fillStyle = WHITE;
-      canvasText(ctx, config.dateVerbose || config.date || 'TBD', W / 2, 1066, W - 80);
+      drawShadowText(dateLine, W / 2, 1088, W - 120);
 
-      ctx.font      = '44px "Playfair Display"';
+      const venueLine = config.venue || '';
+      const venueFontSize = fitFontSize(venueLine, W - 170, 46, 34, '"Playfair Display"');
+      ctx.font      = `normal 400 ${venueFontSize}px "Playfair Display"`;
       ctx.fillStyle = CREAM;
-      canvasText(ctx, config.venue || '', W / 2, 1136, W - 80);
+      drawShadowText(venueLine, W / 2, 1160, W - 150);
 
-      ctx.font      = '36px Cinzel';
+      ctx.font      = 'normal 500 38px Cinzel';
       ctx.fillStyle = DIM;
-      canvasText(ctx, config.city || '', W / 2, 1192);
+      drawShadowText(config.city || '', W / 2, 1220);
 
       // ── Scan label ────────────────────────────────────────────────────────────
-      ctx.font      = '36px Cinzel';
+      ctx.font      = 'normal 600 42px Cinzel';
       ctx.fillStyle = CREAM;
-      canvasText(ctx, 'SCAN  TO  VIEW  YOUR  INVITATION', W / 2, 1290);
+      drawShadowText('SCAN  TO  VIEW  YOUR  INVITATION', W / 2, 1322, W - 120);
 
       // ── QR Code ────────────────────────────────────────────────────────────────
       const QR_SIZE = 340;
@@ -172,36 +237,30 @@ function PosterExportButton() {
       });
 
       const qrX = (W - QR_SIZE - 40) / 2;
-      const qrY = 1318;
+      const qrY = 1362;
 
       // Cream card backing
-      ctx.fillStyle = '#f5e8d0';
-      ctx.beginPath();
-      (ctx as CanvasRenderingContext2D & { roundRect?: (...a: unknown[]) => void }).roundRect
-        ? (ctx as any).roundRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18)
-        : ctx.rect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40);
+      ctx.fillStyle = '#f7ead2';
+      drawRoundedRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18);
       ctx.fill();
 
       // Gold border
-      ctx.strokeStyle = GOLD;
+      ctx.strokeStyle = GOLD_DEEP;
       ctx.lineWidth   = 3;
-      ctx.beginPath();
-      (ctx as any).roundRect
-        ? (ctx as any).roundRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18)
-        : ctx.rect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40);
+      drawRoundedRect(qrX - 20, qrY - 20, QR_SIZE + 40, QR_SIZE + 40, 18);
       ctx.stroke();
 
       ctx.drawImage(qrCanvas, qrX, qrY, QR_SIZE, QR_SIZE);
 
       // URL below QR
-      ctx.font      = '36px Cinzel';
+      ctx.font      = 'normal 600 38px Cinzel';
       ctx.fillStyle = GOLD;
-      canvasText(ctx, 'raziaraaziq.co.za/std', W / 2, qrY + QR_SIZE + 68);
+      drawShadowText('raziaraaziq.co.za/std', W / 2, qrY + QR_SIZE + 72);
 
       // ── Bottom caption ───────────────────────────────────────────────────────
-      ctx.font      = 'italic 32px "Playfair Display"';
+      ctx.font      = 'italic 34px "Playfair Display"';
       ctx.fillStyle = DIM;
-      canvasText(ctx, 'With love \u2014 please keep this date free \u2665', W / 2, 1876);
+      drawShadowText('With love - please keep this date free \u2665', W / 2, 1868, W - 120);
 
       // ── Download ─────────────────────────────────────────────────────────────
       canvas.toBlob(blob => {
