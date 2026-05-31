@@ -5,8 +5,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { allGuests, initialTables as mockTables } from '@/lib/mock-data';
@@ -69,10 +69,15 @@ const VENUE_LAYOUT_TABLES: Table[] = [
     y: 110,
     guests: [VENUE_SAMPLE_GUESTS[0], VENUE_SAMPLE_GUESTS[1]],
   },
-  { id: 'table-1', name: 'Table 1', capacity: 8, shape: 'round-8', guests: [], x: 90, y: 290 },
-  { id: 'table-2', name: 'Table 2', capacity: 8, shape: 'round-8', guests: [], x: 330, y: 290 },
-  { id: 'table-3', name: 'Table 3', capacity: 8, shape: 'round-8', guests: [], x: 570, y: 290 },
+  { id: 'table-1', name: 'Table 1', capacity: 7, shape: 'round-8', guests: [], x: 80, y: 300 },
+  { id: 'table-2', name: 'Table 2', capacity: 6, shape: 'round-8', guests: [], x: 330, y: 300 },
+  { id: 'table-3', name: 'Table 3', capacity: 6, shape: 'round-8', guests: [], x: 580, y: 300 },
 ];
+
+const VENUE_DIMENSIONS = {
+  widthMeters: 25,
+  depthMeters: 15,
+};
 
 // Tag colour map for visual group badges
 const TAG_COLORS: Record<string, string> = {
@@ -187,6 +192,7 @@ const DraggableTableWrapper = ({ table, onPositionChange, children }: { table: T
 };
 
 export function SeatingChart() {
+  const usingVenuePreset = allGuests.length === 0;
   const guestPool = useMemo(
     () => (allGuests.length > 0 ? allGuests : VENUE_SAMPLE_GUESTS),
     []
@@ -210,6 +216,14 @@ export function SeatingChart() {
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const resetVenuePreset = () => {
+    const resetSeatedIds = new Set(tablePreset.flatMap((table) => table.guests.map((guest) => guest.id)));
+    setTables(tablePreset.map((table) => ({ ...table, guests: [...table.guests] })));
+    setUnseatedGuests(guestPool.filter((guest) => !resetSeatedIds.has(guest.id)));
+    setJustFilledTable(null);
+    toast({ title: 'Venue preset reset', description: 'Stage, head table, and guest table layout restored.' });
+  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -388,6 +402,12 @@ export function SeatingChart() {
           <span>{guestPool.filter(g => g.rsvpStatus === 'Confirmed').length - unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} seated</span>
           <span className="text-white/20">·</span>
           <span>{unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} unseated</span>
+          {usingVenuePreset && (
+            <>
+              <span className="text-white/20">·</span>
+              <span className="text-[#d4af37]">21-person venue preset</span>
+            </>
+          )}
           {Object.values(tableConflicts).some(Boolean) && (
             <span className="flex items-center gap-1 text-red-400 text-xs">
               <AlertTriangle size={12} /> Conflicts detected
@@ -412,6 +432,16 @@ export function SeatingChart() {
             <Printer size={15} />
             Print / Save PDF
           </Button>
+          {usingVenuePreset && (
+            <Button
+              variant="outline"
+              className="gap-2 border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10"
+              onClick={resetVenuePreset}
+            >
+              <RotateCcw size={14} />
+              Reset Preset
+            </Button>
+          )}
         </div>
       </div>
 
@@ -426,7 +456,35 @@ export function SeatingChart() {
           </CardContent>
         </Card>
 
-        <div className="col-span-9 rounded-2xl bg-black/20 border border-white/10 p-4 relative" id="canvas">
+        <div className="col-span-9 rounded-2xl bg-black/20 border border-white/10 p-4 relative overflow-hidden" id="canvas">
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-35 pointer-events-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)',
+              backgroundSize: '64px 64px',
+            }}
+          />
+
+          <div className="absolute top-4 left-4 z-20 rounded-md border border-white/15 bg-black/45 px-3 py-1 text-[11px] uppercase tracking-wider text-white/80 pointer-events-none">
+            Approx Hall: {VENUE_DIMENSIONS.depthMeters}m x {VENUE_DIMENSIONS.widthMeters}m
+          </div>
+
+          <div className="absolute top-[94px] left-1/2 -translate-x-1/2 h-[68%] w-[96px] rounded-full border border-[#d4af37]/35 bg-[#d4af37]/10 pointer-events-none z-0" />
+          <div className="absolute top-[130px] left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.2em] text-[#f6e7b7]/80 pointer-events-none z-0">
+            Main Aisle
+          </div>
+
+          <div className="absolute right-5 top-[108px] w-[190px] h-[88px] rounded-xl border border-white/15 bg-black/35 backdrop-blur-sm pointer-events-none z-0" />
+          <div className="absolute right-9 top-[116px] text-[10px] uppercase tracking-[0.16em] text-white/70 pointer-events-none z-0">Buffet / Service</div>
+
+          <div className="absolute right-5 bottom-8 w-[190px] h-[114px] rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 pointer-events-none z-0" />
+          <div className="absolute right-9 bottom-[120px] text-[10px] uppercase tracking-[0.16em] text-[#f6e7b7]/85 pointer-events-none z-0">Dance Floor</div>
+
+          <div className="absolute left-8 bottom-10 w-[140px] h-[58px] rounded-lg border border-white/15 bg-black/35 pointer-events-none z-0" />
+          <div className="absolute left-12 bottom-16 text-[10px] uppercase tracking-[0.15em] text-white/70 pointer-events-none z-0">Entrance</div>
+
           <div id="main-stage" className="absolute top-4 left-1/2 -translate-x-1/2 w-[40%] h-20 bg-aurora-gold/20 border-2 border-aurora-gold rounded-lg flex items-center justify-center z-0">
             <h3 className='font-headline text-xl text-aurora-soft-gold italic flex items-center gap-2'><Crown /> Main Stage</h3>
           </div>
