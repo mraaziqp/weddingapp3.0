@@ -15,6 +15,65 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
+const VENUE_SAMPLE_NAMES = [
+  'Razia Abduraziq',
+  'Abduraziq',
+  'Aaliyah',
+  'Yusuf',
+  'Fatima',
+  'Zayd',
+  'Safiyyah',
+  'Hassan',
+  'Maryam',
+  'Bilal',
+  'Noor',
+  'Ibrahim',
+  'Amina',
+  'Ismail',
+  'Layla',
+  'Umar',
+  'Sumayyah',
+  'Harun',
+  'Sara',
+  'Rayyan',
+  'Hafsa',
+];
+
+const VENUE_SAMPLE_GUESTS: Guest[] = VENUE_SAMPLE_NAMES.map((fullName, index) => {
+  const [firstName, ...rest] = fullName.split(' ');
+  const lastName = rest.join(' ') || `Guest ${index + 1}`;
+  const tags: GuestTag[] =
+    index < 8
+      ? ["Bride's Family"]
+      : index < 15
+      ? ["Groom's Family"]
+      : ["Bride's Friends"];
+
+  return {
+    id: `venue-guest-${index + 1}`,
+    householdId: `venue-household-${Math.floor(index / 2) + 1}`,
+    firstName,
+    lastName,
+    rsvpStatus: 'Confirmed',
+    tags,
+  };
+});
+
+const VENUE_LAYOUT_TABLES: Table[] = [
+  {
+    id: 'head-table',
+    name: 'Bride & Groom',
+    capacity: 2,
+    shape: 'rectangle',
+    x: 280,
+    y: 110,
+    guests: [VENUE_SAMPLE_GUESTS[0], VENUE_SAMPLE_GUESTS[1]],
+  },
+  { id: 'table-1', name: 'Table 1', capacity: 8, shape: 'round-8', guests: [], x: 90, y: 290 },
+  { id: 'table-2', name: 'Table 2', capacity: 8, shape: 'round-8', guests: [], x: 330, y: 290 },
+  { id: 'table-3', name: 'Table 3', capacity: 8, shape: 'round-8', guests: [], x: 570, y: 290 },
+];
+
 // Tag colour map for visual group badges
 const TAG_COLORS: Record<string, string> = {
   "Bride's Family":   '#ec4899',
@@ -128,8 +187,25 @@ const DraggableTableWrapper = ({ table, onPositionChange, children }: { table: T
 };
 
 export function SeatingChart() {
-  const [unseatedGuests, setUnseatedGuests] = useState<Guest[]>(allGuests);
-  const [tables, setTables] = useState<Table[]>(mockTables);
+  const guestPool = useMemo(
+    () => (allGuests.length > 0 ? allGuests : VENUE_SAMPLE_GUESTS),
+    []
+  );
+  const tablePreset = useMemo(
+    () => (allGuests.length > 0 ? mockTables : VENUE_LAYOUT_TABLES),
+    []
+  );
+  const initiallySeatedIds = useMemo(
+    () => new Set(tablePreset.flatMap((table) => table.guests.map((guest) => guest.id))),
+    [tablePreset]
+  );
+
+  const [unseatedGuests, setUnseatedGuests] = useState<Guest[]>(() =>
+    guestPool.filter((guest) => !initiallySeatedIds.has(guest.id))
+  );
+  const [tables, setTables] = useState<Table[]>(() =>
+    tablePreset.map((table) => ({ ...table, guests: [...table.guests] }))
+  );
   const [activeDrag, setActiveDrag] = useState<Active | null>(null);
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -219,7 +295,7 @@ export function SeatingChart() {
     const isMovingToNewContainer = originalContainerId !== overContainerId;
     
     if (isMovingToNewContainer) {
-        const guestToMove = allGuests.find(g => g.id === active.id);
+        const guestToMove = guestPool.find(g => g.id === active.id);
         if (!guestToMove) return;
 
         const overTable = tables.find(t => t.id === overContainerId);
@@ -279,7 +355,7 @@ export function SeatingChart() {
   };
 
   const removeGuestFromTable = (guestId: string) => {
-    const guestToMove = allGuests.find(g => g.id === guestId);
+    const guestToMove = guestPool.find(g => g.id === guestId);
     if (!guestToMove) return;
 
     setTables(current => current.map(t => ({
@@ -309,7 +385,7 @@ export function SeatingChart() {
         {/* Summary badge */}
         <div className="flex items-center gap-2 text-sm text-white/50">
           <Users size={14} />
-          <span>{allGuests.filter(g => g.rsvpStatus === 'Confirmed').length - unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} seated</span>
+          <span>{guestPool.filter(g => g.rsvpStatus === 'Confirmed').length - unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} seated</span>
           <span className="text-white/20">·</span>
           <span>{unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} unseated</span>
           {Object.values(tableConflicts).some(Boolean) && (
