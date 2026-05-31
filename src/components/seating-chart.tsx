@@ -16,36 +16,21 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
 const VENUE_SAMPLE_NAMES = [
-  'Razia Abduraziq',
-  'Abduraziq',
-  'Aaliyah',
-  'Yusuf',
-  'Fatima',
-  'Zayd',
-  'Safiyyah',
-  'Hassan',
-  'Maryam',
-  'Bilal',
-  'Noor',
-  'Ibrahim',
-  'Amina',
-  'Ismail',
-  'Layla',
-  'Umar',
-  'Sumayyah',
-  'Harun',
-  'Sara',
-  'Rayyan',
-  'Hafsa',
+  'Test Guest 1',
+  'Test Guest 2',
+  'Test Guest 3',
+  'Test Guest 4',
+  'Test Guest 5',
+  'Test Guest 6',
 ];
 
 const VENUE_SAMPLE_GUESTS: Guest[] = VENUE_SAMPLE_NAMES.map((fullName, index) => {
   const [firstName, ...rest] = fullName.split(' ');
   const lastName = rest.join(' ') || `Guest ${index + 1}`;
   const tags: GuestTag[] =
-    index < 8
+    index < 2
       ? ["Bride's Family"]
-      : index < 15
+      : index < 4
       ? ["Groom's Family"]
       : ["Bride's Friends"];
 
@@ -65,13 +50,13 @@ const VENUE_LAYOUT_TABLES: Table[] = [
     name: 'Bride & Groom',
     capacity: 2,
     shape: 'rectangle',
-    x: 280,
-    y: 110,
-    guests: [VENUE_SAMPLE_GUESTS[0], VENUE_SAMPLE_GUESTS[1]],
+    x: 300,
+    y: 135,
+    guests: [],
   },
-  { id: 'table-1', name: 'Table 1', capacity: 7, shape: 'round-8', guests: [], x: 80, y: 300 },
-  { id: 'table-2', name: 'Table 2', capacity: 6, shape: 'round-8', guests: [], x: 330, y: 300 },
-  { id: 'table-3', name: 'Table 3', capacity: 6, shape: 'round-8', guests: [], x: 580, y: 300 },
+  { id: 'table-1', name: 'Table 1', capacity: 8, shape: 'round-8', guests: [], x: 70, y: 345 },
+  { id: 'table-2', name: 'Table 2', capacity: 8, shape: 'round-8', guests: [], x: 330, y: 345 },
+  { id: 'table-3', name: 'Table 3', capacity: 8, shape: 'round-8', guests: [], x: 590, y: 345 },
 ];
 
 const VENUE_DIMENSIONS = {
@@ -425,7 +410,7 @@ export function SeatingChart() {
           {usingVenuePreset && (
             <>
               <span className="text-white/20">·</span>
-              <span className="text-[#d4af37]">21-person venue preset</span>
+              <span className="text-[#d4af37]">6-person test preset</span>
             </>
           )}
           {Object.values(tableConflicts).some(Boolean) && (
