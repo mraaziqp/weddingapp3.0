@@ -39,12 +39,12 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+    <nav className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-50 -translate-x-1/2 px-2 sm:px-0">
       <motion.div 
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.5 }}
-        className="flex items-center gap-3 px-6 py-3 bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-2xl"
+        className="flex max-w-[calc(100vw-1rem)] items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 px-2 py-2 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:gap-3 sm:px-6 sm:py-3"
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -57,7 +57,7 @@ export function DashboardNav() {
                     whileTap={{ scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                     className={cn(
-                      `relative w-12 h-12 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300`,
+                      `relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition-all duration-300 sm:h-12 sm:w-12`,
                       isActive ? 'text-black' : 'text-gray-300 hover:text-white'
                     )}
                   >

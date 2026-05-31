@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useTransition } from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay, Active } from '@dnd-kit/core';
+import React, { useEffect, useState, useMemo, useRef, useTransition } from 'react';
+import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay, Active } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw } from 'lucide-react';
+import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw, Trash2, Settings2, Copy, Eraser, Rows3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -14,6 +14,9 @@ import type { Guest, Table, GuestTag } from '@/lib/types';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+const SEATING_LAYOUT_STORAGE_KEY = 'wedu-seating-layout-v1';
 
 const VENUE_SAMPLE_NAMES = [
   'Test Guest 1',
@@ -112,7 +115,37 @@ const SortableGuestPill = ({ guest, onRemove }: { guest: Guest, onRemove?: () =>
   return <GuestPill guest={guest} onRemove={onRemove} ref={setNodeRef} style={style} isDragging={isDragging} {...attributes} {...listeners} />;
 };
 
-const TableDropzone = ({ id, table, guests, children, isOver, isAtCapacity, justFilled, hasConflict }: { id: string, table: Table, guests: Guest[], children: React.ReactNode, isOver: boolean, isAtCapacity: boolean, justFilled: boolean, hasConflict: boolean }) => {
+const TableDropzone = ({
+  id,
+  table,
+  guests,
+  children,
+  isOver,
+  isAtCapacity,
+  justFilled,
+  hasConflict,
+  isLocked,
+  onDelete,
+  onRename,
+  onDuplicate,
+  onClearGuests,
+  onSetShape,
+}: {
+  id: string,
+  table: Table,
+  guests: Guest[],
+  children: React.ReactNode,
+  isOver: boolean,
+  isAtCapacity: boolean,
+  justFilled: boolean,
+  hasConflict: boolean,
+  isLocked?: boolean,
+  onDelete?: () => void,
+  onRename?: () => void,
+  onDuplicate?: () => void,
+  onClearGuests?: () => void,
+  onSetShape?: (shape: 'round-8' | 'round-10' | 'rectangle') => void,
+}) => {
     const { setNodeRef } = useSortable({ id });
     const tableShapeStyles = {
         'round-8': 'w-36 h-36',
@@ -142,6 +175,65 @@ const TableDropzone = ({ id, table, guests, children, isOver, isAtCapacity, just
                             })}
                             animate={{ scale: (isOver && !isAtCapacity) ? 1.05 : 1 }}
                         >
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="absolute left-2 top-2 z-20 h-7 w-7 rounded-full border border-white/20 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white"
+                                  onPointerDown={(event) => event.stopPropagation()}
+                                  onClick={(event) => event.stopPropagation()}
+                                  aria-label={`Open actions for ${table.name}`}
+                                >
+                                  <Settings2 size={13} />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-44 glass-card p-1" align="start" sideOffset={8}>
+                                <div className="flex flex-col">
+                                  {!isLocked ? (
+                                    <>
+                                      <Button variant="ghost" className="justify-start gap-2" onClick={onRename}>
+                                        <Rows3 size={13} /> Rename
+                                      </Button>
+                                      <Button variant="ghost" className="justify-start gap-2" onClick={onDuplicate}>
+                                        <Copy size={13} /> Duplicate
+                                      </Button>
+                                      <Button variant="ghost" className="justify-start gap-2" onClick={onClearGuests}>
+                                        <Eraser size={13} /> Clear Guests
+                                      </Button>
+                                      <Button variant="ghost" className="justify-start" onClick={() => onSetShape?.('round-8')}>
+                                        Set Round 8
+                                      </Button>
+                                      <Button variant="ghost" className="justify-start" onClick={() => onSetShape?.('round-10')}>
+                                        Set Round 10
+                                      </Button>
+                                      <Button variant="ghost" className="justify-start" onClick={() => onSetShape?.('rectangle')}>
+                                        Set Rectangle
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <p className="px-2 py-1 text-xs text-white/70">Head table is locked.</p>
+                                  )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            {onDelete ? (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="absolute right-2 top-2 z-20 h-7 w-7 rounded-full border border-white/20 bg-black/50 text-red-300 hover:bg-red-500/15 hover:text-red-200"
+                                onPointerDown={(event) => event.stopPropagation()}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onDelete();
+                                }}
+                                aria-label={`Delete ${table.name}`}
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            ) : null}
                             <p className="font-bold text-lg tracking-tight">{table.name}</p>
                             <p className="text-sm text-muted-foreground">{guests.length} / {table.capacity}</p>
                             {hasConflict && (
@@ -173,15 +265,20 @@ const TableDropzone = ({ id, table, guests, children, isOver, isAtCapacity, just
     );
 };
 
-const DraggableTableWrapper = ({ table, onPositionChange, children }: { table: Table; onPositionChange: (id: string, pos: { x: number; y: number }) => void; children: React.ReactNode }) => {
+const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRef }: { table: Table; onPositionChange: (id: string, pos: { x: number; y: number }) => void; children: React.ReactNode; dragBoundsRef: React.RefObject<HTMLDivElement | null> }) => {
   return (
     <motion.div
       drag
-      dragConstraints={{ left: 0, right: 800, top: 0, bottom: 400 }}
+      dragConstraints={dragBoundsRef}
       dragMomentum={false}
-      onDragEnd={(event, info) => onPositionChange(table.id, info.point)}
+      onDragEnd={(_, info) =>
+        onPositionChange(table.id, {
+          x: table.x + info.offset.x,
+          y: table.y + info.offset.y,
+        })
+      }
       style={{ x: table.x, y: table.y, position: 'absolute' }}
-      className="z-10"
+      className="z-10 touch-none"
     >
       {children}
     </motion.div>
@@ -189,6 +286,8 @@ const DraggableTableWrapper = ({ table, onPositionChange, children }: { table: T
 };
 
 export function SeatingChart() {
+  const isMobile = useIsMobile();
+  const canvasBoundsRef = useRef<HTMLDivElement>(null);
   const usingVenuePreset = allGuests.length === 0;
   const guestPool = useMemo(
     () => (allGuests.length > 0 ? allGuests : VENUE_SAMPLE_GUESTS),
@@ -211,8 +310,59 @@ export function SeatingChart() {
   );
   const [activeDrag, setActiveDrag] = useState<Active | null>(null);
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
+  const [showUnseatedPanel, setShowUnseatedPanel] = useState(true);
+  const [hasHydratedLayout, setHasHydratedLayout] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isMobile) {
+      setShowUnseatedPanel(true);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(SEATING_LAYOUT_STORAGE_KEY);
+      if (!raw) {
+        setHasHydratedLayout(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as { tables?: Array<Table & { guests?: Guest[] }>; unseatedGuestIds?: string[] };
+      if (!parsed.tables || !Array.isArray(parsed.tables)) {
+        setHasHydratedLayout(true);
+        return;
+      }
+
+      const guestById = new Map(guestPool.map((guest) => [guest.id, guest]));
+      const restoredTables: Table[] = parsed.tables.map((table) => ({
+        ...table,
+        guests: (table.guests ?? []).map((guest) => guestById.get(guest.id)).filter((guest): guest is Guest => Boolean(guest)),
+      }));
+      const seatedIds = new Set(restoredTables.flatMap((table) => table.guests.map((guest) => guest.id)));
+      const restoredUnseatedFromIds = (parsed.unseatedGuestIds ?? []).map((id) => guestById.get(id)).filter((guest): guest is Guest => Boolean(guest));
+      const fallbackUnseated = guestPool.filter((guest) => !seatedIds.has(guest.id));
+      const unseated = restoredUnseatedFromIds.length > 0 ? restoredUnseatedFromIds : fallbackUnseated;
+
+      setTables(restoredTables);
+      setUnseatedGuests(unseated);
+      toast({ title: 'Layout restored', description: 'Your latest seating edits were loaded.' });
+    } catch {
+      // Ignore malformed localStorage and continue with defaults.
+    } finally {
+      setHasHydratedLayout(true);
+    }
+  }, [guestPool, toast]);
+
+  useEffect(() => {
+    if (!hasHydratedLayout) return;
+    const payload = {
+      tables,
+      unseatedGuestIds: unseatedGuests.map((guest) => guest.id),
+    };
+    window.localStorage.setItem(SEATING_LAYOUT_STORAGE_KEY, JSON.stringify(payload));
+  }, [hasHydratedLayout, tables, unseatedGuests]);
 
   const resetVenuePreset = () => {
     const resetSeatedIds = new Set(tablePreset.flatMap((table) => table.guests.map((guest) => guest.id)));
@@ -222,7 +372,10 @@ export function SeatingChart() {
     toast({ title: 'Venue preset reset', description: 'Stage, head table, and guest table layout restored.' });
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 140, tolerance: 8 } })
+  );
 
   const activeGuest = useMemo(() => activeDrag?.data.current?.type === 'guest' ? activeDrag.data.current.guest as Guest : null, [activeDrag]);
   const containers = useMemo(() => ['unseated', ...tables.map(t => t.id)], [tables]);
@@ -397,12 +550,94 @@ export function SeatingChart() {
       setTables(current => [...current, newTable]);
   };
 
+  const deleteTable = (tableId: string) => {
+    const tableToDelete = tables.find((table) => table.id === tableId);
+    if (!tableToDelete) return;
+
+    setUnseatedGuests((current) => {
+      const existing = new Set(current.map((guest) => guest.id));
+      const restored = tableToDelete.guests.filter((guest) => !existing.has(guest.id));
+      return [...restored, ...current];
+    });
+    setTables((current) => current.filter((table) => table.id !== tableId));
+
+    toast({
+      title: `${tableToDelete.name} deleted`,
+      description: `${tableToDelete.guests.length} guest${tableToDelete.guests.length === 1 ? '' : 's'} moved back to Unseated Guests.`,
+    });
+  };
+
+  const requestDeleteTable = (tableId: string) => {
+    const table = tables.find((item) => item.id === tableId);
+    if (!table) return;
+    const ok = window.confirm(`Delete ${table.name}? Guests will be moved to Unseated Guests.`);
+    if (!ok) return;
+    deleteTable(tableId);
+  };
+
+  const renameTable = (tableId: string) => {
+    const table = tables.find((item) => item.id === tableId);
+    if (!table) return;
+    const nextName = window.prompt('Rename table', table.name)?.trim();
+    if (!nextName) return;
+    setTables((current) => current.map((item) => (item.id === tableId ? { ...item, name: nextName } : item)));
+    toast({ title: 'Table renamed', description: `${table.name} is now ${nextName}.` });
+  };
+
+  const duplicateTable = (tableId: string) => {
+    const source = tables.find((item) => item.id === tableId);
+    if (!source) return;
+    const duplicated: Table = {
+      ...source,
+      id: `table-${Date.now()}`,
+      name: `${source.name} Copy`,
+      x: source.x + 36,
+      y: source.y + 36,
+      guests: [],
+    };
+    setTables((current) => [...current, duplicated]);
+    toast({ title: 'Table duplicated', description: `${duplicated.name} added with matching style.` });
+  };
+
+  const clearTableGuests = (tableId: string) => {
+    const table = tables.find((item) => item.id === tableId);
+    if (!table || table.guests.length === 0) return;
+
+    setUnseatedGuests((current) => {
+      const existing = new Set(current.map((guest) => guest.id));
+      const restored = table.guests.filter((guest) => !existing.has(guest.id));
+      return [...restored, ...current];
+    });
+    setTables((current) => current.map((item) => (item.id === tableId ? { ...item, guests: [] } : item)));
+    toast({ title: 'Guests cleared', description: `${table.guests.length} moved back to Unseated Guests.` });
+  };
+
+  const setTableShape = (tableId: string, shape: 'round-8' | 'round-10' | 'rectangle') => {
+    setTables((current) =>
+      current.map((item) => {
+        if (item.id !== tableId) return item;
+
+        const requestedCapacity = shape === 'round-10' ? 10 : 8;
+        if (item.guests.length > requestedCapacity) {
+          toast({
+            variant: 'destructive',
+            title: 'Too many guests for this shape',
+            description: `Move ${item.guests.length - requestedCapacity} guest(s) first.`,
+          });
+          return item;
+        }
+
+        return { ...item, shape, capacity: requestedCapacity };
+      })
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col gap-3">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3" data-print-hide>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" data-print-hide>
         {/* Summary badge */}
-        <div className="flex items-center gap-2 text-sm text-white/50">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-white/50">
           <Users size={14} />
           <span>{guestPool.filter(g => g.rsvpStatus === 'Confirmed').length - unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length} seated</span>
           <span className="text-white/20">·</span>
@@ -419,10 +654,22 @@ export function SeatingChart() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isMobile && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-white/25 text-white/90 hover:bg-white/10"
+              onClick={() => setShowUnseatedPanel((current) => !current)}
+            >
+              <Users size={14} />
+              {showUnseatedPanel ? 'Hide Guests' : 'Show Guests'}
+            </Button>
+          )}
           <Button
             variant="outline"
-            className="gap-2 border-[#d4af37]/50 text-[#f6e7b7] bg-[#d4af37]/10 hover:bg-[#d4af37]/20 font-semibold"
+            size={isMobile ? 'sm' : 'default'}
+            className="gap-2 border-[#d4af37]/50 bg-[#d4af37]/10 font-semibold text-[#f6e7b7] hover:bg-[#d4af37]/20"
             onClick={magicSeat}
             disabled={isPending || unseatedGuests.filter(g => g.rsvpStatus === 'Confirmed').length === 0}
           >
@@ -431,6 +678,7 @@ export function SeatingChart() {
           </Button>
           <Button
             variant="outline"
+            size={isMobile ? 'sm' : 'default'}
             className="gap-2 border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10"
             onClick={() => window.print()}
           >
@@ -440,6 +688,7 @@ export function SeatingChart() {
           {usingVenuePreset && (
             <Button
               variant="outline"
+              size={isMobile ? 'sm' : 'default'}
               className="gap-2 border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10"
               onClick={resetVenuePreset}
             >
@@ -467,18 +716,22 @@ export function SeatingChart() {
         ))}
       </div>
 
-      <div id="seating-print-area" className="flex-1 grid grid-cols-12 gap-6">
+      <div id="seating-print-area" className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <Card className="glass-card col-span-3" data-print-hide>
-          <CardHeader><CardTitle>Unseated Guests</CardTitle></CardHeader>
-          <CardContent className="space-y-2 h-[calc(100%-6rem)] overflow-y-auto pr-2">
-            <SortableContext items={unseatedGuests.map(g => g.id)}>
-              {unseatedGuests.map(guest => <SortableGuestPill key={guest.id} guest={guest} />)}
-            </SortableContext>
-          </CardContent>
-        </Card>
+        {(showUnseatedPanel || !isMobile) && (
+          <Card className="glass-card lg:col-span-3" data-print-hide>
+            <CardHeader><CardTitle>Unseated Guests</CardTitle></CardHeader>
+            <CardContent className="space-y-2 overflow-y-auto pr-2 max-h-[34dvh] lg:max-h-[calc(100%-6rem)]">
+              <SortableContext items={unseatedGuests.map(g => g.id)}>
+                {unseatedGuests.map(guest => <SortableGuestPill key={guest.id} guest={guest} />)}
+              </SortableContext>
+            </CardContent>
+          </Card>
+        )}
 
-        <div className="col-span-9 rounded-2xl bg-black/20 border border-white/10 p-4 relative overflow-hidden" id="canvas">
+        <div className="lg:col-span-9">
+        <div className="relative h-[62dvh] min-h-[520px] overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4 lg:h-full" id="canvas-shell">
+        <div ref={canvasBoundsRef} className="relative min-h-[520px] min-w-[760px] lg:min-h-full lg:min-w-0" id="canvas">
           <div
             aria-hidden
             className="absolute inset-0 opacity-20 pointer-events-none"
@@ -504,7 +757,7 @@ export function SeatingChart() {
           
            <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" className="absolute top-6 right-6 z-20" data-print-hide> <Plus className="mr-2"/> Add Table</Button>
+              <Button variant="outline" size={isMobile ? 'sm' : 'default'} className="absolute right-4 top-4 z-20" data-print-hide> <Plus className="mr-2"/> Add Table</Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto glass-card p-2">
                 <div className="flex flex-col gap-2">
@@ -517,7 +770,7 @@ export function SeatingChart() {
 
             <SortableContext items={containers}>
             {tables.map(table => (
-              <DraggableTableWrapper key={table.id} table={table} onPositionChange={handleTablePositionChange}>
+              <DraggableTableWrapper key={table.id} table={table} onPositionChange={handleTablePositionChange} dragBoundsRef={canvasBoundsRef}>
                   <TableDropzone
                       id={table.id}
                       table={table}
@@ -526,6 +779,12 @@ export function SeatingChart() {
                       isAtCapacity={!!activeDrag && table.guests.length >= table.capacity}
                       justFilled={justFilledTable === table.id}
                       hasConflict={tableConflicts[table.id] ?? false}
+                        isLocked={table.id === 'head-table'}
+                        onRename={table.id === 'head-table' ? undefined : () => renameTable(table.id)}
+                        onDuplicate={table.id === 'head-table' ? undefined : () => duplicateTable(table.id)}
+                        onClearGuests={table.id === 'head-table' ? undefined : () => clearTableGuests(table.id)}
+                        onSetShape={table.id === 'head-table' ? undefined : (shape) => setTableShape(table.id, shape)}
+                        onDelete={table.id === 'head-table' ? undefined : () => requestDeleteTable(table.id)}
                   >
                     <SortableContext items={table.guests.map(g => g.id)}>
                         <div className="space-y-1">
@@ -539,6 +798,8 @@ export function SeatingChart() {
             ))}
             </SortableContext>
         </div>
+          </div>
+          </div>
         <DragOverlay>
             {activeGuest ? <GuestPill guest={activeGuest} isOverlay /> : null}
         </DragOverlay>

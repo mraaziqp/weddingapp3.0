@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <AdminGlobalSearch />
           </header>
           
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28">
+          <main className="flex-1 p-4 pb-[calc(8.5rem+env(safe-area-inset-bottom))] sm:p-6 sm:pb-[calc(9.5rem+env(safe-area-inset-bottom))] lg:p-8 lg:pb-[calc(7rem+env(safe-area-inset-bottom))]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}
