@@ -89,6 +89,15 @@ const TAG_COLORS: Record<string, string> = {
   'Do Not Sit Together': '#ef4444',
 };
 
+const TAG_LABELS: Record<string, string> = {
+  "Bride's Family": 'Bride Fam',
+  "Groom's Family": 'Groom Fam',
+  "Bride's Friends": 'Bride Friends',
+  "Groom's Friends": 'Groom Friends',
+  Work: 'Work',
+  'Do Not Sit Together': 'Conflict',
+};
+
 const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: () => void, isOverlay?: boolean, isDragging?: boolean, style?: React.CSSProperties, [key: string]: any }>(({ guest, onRemove, isOverlay, isDragging, style, ...props }, ref) => {
   const primaryTag = guest.tags?.[0];
   const tagColor   = primaryTag ? TAG_COLORS[primaryTag] : undefined;
@@ -97,7 +106,10 @@ const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: ()
       <GripVertical className="h-5 w-5 text-muted-foreground" />
       <span className="font-medium flex-1">{guest.firstName} {guest.lastName}</span>
       {tagColor && (
-        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tagColor }} title={primaryTag} />
+        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide border border-white/20 bg-black/30" title={primaryTag}>
+          <span className="w-2 h-2 rounded-full" style={{ background: tagColor }} />
+          <span>{TAG_LABELS[primaryTag] ?? primaryTag}</span>
+        </span>
       )}
       {onRemove && (
         <button onClick={onRemove} className="p-1 rounded-full hover:bg-white/20">
@@ -229,6 +241,14 @@ export function SeatingChart() {
 
   const activeGuest = useMemo(() => activeDrag?.data.current?.type === 'guest' ? activeDrag.data.current.guest as Guest : null, [activeDrag]);
   const containers = useMemo(() => ['unseated', ...tables.map(t => t.id)], [tables]);
+  const planningTagSummary = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const guest of guestPool) {
+      const tag = guest.tags?.[0] ?? 'General';
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+    return Array.from(counts.entries());
+  }, [guestPool]);
 
   // ── Conflict Radar ─────────────────────────────────────────────────────
   const tableConflicts = useMemo(() => {
@@ -445,6 +465,23 @@ export function SeatingChart() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2" data-print-hide>
+        <span className="text-xs uppercase tracking-wider text-white/60">Planning Tags</span>
+        {planningTagSummary.map(([tag, count]) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-2.5 py-1 text-[11px] text-white/90"
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: TAG_COLORS[tag] ?? '#d1d5db' }}
+            />
+            <span>{TAG_LABELS[tag] ?? tag}</span>
+            <span className="text-white/60">{count}</span>
+          </span>
+        ))}
+      </div>
+
       <div id="seating-print-area" className="flex-1 grid grid-cols-12 gap-6">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <Card className="glass-card col-span-3" data-print-hide>
@@ -459,7 +496,7 @@ export function SeatingChart() {
         <div className="col-span-9 rounded-2xl bg-black/20 border border-white/10 p-4 relative overflow-hidden" id="canvas">
           <div
             aria-hidden
-            className="absolute inset-0 opacity-35 pointer-events-none"
+            className="absolute inset-0 opacity-20 pointer-events-none"
             style={{
               backgroundImage:
                 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)',
@@ -475,15 +512,6 @@ export function SeatingChart() {
           <div className="absolute top-[130px] left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.2em] text-[#f6e7b7]/80 pointer-events-none z-0">
             Main Aisle
           </div>
-
-          <div className="absolute right-5 top-[108px] w-[190px] h-[88px] rounded-xl border border-white/15 bg-black/35 backdrop-blur-sm pointer-events-none z-0" />
-          <div className="absolute right-9 top-[116px] text-[10px] uppercase tracking-[0.16em] text-white/70 pointer-events-none z-0">Buffet / Service</div>
-
-          <div className="absolute right-5 bottom-8 w-[190px] h-[114px] rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 pointer-events-none z-0" />
-          <div className="absolute right-9 bottom-[120px] text-[10px] uppercase tracking-[0.16em] text-[#f6e7b7]/85 pointer-events-none z-0">Dance Floor</div>
-
-          <div className="absolute left-8 bottom-10 w-[140px] h-[58px] rounded-lg border border-white/15 bg-black/35 pointer-events-none z-0" />
-          <div className="absolute left-12 bottom-16 text-[10px] uppercase tracking-[0.15em] text-white/70 pointer-events-none z-0">Entrance</div>
 
           <div id="main-stage" className="absolute top-4 left-1/2 -translate-x-1/2 w-[40%] h-20 bg-aurora-gold/20 border-2 border-aurora-gold rounded-lg flex items-center justify-center z-0">
             <h3 className='font-headline text-xl text-aurora-soft-gold italic flex items-center gap-2'><Crown /> Main Stage</h3>
