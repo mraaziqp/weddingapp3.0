@@ -19,6 +19,20 @@ const ADMIN_COOKIE_NAME = "wedding_admin_session";
 const ADMIN_KEY_QUERY_PARAM = "adminKey";
 const INVITE_FALLBACK_ROUTE = "/event";
 
+function getAllowedAdminKeys(): string[] {
+  const combinedKeys = [
+    process.env.ADMIN_ACCESS_KEYS,
+    process.env.ADMIN_ACCESS_KEY,
+  ]
+    .filter(Boolean)
+    .join(",");
+
+  return combinedKeys
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+}
+
 function isAdminRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
@@ -38,18 +52,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const adminAccessKey = process.env.ADMIN_ACCESS_KEY;
+  const allowedAdminKeys = getAllowedAdminKeys();
   const cookieKey = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
   const queryKey = searchParams.get(ADMIN_KEY_QUERY_PARAM);
-  const validCookie = Boolean(adminAccessKey) && cookieKey === adminAccessKey;
-  const validQuery = Boolean(adminAccessKey) && queryKey === adminAccessKey;
+  const validCookie = Boolean(cookieKey) && allowedAdminKeys.includes(cookieKey!);
+  const validQuery = Boolean(queryKey) && allowedAdminKeys.includes(queryKey!);
 
   if (validQuery) {
     // Accept one-time key in URL, then persist it in a secure HTTP cookie.
     const response = NextResponse.redirect(getUrlWithoutAdminQuery(request));
     response.cookies.set({
       name: ADMIN_COOKIE_NAME,
-      value: adminAccessKey!,
+      value: queryKey!,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
