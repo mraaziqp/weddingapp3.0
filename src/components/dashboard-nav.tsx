@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   Mail,
   Music,
-  Palette,
   QrCode,
   Users,
 } from "lucide-react";

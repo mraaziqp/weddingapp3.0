@@ -86,6 +86,7 @@ const TAG_LABELS: Record<string, string> = {
   'Do Not Sit Together': 'Conflict',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: () => void, isOverlay?: boolean, isDragging?: boolean, style?: React.CSSProperties, [key: string]: any }>(({ guest, onRemove, isOverlay, isDragging, style, ...props }, ref) => {
   const primaryTag = guest.tags?.[0];
   const tagColor   = primaryTag ? TAG_COLORS[primaryTag] : undefined;
@@ -96,7 +97,7 @@ const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: ()
       {tagColor && (
         <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide border border-white/20 bg-black/30" title={primaryTag}>
           <span className="w-2 h-2 rounded-full" style={{ background: tagColor }} />
-          <span>{TAG_LABELS[primaryTag] ?? primaryTag}</span>
+          <span>{primaryTag ? (TAG_LABELS[primaryTag] ?? primaryTag) : 'General'}</span>
         </span>
       )}
       {onRemove && (
