@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { CalendarHeart, MailOpen, Globe, Sparkles, Play, Users, Clock, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
