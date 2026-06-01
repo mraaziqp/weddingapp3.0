@@ -35,6 +35,22 @@ const FILTER_PRESETS: FilterPreset[] = [
   { id: 'vhs', name: 'Old VHS', css: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' },
   { id: 'rose', name: 'Warm Rose', css: 'hue-rotate(-25deg) saturate(1.25) contrast(1.05)' },
   { id: 'forest', name: 'Forest Green', css: 'hue-rotate(30deg) saturate(1.1) contrast(1.1) brightness(0.95)' },
+  { id: 'lomo-red', name: 'Lomo Red', css: 'hue-rotate(-20deg) saturate(1.6) contrast(1.2) brightness(0.9)' },
+  { id: 'dreamy', name: 'Dreamy Pastel', css: 'saturate(0.6) brightness(1.15) blur(0.5px)' },
+  { id: 'golden', name: 'Golden Hour', css: 'sepia(0.35) hue-rotate(-15deg) saturate(1.4) brightness(1.05)' },
+  { id: 'deep-noir', name: 'Deep Noir', css: 'grayscale(1) contrast(1.6) brightness(0.75)' },
+  { id: 'kodak', name: 'Vintage Kodak', css: 'sepia(0.3) contrast(0.9) saturate(1.2) brightness(1.1) hue-rotate(-10deg)' },
+  { id: 'faded', name: 'Faded Film', css: 'contrast(0.8) brightness(1.1) saturate(0.7) sepia(0.2)' },
+  { id: 'chrome', name: 'Cool Chrome', css: 'grayscale(0.5) contrast(1.3) saturate(0.8) brightness(0.95) hue-rotate(180deg)' },
+  { id: 'amber', name: 'Warm Amber', css: 'sepia(0.25) hue-rotate(-5deg) saturate(1.3) brightness(0.98)' },
+  { id: 'mint', name: 'Mint Fresh', css: 'hue-rotate(160deg) saturate(1.2) contrast(1.05) brightness(1.02)' },
+  { id: 'cinema', name: 'Cinematic', css: 'contrast(1.25) saturate(0.9) brightness(0.95) sepia(0.1)' },
+  { id: 'desert', name: 'Desert Sand', css: 'sepia(0.3) hue-rotate(-10deg) saturate(0.9) contrast(1.1) brightness(1.05)' },
+  { id: 'neon-glow', name: 'Neon Glow', css: 'saturate(1.8) hue-rotate(45deg) contrast(1.3) brightness(1.1)' },
+  { id: 'blush', name: 'Blush Pink', css: 'hue-rotate(-40deg) saturate(1.3) contrast(1.05) brightness(1.02)' },
+  { id: 'moody-blue', name: 'Moody Blue', css: 'hue-rotate(200deg) saturate(1.1) contrast(1.15) brightness(0.92)' },
+  { id: 'retro-fade', name: 'Retro Fade', css: 'contrast(0.85) brightness(1.2) saturate(0.75) sepia(0.25)' },
+  { id: 'crisp-bw', name: 'Crisp B&W', css: 'grayscale(1) contrast(1.5) brightness(1.05)' },
 ];
 
 function FilmCounter({ shotsLeft, total }: { shotsLeft: number; total: number }) {

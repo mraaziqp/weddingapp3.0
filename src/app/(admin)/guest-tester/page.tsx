@@ -19,10 +19,18 @@ export default function GuestTesterPage() {
   const { toast } = useToast();
   const [selectedGuestQr, setSelectedGuestQr] = useState<string>('fatima-fassi');
   const [iframeKey, setIframeKey] = useState<number>(0);
-  
+  const [deviceFrame, setDeviceFrame] = useState<'iphone' | 'ipad' | 'desktop'>('iphone');
+
   // Simulation switches
   const [simEventDay, setSimEventDay] = useState<boolean>(false);
   const [partyMode, setPartyMode] = useState<boolean>(false);
+
+  // Real households from mock data
+  const availableHouseholds = households.map(h => ({
+    id: h.qrCode,
+    name: h.name,
+    guestCount: h.guests?.length || 0,
+  }));
 
   // Sync state with localStorage/cookies on mount
   useEffect(() => {
