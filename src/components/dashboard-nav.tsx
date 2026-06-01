@@ -15,6 +15,8 @@ import {
   Music,
   QrCode,
   Users,
+  DollarSign,
+  Briefcase,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -24,6 +26,8 @@ const navItems = [
   { href: "/dashboard", icon: <LayoutDashboard size={28} />, label: "Dashboard" },
   { href: "/guests", icon: <Users size={28} />, label: "Guest Ledger" },
   { href: "/seating", icon: <Armchair size={28} />, label: "Seating Studio" },
+  { href: "/budget", icon: <DollarSign size={28} />, label: "Budget" },
+  { href: "/vendors", icon: <Briefcase size={28} />, label: "Vendors" },
   { href: "/registry", icon: <Gift size={28} />, label: "Registry" },
   { href: "/vault", icon: <Heart size={28} />, label: "Memory Vault" },
   { href: "/playlist", icon: <Music size={28} />, label: "Playlist" },
