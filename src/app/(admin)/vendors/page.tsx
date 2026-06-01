@@ -90,8 +90,8 @@ export default function VendorsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-headline text-3xl italic font-bold tracking-tight">Vendor Manager</h1>
-          <p className="text-white/40 text-sm mt-2">Manage all your wedding vendors and track payments</p>
+          <h1 className="font-headline text-3xl italic font-bold tracking-tight text-amber-50">👔 Vendor Manager</h1>
+          <p className="text-white/50 text-sm mt-2">Organize contacts, track payments, confirm services</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>

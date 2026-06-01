@@ -68,8 +68,8 @@ export default function VaultPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-headline text-3xl font-bold italic tracking-tight">The Memory Vault</h1>
-        <p className="text-white/40 text-sm mt-2">Cherish every moment shared by your guests</p>
+        <h1 className="font-headline text-3xl font-bold italic tracking-tight text-amber-50">💝 Memory Vault</h1>
+        <p className="text-white/50 text-sm mt-2">Every precious moment from your loved ones</p>
       </div>
 
       {/* Tabs */}

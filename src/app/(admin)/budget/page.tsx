@@ -87,8 +87,8 @@ export default function BudgetPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-headline text-3xl italic font-bold tracking-tight">Wedding Budget Tracker</h1>
-          <p className="text-white/40 text-sm mt-2">Track expenses and monitor spending across all categories</p>
+          <h1 className="font-headline text-3xl italic font-bold tracking-tight text-amber-50">💰 Budget Tracker</h1>
+          <p className="text-white/50 text-sm mt-2">Monitor every rupee spent vs. budgeted</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={exportCSV} variant="outline" className="gap-2">
