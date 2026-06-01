@@ -4,161 +4,295 @@ import { useEffect, useState } from 'react';
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { CalendarHeart, MailOpen, Globe, Sparkles } from "lucide-react";
+import { CalendarHeart, MailOpen, Globe, Sparkles, Play, Users, Clock, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } },
+};
 
 export default function DashboardPage() {
   const [redirectToStd, setRedirectToStd] = useState(true);
+  const [invitationMode, setInvitationMode] = useState(false);
+  const [weddingDayMode, setWeddingDayMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showGuestView, setShowGuestView] = useState(false);
   const { toast } = useToast();
-  const weddingDate = new Date('2026-09-06');
 
+  const weddingDate = new Date('2026-09-06');
+  const daysUntilWedding = Math.ceil((weddingDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  // Load config
   useEffect(() => {
     fetch('/api/std/config')
       .then(r => r.json())
       .then((data) => {
-        if (data.config && typeof data.config.redirectToStd === 'boolean') {
-          setRedirectToStd(data.config.redirectToStd);
+        if (data.config) {
+          setRedirectToStd(data.config.redirectToStd !== false);
+          setInvitationMode(data.config.invitationMode === true);
+          setWeddingDayMode(data.config.weddingDayMode === true);
         }
       })
       .catch(() => {});
   }, []);
 
-  const handleToggle = async (checked: boolean) => {
-    setRedirectToStd(checked);
+  // Generic switch handler
+  const handleSwitchChange = async (key: string, checked: boolean) => {
     setIsUpdating(true);
     try {
       const getRes = await fetch('/api/std/config');
       const getData = await getRes.json();
       const existingConfig = getData.config || {};
-      const newConfig = { ...existingConfig, redirectToStd: checked };
+      const newConfig = { ...existingConfig, [key]: checked };
 
       const res = await fetch('/api/std/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: newConfig, designState: getData.designState }),
       });
+
       const data = await res.json();
       if (data.ok) {
+        // Update local state based on key
+        if (key === 'redirectToStd') setRedirectToStd(checked);
+        if (key === 'invitationMode') setInvitationMode(checked);
+        if (key === 'weddingDayMode') setWeddingDayMode(checked);
+
+        const messages: Record<string, string> = {
+          redirectToStd: checked ? 'Save the Date mode ACTIVE ✨' : 'RSVP mode ACTIVE 📧',
+          invitationMode: checked ? 'Invitation link is LIVE 🎫' : 'Save the Date link is LIVE 💌',
+          weddingDayMode: checked ? '🎉 WEDDING DAY MODE ACTIVATED! 🎉' : 'Back to planning mode',
+        };
+
         toast({
-          title: 'Routing Updated',
-          description: checked 
-            ? 'Guests will now see the Save the Date envelope.'
-            : 'Guests will now see the main RSVP Hub.',
+          title: '✓ Settings Updated',
+          description: messages[key] || 'Configuration updated',
         });
       } else {
         toast({ title: 'Failed to update', description: data.error, variant: 'destructive' });
       }
     } catch (err) {
-      toast({ title: 'Error updating route', description: String(err), variant: 'destructive' });
+      toast({ variant: 'destructive', title: 'Error', description: String(err) });
     } finally {
       setIsUpdating(false);
     }
   };
 
+  const getActiveMode = () => {
+    if (weddingDayMode) return { label: '🎊 WEDDING DAY MODE', color: 'text-red-400', bgColor: 'bg-red-500/10' };
+    if (invitationMode) return { label: '🎫 INVITATION MODE', color: 'text-blue-400', bgColor: 'bg-blue-500/10' };
+    return { label: '💌 SAVE THE DATE MODE', color: 'text-amber-400', bgColor: 'bg-amber-500/10' };
+  };
+
+  const activeMode = getActiveMode();
+
   return (
-    <div className="relative min-h-screen space-y-8 p-4 md:p-8 overflow-hidden font-sans">
-      {/* Background Animated Blobs for Premium Feel */}
+    <div className="relative min-h-screen space-y-6 p-4 md:p-8 overflow-hidden">
+      {/* Animated Background */}
       <div className="fixed inset-0 pointer-events-none z-[-1]">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[120px] mix-blend-screen animate-pulse duration-10000" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-900/20 blur-[150px] mix-blend-screen" />
-        <div className="absolute top-[30%] right-[20%] w-[30%] h-[30%] rounded-full bg-amber-600/10 blur-[100px] mix-blend-screen" />
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-purple-900/30 blur-[140px] mix-blend-screen animate-pulse" />
+        <div className="absolute bottom-[-15%] right-[-15%] w-[60%] h-[60%] rounded-full bg-emerald-900/30 blur-[160px] mix-blend-screen" />
+        <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-amber-600/15 blur-[120px] mix-blend-screen animate-pulse delay-1000" />
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-6 border-b border-white/10"
-      >
-        <div className="space-y-2">
-          <Badge variant="outline" className="text-[10px] uppercase tracking-[0.2em] border-amber-500/30 text-amber-300 py-1 px-3 bg-amber-500/10 mb-2">
-            <Sparkles size={12} className="mr-2 inline" /> Admin Command Center
-          </Badge>
-          <h1 className="font-serif text-5xl md:text-6xl font-light tracking-tight text-white/90">
-            The <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Master</span> Plan
-          </h1>
-          <p className="text-muted-foreground tracking-wide text-sm md:text-base max-w-lg font-light">
-            Welcome back, Abduraziq. Every detail is at your fingertips. Orchestrate the perfect day.
-          </p>
-        </div>
-        
-        <div className="flex flex-col gap-2 items-end">
-          <Badge variant="outline" className="text-[10px] uppercase tracking-widest border-emerald-500/30 text-emerald-400 py-1.5 px-3 bg-black/40 backdrop-blur-md shadow-xl">
-            <Globe size={11} className="mr-2 animate-pulse text-emerald-400" />
-            Live: raziaraaziq.co.za
-          </Badge>
-        </div>
-      </motion.div>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        {/* GREETING FOR FIANCÉE */}
+        <motion.div variants={itemVariants} className="mb-8">
+          <div className="space-y-3">
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.3 }}
+              className="font-headline text-5xl md:text-7xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-300 to-amber-500"
+            >
+              Greetings, my soon-to-be wife 💍
+            </motion.h1>
+            <p className="text-white/60 text-lg font-light tracking-wide max-w-2xl">
+              Welcome to your wedding command center. Everything you need to create the perfect day is here.
+            </p>
+          </div>
+        </motion.div>
 
-      {/* Website Routing Panel */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <Card className="relative overflow-hidden border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl group transition-all hover:bg-black/50">
-          <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-amber-500/5 to-transparent rounded-full filter blur-3xl pointer-events-none transition-opacity group-hover:opacity-100 opacity-50" />
-          <CardHeader className="pb-4 border-b border-white/5">
-            <CardTitle className="text-xl font-serif font-medium flex items-center gap-3 text-white/90">
-              <Globe className="text-amber-400 h-5 w-5" />
-              Domain Traffic Controller
-            </CardTitle>
-            <CardDescription className="text-sm text-white/50 font-light">
-              Toggle the public landing page experience for your guests.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-md shadow-inner transition-all hover:border-white/10">
-              <div className="space-y-2 flex-1">
-                <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                  Active Gateway:{' '}
-                  <span className={redirectToStd ? 'text-amber-400 font-serif italic' : 'text-emerald-400 font-serif italic'}>
-                    {redirectToStd ? 'The Envelope Reveal' : 'The Event Ledger'}
-                  </span>
-                </h3>
-                <p className="text-sm text-white/50 font-light leading-relaxed">
-                  {redirectToStd
-                    ? 'Visitors are currently greeted by the interactive Save the Date envelope.'
-                    : 'Visitors bypass the envelope and enter the comprehensive wedding portal.'}
-                </p>
+        {/* MODE STATUS CARD */}
+        <motion.div variants={itemVariants}>
+          <Card className={`relative overflow-hidden border-white/5 backdrop-blur-2xl shadow-2xl transition-all duration-500 ${activeMode.bgColor} border-l-4 ${activeMode.color.replace('text-', 'border-')}`}>
+            <div className="absolute top-0 right-0 h-full w-1/3 bg-gradient-to-l from-white/5 to-transparent rounded-full filter blur-3xl" />
+            <CardContent className="pt-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white/60 uppercase tracking-widest mb-1">Current Mode</p>
+                <p className={`text-3xl font-bold font-headline ${activeMode.color}`}>{activeMode.label}</p>
               </div>
-              
-              <div className="flex items-center gap-4 bg-black/50 border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Status</span>
-                  <span className="text-sm font-medium text-white tracking-wide flex items-center gap-2">
-                    {redirectToStd ? (
-                      <CalendarHeart size={16} className="text-amber-400" />
-                    ) : (
-                      <MailOpen size={16} className="text-emerald-400" />
-                    )}
-                    STD Mode
-                  </span>
+              <div className="text-right">
+                <p className="text-sm text-white/60 mb-1">Days Until</p>
+                <p className="text-3xl font-bold text-amber-400">{daysUntilWedding} days</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* CONTROL PANEL - ALL SWITCHES */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
+            <CardHeader className="border-b border-white/5 pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Trophy className="text-amber-400" size={20} />
+                Control Panel
+              </CardTitle>
+              <CardDescription>Manage your wedding's public experience</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              {/* Switch 1: Save the Date */}
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-white flex items-center gap-2">
+                      <CalendarHeart className="text-amber-400" size={18} />
+                      Save the Date Envelope
+                    </h3>
+                    <p className="text-xs text-white/50">Let guests open the interactive envelope first</p>
+                  </div>
+                  <Switch
+                    checked={redirectToStd}
+                    onCheckedChange={(checked) => handleSwitchChange('redirectToStd', checked)}
+                    disabled={isUpdating}
+                    className="data-[state=checked]:bg-amber-500"
+                  />
                 </div>
-                <div className="w-px h-8 bg-white/10 mx-2" />
-                <Switch 
-                  checked={redirectToStd} 
-                  onCheckedChange={handleToggle}
-                  disabled={isUpdating}
-                  className="data-[state=checked]:bg-amber-500"
-                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <AnalyticsDashboard />
+              {/* Switch 2: Invitation Mode */}
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-white flex items-center gap-2">
+                      <MailOpen className="text-blue-400" size={18} />
+                      Invitation Mode
+                    </h3>
+                    <p className="text-xs text-white/50">Switch to invitation & RSVP experience</p>
+                  </div>
+                  <Switch
+                    checked={invitationMode}
+                    onCheckedChange={(checked) => handleSwitchChange('invitationMode', checked)}
+                    disabled={isUpdating}
+                    className="data-[state=checked]:bg-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Switch 3: Wedding Day Mode */}
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:border-red-500/50 transition-all space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-red-300 flex items-center gap-2">
+                      <Sparkles className="text-red-400 animate-pulse" size={18} />
+                      Wedding Day Mode
+                    </h3>
+                    <p className="text-xs text-red-300/70">🎉 Activate celebration mode & special features</p>
+                  </div>
+                  <Switch
+                    checked={weddingDayMode}
+                    onCheckedChange={(checked) => handleSwitchChange('weddingDayMode', checked)}
+                    disabled={isUpdating}
+                    className="data-[state=checked]:bg-red-500"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* GUEST TESTING SECTION */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
+            <CardHeader className="border-b border-white/5 pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Users className="text-emerald-400" size={20} />
+                Guest Experience Testing
+              </CardTitle>
+              <CardDescription>See exactly what your guests will experience</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Test as Guest Button */}
+                <Button
+                  asChild
+                  className="h-24 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
+                >
+                  <Link href="/guest-tester">
+                    <div className="flex flex-col items-center gap-2">
+                      <Users size={20} />
+                      <span>Test as Guest</span>
+                    </div>
+                  </Link>
+                </Button>
+
+                {/* Test Save the Date */}
+                <Button
+                  asChild
+                  className="h-24 bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
+                >
+                  <Link href="/std">
+                    <div className="flex flex-col items-center gap-2">
+                      <CalendarHeart size={20} />
+                      <span>View Envelope</span>
+                    </div>
+                  </Link>
+                </Button>
+
+                {/* Test Wedding Day */}
+                <Button
+                  onClick={() => handleSwitchChange('weddingDayMode', !weddingDayMode)}
+                  className="h-24 bg-gradient-to-br from-red-600 to-pink-700 hover:from-red-500 hover:to-pink-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Sparkles size={20} />
+                    <span>Toggle Day Mode</span>
+                  </div>
+                </Button>
+              </div>
+
+              {/* Wedding Day Beta Testers */}
+              <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
+                <h4 className="font-medium text-white flex items-center gap-2">
+                  <Clock size={18} className="text-red-400" />
+                  Beta Testing for Wedding Day
+                </h4>
+                <p className="text-sm text-white/60">
+                  When Wedding Day Mode is activated, guests will see celebration animations on their first visit. Use this to test with beta testers before the big day.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  onClick={() => {
+                    toast({ title: '✓ Beta Testing Ready', description: 'Share the app link with your beta testers to test the wedding day experience!' });
+                    setShowGuestView(true);
+                  }}
+                >
+                  Invite Beta Testers
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ANALYTICS DASHBOARD */}
+        <motion.div variants={itemVariants}>
+          <AnalyticsDashboard />
+        </motion.div>
       </motion.div>
     </div>
   );
 }
-
