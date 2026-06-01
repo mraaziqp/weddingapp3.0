@@ -6,14 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { CalendarHeart, MailOpen, Globe } from "lucide-react";
+import { CalendarHeart, MailOpen, Globe, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const [redirectToStd, setRedirectToStd] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  // Load config on mount
   useEffect(() => {
     fetch('/api/std/config')
       .then(r => r.json())
@@ -25,7 +25,6 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
 
-  // Update redirect config in database
   const handleToggle = async (checked: boolean) => {
     setRedirectToStd(checked);
     setIsUpdating(true);
@@ -43,10 +42,10 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.ok) {
         toast({
-          title: 'Landing Route Updated!',
+          title: 'Routing Updated',
           description: checked 
-            ? 'Guests visiting raziaraaziq.co.za will now go straight to the Save the Date.'
-            : 'Guests visiting raziaraaziq.co.za will now go straight to the Event RSVP Hub.',
+            ? 'Guests will now see the Save the Date envelope.'
+            : 'Guests will now see the main RSVP Hub.',
         });
       } else {
         toast({ title: 'Failed to update', description: data.error, variant: 'destructive' });
@@ -59,68 +58,106 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-headline text-3xl font-bold italic tracking-tight">Our Wedding Command</h1>
-          <p className="text-muted-foreground tracking-wide text-sm">Salaam, Abduraziq. Here is the status of the big day.</p>
-        </div>
-        
-        {/* Quick Domain Controller Badge */}
-        <Badge variant="outline" className="text-[10px] uppercase tracking-widest border-accent/30 text-accent self-start py-1.5 px-3 bg-white/5">
-          <Globe size={11} className="mr-1.5 animate-pulse" />
-          Live Domain: raziaraaziq.co.za
-        </Badge>
+    <div className="relative min-h-screen space-y-8 p-4 md:p-8 overflow-hidden font-sans">
+      {/* Background Animated Blobs for Premium Feel */}
+      <div className="fixed inset-0 pointer-events-none z-[-1]">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[120px] mix-blend-screen animate-pulse duration-10000" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-900/20 blur-[150px] mix-blend-screen" />
+        <div className="absolute top-[30%] right-[20%] w-[30%] h-[30%] rounded-full bg-amber-600/10 blur-[100px] mix-blend-screen" />
       </div>
 
-      {/* Website Routing Panel */}
-      <Card className="glass-card border-white/10 bg-white/5 backdrop-blur-md overflow-hidden relative">
-        <div className="absolute top-0 right-0 h-32 w-32 bg-accent/5 rounded-full filter blur-xl pointer-events-none" />
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
-            <Globe className="text-accent h-5 w-5" />
-            Website Route Controller
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            Control which landing page guests see when they visit your wedding domain.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-xl border border-white/5 bg-black/20">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-white">
-                Current Landing Route:{' '}
-                <span className={redirectToStd ? 'text-[#d4af37]' : 'text-emerald-400'}>
-                  {redirectToStd ? 'Save the Date Envelope' : 'Event RSVP Hub'}
-                </span>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {redirectToStd
-                  ? 'Guests will see the beautiful animated envelope reveal at /std. Untick to activate the full wedding website.'
-                  : 'Guests will go straight to the wedding details, events, and RSVP ledger.'}
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3 self-end md:self-auto bg-white/5 border border-white/10 rounded-xl p-2 px-4 shadow-inner">
-              <span className="text-xs font-semibold text-gray-300 tracking-wider uppercase flex items-center gap-1.5">
-                {redirectToStd ? (
-                  <CalendarHeart size={14} className="text-[#d4af37]" />
-                ) : (
-                  <MailOpen size={14} className="text-emerald-400" />
-                )}
-                Save the Date Mode:
-              </span>
-              <Switch 
-                checked={redirectToStd} 
-                onCheckedChange={handleToggle}
-                disabled={isUpdating}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-6 border-b border-white/10"
+      >
+        <div className="space-y-2">
+          <Badge variant="outline" className="text-[10px] uppercase tracking-[0.2em] border-amber-500/30 text-amber-300 py-1 px-3 bg-amber-500/10 mb-2">
+            <Sparkles size={12} className="mr-2 inline" /> Admin Command Center
+          </Badge>
+          <h1 className="font-serif text-5xl md:text-6xl font-light tracking-tight text-white/90">
+            The <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Master</span> Plan
+          </h1>
+          <p className="text-muted-foreground tracking-wide text-sm md:text-base max-w-lg font-light">
+            Welcome back, Abduraziq. Every detail is at your fingertips. Orchestrate the perfect day.
+          </p>
+        </div>
+        
+        <div className="flex flex-col gap-2 items-end">
+          <Badge variant="outline" className="text-[10px] uppercase tracking-widest border-emerald-500/30 text-emerald-400 py-1.5 px-3 bg-black/40 backdrop-blur-md shadow-xl">
+            <Globe size={11} className="mr-2 animate-pulse text-emerald-400" />
+            Live: raziaraaziq.co.za
+          </Badge>
+        </div>
+      </motion.div>
 
-      <AnalyticsDashboard />
+      {/* Website Routing Panel */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <Card className="relative overflow-hidden border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl group transition-all hover:bg-black/50">
+          <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-amber-500/5 to-transparent rounded-full filter blur-3xl pointer-events-none transition-opacity group-hover:opacity-100 opacity-50" />
+          <CardHeader className="pb-4 border-b border-white/5">
+            <CardTitle className="text-xl font-serif font-medium flex items-center gap-3 text-white/90">
+              <Globe className="text-amber-400 h-5 w-5" />
+              Domain Traffic Controller
+            </CardTitle>
+            <CardDescription className="text-sm text-white/50 font-light">
+              Toggle the public landing page experience for your guests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-md shadow-inner transition-all hover:border-white/10">
+              <div className="space-y-2 flex-1">
+                <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                  Active Gateway:{' '}
+                  <span className={redirectToStd ? 'text-amber-400 font-serif italic' : 'text-emerald-400 font-serif italic'}>
+                    {redirectToStd ? 'The Envelope Reveal' : 'The Event Ledger'}
+                  </span>
+                </h3>
+                <p className="text-sm text-white/50 font-light leading-relaxed">
+                  {redirectToStd
+                    ? 'Visitors are currently greeted by the interactive Save the Date envelope.'
+                    : 'Visitors bypass the envelope and enter the comprehensive wedding portal.'}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-4 bg-black/50 border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Status</span>
+                  <span className="text-sm font-medium text-white tracking-wide flex items-center gap-2">
+                    {redirectToStd ? (
+                      <CalendarHeart size={16} className="text-amber-400" />
+                    ) : (
+                      <MailOpen size={16} className="text-emerald-400" />
+                    )}
+                    STD Mode
+                  </span>
+                </div>
+                <div className="w-px h-8 bg-white/10 mx-2" />
+                <Switch 
+                  checked={redirectToStd} 
+                  onCheckedChange={handleToggle}
+                  disabled={isUpdating}
+                  className="data-[state=checked]:bg-amber-500"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <AnalyticsDashboard />
+      </motion.div>
     </div>
   );
 }
+

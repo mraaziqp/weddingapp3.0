@@ -1,8 +1,45 @@
 import type { Guest, Household, Table, MenuItem, TimelineEvent, TrackItem } from './types';
 
-export const allGuests: Guest[] = [];
+export const households: Household[] = [
+  {
+    id: 'h-1',
+    name: 'The Al-Fassi Family',
+    address: '12 Morocco Way, Cape Town',
+    qrCode: 'fatima-fassi',
+    guests: [
+      { id: 'g-1', householdId: 'h-1', firstName: 'Fatima', lastName: 'Al-Fassi', rsvpStatus: 'Confirmed', tags: ["Bride's Family"], dietaryRestrictions: 'Vegetarian' }
+    ]
+  },
+  {
+    id: 'h-2',
+    name: 'The Naidoo Household',
+    address: '8 Durban Rd, Cape Town',
+    qrCode: 'farid-naidoo',
+    guests: [
+      { id: 'g-2', householdId: 'h-2', firstName: 'Farid', lastName: 'Naidoo', rsvpStatus: 'Confirmed', tags: ["Groom's Family"], songRequest: 'September', dietaryRestrictions: 'Gluten-Free' }
+    ]
+  },
+  {
+    id: 'h-3',
+    name: 'Zayd Hendricks',
+    address: '42 Pine St, Cape Town',
+    qrCode: 'zayd-hendricks',
+    guests: [
+      { id: 'g-3', householdId: 'h-3', firstName: 'Zayd', lastName: 'Hendricks', rsvpStatus: 'Confirmed', tags: ["Bride's Friends"], songRequest: 'Marry You' }
+    ]
+  },
+  {
+    id: 'h-4',
+    name: 'Layla Abrahams',
+    address: '17 Oak Ave, Cape Town',
+    qrCode: 'layla-abrahams',
+    guests: [
+      { id: 'g-4', householdId: 'h-4', firstName: 'Layla', lastName: 'Abrahams', rsvpStatus: 'Confirmed', tags: ["Groom's Friends"] }
+    ]
+  }
+];
 
-export const households: Household[] = [];
+export const allGuests: Guest[] = households.flatMap(h => h.guests);
 
 export const initialTables: Table[] = [
     { id: 'table-1', name: 'Table 1', capacity: 8,  shape: 'round-8',  guests: [], x: 100, y: 200 },
@@ -11,8 +48,6 @@ export const initialTables: Table[] = [
     { id: 'table-4', name: 'Table 4', capacity: 10, shape: 'round-10', guests: [], x: 200, y: 450 },
     { id: 'table-5', name: 'Table 5', capacity: 10, shape: 'round-10', guests: [], x: 450, y: 450 },
 ];
-
-// ── Planner Suite seed data ────────────────────────────────────────────────
 
 export const initialMenuItems: MenuItem[] = [
     { id: 'm-1',  name: 'Smoked Salmon Blinis',      description: 'Cream cheese, dill, capers',            course: 'canapes',  dietaryFlags: [],                              sortOrder: 0 },
