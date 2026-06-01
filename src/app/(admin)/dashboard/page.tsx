@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [redirectToStd, setRedirectToStd] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+  const weddingDate = new Date('2026-09-06');
 
   useEffect(() => {
     fetch('/api/std/config')
