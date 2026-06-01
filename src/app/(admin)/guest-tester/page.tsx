@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { households } from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function GuestTesterPage() {

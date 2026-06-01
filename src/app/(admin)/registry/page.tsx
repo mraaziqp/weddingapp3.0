@@ -14,10 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle } from "lucide-react";
+import { fetchGifts } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
-const initialGifts = [
+const mockGifts = [
     { id: 1, name: "Le Creuset Dutch Oven", price: 3500, imageUrl: "https://picsum.photos/seed/dutch-oven/400/300", imageHint: "kitchenware cooking", storeUrl: "#", isCrowdfund: true, fundedAmount: 2500, category: "Kitchen", store: 'Yuppiechef' },
     { id: 2, name: "Sonos One Speaker Set", price: 4000, imageUrl: "https://picsum.photos/seed/sonos/400/300", imageHint: "tech audio", storeUrl: "#", isCrowdfund: false, fundedAmount: 4000, category: "Electronics", store: 'Takealot' },
     { id: 3, name: "Parachute Linen Sheets", price: 2500, imageUrl: "https://picsum.photos/seed/sheets/400/300", imageHint: "bedroom decor", storeUrl: "#", isCrowdfund: false, fundedAmount: 0, category: "Home", store: '@home' },
@@ -169,8 +171,21 @@ const CashFundCard = () => {
 
 
 export default function RegistryPage() {
-    const [gifts, setGifts] = useState<Gift[]>(initialGifts);
+    const [gifts, setGifts] = useState<Gift[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        fetchGifts()
+            .then(setGifts)
+            .catch(err => {
+                console.error('Failed to load gifts:', err);
+                toast({ variant: 'destructive', title: 'Failed to load gifts' });
+                setGifts(mockGifts);
+            })
+            .finally(() => setLoading(false));
+    }, [toast]);
 
     const handleAddGift = (newGift: Gift) => {
         setGifts(prevGifts => [newGift, ...prevGifts]);
@@ -185,7 +200,7 @@ export default function RegistryPage() {
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-[#d4af37] to-[#f6e7b7] text-black font-medium shadow-lg shadow-[#d4af37]/30 glossy-sweep">
+                <Button disabled={loading} className="bg-gradient-to-r from-[#d4af37] to-[#f6e7b7] text-black font-medium shadow-lg shadow-[#d4af37]/30 glossy-sweep">
                     <PlusCircle className="mr-2"/> Add New Gift
                 </Button>
             </DialogTrigger>
@@ -197,15 +212,22 @@ export default function RegistryPage() {
             </DialogContent>
         </Dialog>
       </div>
-      <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <CashFundCard/>
-        {gifts.map(gift => <GiftCard key={gift.id} gift={gift} />)}
-      </motion.div>
+      {loading && (
+        <div className="text-center py-12 text-white/40">
+          <p>Loading gifts...</p>
+        </div>
+      )}
+      {!loading && (
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <CashFundCard/>
+          {gifts.map(gift => <GiftCard key={gift.id} gift={gift} />)}
+        </motion.div>
+      )}
     </div>
   );
 }

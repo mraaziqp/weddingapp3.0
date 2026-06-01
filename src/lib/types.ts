@@ -103,6 +103,7 @@ export type TimelineEvent = {
   category: TimelineCategory;
   isPublic: boolean;
   duration?: number;   // minutes
+  sortOrder: number;
 };
 
 export type TrackColumn = 'must-play' | 'if-time' | 'do-not-play';
@@ -113,4 +114,5 @@ export type TrackItem = {
   artist: string;
   column: TrackColumn;
   requestedBy?: string; // guest name
+  sortOrder: number;
 };

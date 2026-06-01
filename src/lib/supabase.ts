@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Guest, Household } from './types';
+import type { Guest, Household, MenuItem, TimelineEvent, TrackItem, Gift } from './types';
 
 // Fall back to a dummy URL/key during static-generation (build) so that the
 // module can be loaded without throwing. Real env vars must be set on Vercel
@@ -47,6 +47,17 @@ export function dbToHousehold(h: Record<string, any>): Household {
         address: '',
         qrCode: h.qr_code,
         guests: (h.guests ?? []).map(dbToGuest),
+    };
+}
+
+export function dbToMenuItem(m: Record<string, any>): MenuItem {
+    return {
+        id: m.id,
+        name: m.name,
+        description: m.description ?? '—',
+        course: m.course as any,
+        dietaryFlags: m.dietary_flags ? m.dietary_flags.split(',').map((f: string) => f.trim()) : [],
+        sortOrder: m.sort_order ?? 0,
     };
 }
 
@@ -141,4 +152,160 @@ export async function lookupHouseholdByQr(qrCode: string): Promise<Household | n
         .single();
     if (error || !data) return null;
     return dbToHousehold(data);
+}
+
+// ── Menu Items ────────────────────────────────────────────────────────────────
+
+export async function fetchMenuItems(): Promise<MenuItem[]> {
+    const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(dbToMenuItem);
+}
+
+export async function addMenuItem(
+    name: string,
+    description: string,
+    course: string,
+    dietaryFlags: string[] = []
+): Promise<MenuItem> {
+    const id = `menu-${Date.now()}`;
+    const { error } = await supabase.from('menu_items').insert({
+        id,
+        name,
+        description: description || null,
+        course,
+        dietary_flags: dietaryFlags.length > 0 ? dietaryFlags.join(',') : null,
+        sort_order: 0,
+    });
+    if (error) throw error;
+    return {
+        id,
+        name,
+        description: description || '—',
+        course: course as any,
+        dietaryFlags,
+        sortOrder: 0,
+    };
+}
+
+export async function deleteMenuItem(id: string): Promise<void> {
+    const { error } = await supabase.from('menu_items').delete().eq('id', id);
+    if (error) throw error;
+}
+
+export async function updateMenuItemsOrder(items: MenuItem[]): Promise<void> {
+    const updates = items.map((item, idx) => ({
+        id: item.id,
+        sort_order: idx,
+    }));
+    for (const update of updates) {
+        const { error } = await supabase
+            .from('menu_items')
+            .update({ sort_order: update.sort_order })
+            .eq('id', update.id);
+        if (error) throw error;
+    }
+}
+
+// ── Timeline Events ───────────────────────────────────────────────────────────
+
+export function dbToTimelineEvent(e: Record<string, any>): TimelineEvent {
+    return {
+        id: e.id,
+        time: e.time,
+        title: e.title,
+        description: e.description ?? '',
+        category: e.category as any,
+        isPublic: e.is_public ?? true,
+        duration: e.duration ?? 30,
+        sortOrder: e.sort_order ?? 0,
+    };
+}
+
+export async function fetchTimelineEvents(): Promise<TimelineEvent[]> {
+    const { data, error } = await supabase
+        .from('timeline_events')
+        .select('*')
+        .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(dbToTimelineEvent);
+}
+
+export async function updateTimelineEventsOrder(events: TimelineEvent[]): Promise<void> {
+    for (let i = 0; i < events.length; i++) {
+        const { error } = await supabase
+            .from('timeline_events')
+            .update({ sort_order: i })
+            .eq('id', events[i].id);
+        if (error) throw error;
+    }
+}
+
+// ── Tracks (Playlist) ─────────────────────────────────────────────────────────
+
+export function dbToTrackItem(t: Record<string, any>): TrackItem {
+    return {
+        id: t.id,
+        title: t.title,
+        artist: t.artist ?? 'Unknown',
+        column: t.column as any,
+        requestedBy: t.requested_by ?? null,
+        sortOrder: t.sort_order ?? 0,
+    };
+}
+
+export async function fetchTracks(): Promise<TrackItem[]> {
+    const { data, error } = await supabase
+        .from('tracks')
+        .select('*')
+        .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(dbToTrackItem);
+}
+
+export async function updateTrackColumn(
+    trackId: string,
+    column: 'must-play' | 'if-time' | 'do-not-play'
+): Promise<void> {
+    const { error } = await supabase
+        .from('tracks')
+        .update({ column })
+        .eq('id', trackId);
+    if (error) throw error;
+}
+
+export async function updateTracksOrder(tracks: TrackItem[]): Promise<void> {
+    for (let i = 0; i < tracks.length; i++) {
+        const { error } = await supabase
+            .from('tracks')
+            .update({ sort_order: i })
+            .eq('id', tracks[i].id);
+        if (error) throw error;
+    }
+}
+
+// ── Gifts ─────────────────────────────────────────────────────────────────────
+
+export function dbToGift(g: Record<string, any>): Gift {
+    return {
+        id: g.id,
+        name: g.name,
+        price: g.price ?? 0,
+        imageUrl: g.image_url ?? '',
+        storeUrl: g.store_url ?? '',
+        isCrowdfund: g.is_crowdfund ?? false,
+        fundedAmount: g.funded_amount ?? 0,
+    };
+}
+
+export async function fetchGifts(): Promise<Gift[]> {
+    const { data, error } = await supabase
+        .from('gifts')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(dbToGift);
 }

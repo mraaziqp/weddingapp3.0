@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { Gift, QrCode, UserPlus, Map, PartyPopper, MonitorPlay, Flame, LayoutTemplate, SmartphoneNfc } from "lucide-react";
+import { Gift, QrCode, UserPlus, Map, PartyPopper, MonitorPlay, Flame, LayoutTemplate, SmartphoneNfc, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { differenceInSeconds } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { usePartyMode } from '@/hooks/use-party-mode';
 import { cn } from '@/lib/utils';
+import { fetchDashboardStats } from '@/lib/stats';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -218,10 +219,10 @@ const MusicWidget = () => (
     </MotionCard>
 );
 
-const RSVPStatus = () => {
-    const percentage = Math.round((186 / 250) * 100);
+const RSVPStatus = ({ confirmed, total }: { confirmed: number; total: number }) => {
+    const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
     const [offset, setOffset] = useState(251);
-    
+
     useEffect(() => setOffset(251 - (percentage / 100) * 251), [percentage]);
 
     return (
@@ -251,10 +252,10 @@ const RSVPStatus = () => {
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="font-serif text-3xl font-light text-white">186</span>
+                        <span className="font-serif text-3xl font-light text-white">{confirmed}</span>
                     </div>
                 </div>
-                 <p className="text-[10px] uppercase tracking-widest text-white/40 mt-4">Out of 250</p>
+                 <p className="text-[10px] uppercase tracking-widest text-white/40 mt-4">Out of {total}</p>
             </CardContent>
         </MotionCard>
     );
@@ -309,8 +310,16 @@ const SeatingMiniMap = () => (
 );
 
 export function AnalyticsDashboard() {
+  const [stats, setStats] = useState({ confirmedGuests: 0, totalGuests: 0 });
+
+  useEffect(() => {
+    fetchDashboardStats()
+      .then(data => setStats({ confirmedGuests: data.confirmedGuests, totalGuests: data.totalGuests }))
+      .catch(err => console.error('Failed to fetch stats:', err));
+  }, []);
+
   return (
-    <motion.div 
+    <motion.div
       className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(180px,auto)] pb-20"
       variants={containerVariants}
       initial="hidden"
@@ -319,7 +328,7 @@ export function AnalyticsDashboard() {
         <CountdownCard />
         <QuickActions />
         <MusicWidget />
-        <RSVPStatus />
+        <RSVPStatus confirmed={stats.confirmedGuests} total={stats.totalGuests || 250} />
         <LatestGift />
         <SeatingMiniMap />
     </motion.div>

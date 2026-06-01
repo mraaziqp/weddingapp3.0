@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   Clock, GripVertical, Plus, Globe, Lock, ArrowLeft, Save, Eye,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { initialTimeline } from '@/lib/mock-data';
+import { fetchTimelineEvents, updateTimelineEventsOrder } from '@/lib/supabase';
 import type { TimelineEvent, TimelineCategory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 // ── Category metadata ──────────────────────────────────────────────────────
 const CAT_META: Record<TimelineCategory, { label: string; color: string; bg: string }> = {
@@ -152,9 +153,21 @@ function EventCard({
 
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function RunOfShowPage() {
-  const [events, setEvents] = useState<TimelineEvent[]>(initialTimeline);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchTimelineEvents()
+      .then(setEvents)
+      .catch(err => {
+        console.error('Failed to load timeline:', err);
+        toast({ variant: 'destructive', title: 'Failed to load timeline' });
+      })
+      .finally(() => setLoading(false));
+  }, [toast]);
 
   const addEvent = () => {
     const lastTime = events[events.length - 1]?.time ?? '18:00';
@@ -246,8 +259,28 @@ export default function RunOfShowPage() {
         ))}
       </div>
 
-      {/* Timeline */}
-      <Reorder.Group axis="y" values={events} onReorder={v => startTransition(() => setEvents(v as TimelineEvent[]))}>
+      {loading && (
+        <div className="text-center py-12 text-white/40">
+          <p>Loading timeline...</p>
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          {/* Timeline */}
+          <Reorder.Group
+            axis="y"
+            values={events}
+            onReorder={v => startTransition(async () => {
+              const reordered = v as TimelineEvent[];
+              setEvents(reordered);
+              try {
+                await updateTimelineEventsOrder(reordered);
+              } catch (err) {
+                console.error('Failed to save order:', err);
+                toast({ variant: 'destructive', title: 'Failed to save order' });
+              }
+            })}>
         <div className="space-y-0">
           <AnimatePresence>
             {events.map(event => (
@@ -271,12 +304,15 @@ export default function RunOfShowPage() {
         <Button
           variant="outline"
           onClick={addEvent}
+          disabled={loading}
           className="gap-2 border-white/10 text-white/50 hover:text-white hover:border-white/30"
         >
           <Plus size={16} />
           Add Event
         </Button>
       </motion.div>
+        </>
+      )}
     </div>
   );
 }

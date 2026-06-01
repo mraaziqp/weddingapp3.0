@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useTransition, useState } from 'react';
+import { useMemo, useTransition, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -15,11 +15,13 @@ import {
   FlameKindling, Nut, ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
-import { allGuests, initialMenuItems } from '@/lib/mock-data';
+import { fetchMenuItems, addMenuItem, deleteMenuItem, updateMenuItemsOrder } from '@/lib/supabase';
+import { allGuests } from '@/lib/mock-data';
 import type { MenuItem, MenuCourse, DietaryFlag } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const COURSES: { id: MenuCourse; label: string; emoji: string; accent: string }[] = [
@@ -223,9 +225,21 @@ function CourseColumn({
 
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function CulinaryPage() {
-  const [items, setItems] = useState<MenuItem[]>(initialMenuItems);
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [, startTransition] = useTransition();
+  const { toast } = useToast();
   const snapshot = useMemo(buildSnapshot, []);
+
+  useEffect(() => {
+    fetchMenuItems()
+      .then(setItems)
+      .catch(err => {
+        console.error('Failed to load menu items:', err);
+        toast({ variant: 'destructive', title: 'Failed to load menu' });
+      })
+      .finally(() => setLoading(false));
+  }, [toast]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -233,29 +247,47 @@ export default function CulinaryPage() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    startTransition(() => {
-      setItems(prev => {
-        const oldIdx = prev.findIndex(i => i.id === active.id);
-        const newIdx = prev.findIndex(i => i.id === over.id);
-        if (oldIdx === -1 || newIdx === -1) return prev;
-        return arrayMove(prev, oldIdx, newIdx);
-      });
+    startTransition(async () => {
+      const newItems = arrayMove(
+        items,
+        items.findIndex(i => i.id === active.id),
+        items.findIndex(i => i.id === over.id)
+      );
+      setItems(newItems);
+      try {
+        await updateMenuItemsOrder(newItems);
+      } catch (err) {
+        console.error('Failed to save order:', err);
+        toast({ variant: 'destructive', title: 'Failed to save order' });
+        setItems(items);
+      }
     });
   };
 
-  const removeItem = (id: string) => startTransition(() => setItems(p => p.filter(i => i.id !== id)));
+  const removeItem = (id: string) => {
+    startTransition(async () => {
+      setItems(p => p.filter(i => i.id !== id));
+      try {
+        await deleteMenuItem(id);
+      } catch (err) {
+        console.error('Failed to delete item:', err);
+        toast({ variant: 'destructive', title: 'Failed to delete item' });
+        // Re-fetch to restore state
+        const updated = await fetchMenuItems();
+        setItems(updated);
+      }
+    });
+  };
 
   const addItem = (course: MenuCourse, name: string, desc: string) => {
-    startTransition(() => {
-      const newItem: MenuItem = {
-        id: `m-${Date.now()}`,
-        name,
-        description: desc || '—',
-        course,
-        dietaryFlags: [],
-        sortOrder: items.filter(i => i.course === course).length,
-      };
-      setItems(p => [...p, newItem]);
+    startTransition(async () => {
+      try {
+        const newItem = await addMenuItem(name, desc, course, []);
+        setItems(p => [...p, newItem]);
+      } catch (err) {
+        console.error('Failed to add item:', err);
+        toast({ variant: 'destructive', title: 'Failed to add item' });
+      }
     });
   };
 
@@ -313,6 +345,7 @@ export default function CulinaryPage() {
           </div>
           <Button
             onClick={handlePrint}
+            disabled={loading}
             className="gap-2 bg-[#d4af37] text-black font-bold hover:bg-[#b8992d] shadow-[0_4px_20px_rgba(212,175,55,0.3)] flex-shrink-0"
           >
             <Printer size={15} />
@@ -320,7 +353,15 @@ export default function CulinaryPage() {
           </Button>
         </div>
 
-        {/* Chef's Snapshot */}
+        {loading && (
+          <div className="text-center py-12 text-white/40">
+            <p>Loading menu items...</p>
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* Chef's Snapshot */}
         <motion.div
           className="rounded-2xl p-5 border"
           style={{ background: 'rgba(249,115,22,0.06)', borderColor: 'rgba(249,115,22,0.2)' }}
@@ -369,6 +410,8 @@ export default function CulinaryPage() {
             {/* Drag overlay is handled by DishCard's own position */}
           </DragOverlay>
         </DndContext>
+          </>
+        )}
       </div>
     </>
   );
