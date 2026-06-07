@@ -3,6 +3,7 @@
 import { households } from '@/lib/mock-data';
 import type { Household } from '@/lib/types';
 import { EnvelopeReveal } from '@/components/envelope-reveal';
+import { InvitationRSVP } from '@/components/invitation-rsvp';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,7 @@ export default function InvitePage() {
   const guestId = params?.guestId as string;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [showInvitation, setShowInvitation] = useState(false);
 
   // This logic runs only on the client, avoiding SSR issues with localStorage.
   useEffect(() => {
@@ -24,12 +26,21 @@ export default function InvitePage() {
           // Redirect to the new event-day experience
           router.replace(`/event?guestId=${guestId}`);
         } else {
-          // If not event day, proceed to show the invitation.
-          setIsLoading(false);
+          // Check if invitation mode is enabled
+          fetch('/api/std/config')
+            .then(r => r.json())
+            .then(data => {
+              setShowInvitation(data.config?.invitationMode === true);
+              setIsLoading(false);
+            })
+            .catch(() => {
+              setShowInvitation(false);
+              setIsLoading(false);
+            });
         }
     }
   }, [guestId, router]);
-  
+
   const household: Household | undefined = households.find(h => h.qrCode === guestId);
 
   // Show a loading skeleton while we decide which route to show
@@ -57,10 +68,17 @@ export default function InvitePage() {
       guests: [],
       qrCode: 'FALLBACK-QR'
     };
-    return <EnvelopeReveal household={fallbackHousehold} />;
+    return showInvitation ? (
+      <InvitationRSVP household={fallbackHousehold} />
+    ) : (
+      <EnvelopeReveal household={fallbackHousehold} />
+    );
   }
 
-  // On the event day, this component will be replaced by the redirect.
-  // Otherwise, it will show the envelope reveal.
-  return <EnvelopeReveal household={household} />;
+  // Show invitation if mode is on, otherwise show the envelope reveal.
+  return showInvitation ? (
+    <InvitationRSVP household={household} />
+  ) : (
+    <EnvelopeReveal household={household} />
+  );
 }
