@@ -2,62 +2,14 @@
 > nextn@0.1.0 dev
 > next dev -p 3000 -p 5000
 
-   ▲ Next.js 15.5.9
-   - Local:        http://localhost:5000
-   - Network:      http://192.168.56.1:5000
-   - Environments: .env.local
-
- ✓ Starting...
- ✓ Ready in 2s
- ✓ Compiled /middleware in 176ms (159 modules)
- ○ Compiling /api/std/config ...
- ✓ Compiled /api/std/config in 822ms (343 modules)
- PUT /api/std/config 200 in 4755ms
- ○ Compiling /invite/[guestId] ...
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\hiberfil.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\swapfile.sys'
-
-
-Source path: K:\Projects\Wdding 3.0\src\app\globals.css
-Setting up new context...
-Finding changed files: 11.447ms
-Reading changed files: 187.863ms
-Sorting candidates: 6.583ms
-
-[1m[33mwarn[39m[22m - The class `duration-[15s]` is ambiguous and matches multiple utilities.
-[1m[33mwarn[39m[22m - If this is content and not a class, replace it with `duration-&lsqb;15s&rsqb;` to silence this warning.
-Generate rules: 230.202ms
-Build stylesheet: 4.593ms
-Potential classes:  12191
-Active contexts:  1
-JIT TOTAL: 580.06ms
-
-
- ✓ Compiled /invite/[guestId] in 3s (1656 modules)
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\hiberfil.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\swapfile.sys'
-
-
-Source path: K:\Projects\Wdding 3.0\src\app\globals.css
-Finding changed files: 10.845ms
-Reading changed files: 0.009ms
-Sorting candidates: 0.004ms
-Generate rules: 0.078ms
-Build stylesheet: 0.004ms
-Potential classes:  1
-Active contexts:  1
-JIT TOTAL: 36.854ms
-
-
- ✓ Compiled in 324ms (716 modules)
- GET /invite/HH-001 200 in 3911ms
- PUT /api/std/config 200 in 825ms
- GET /invite/HH-001 200 in 61ms
- PUT /api/std/config 200 in 1070ms
- GET /invite/HH-001 200 in 74ms
+ ⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::5000
+    at <unknown> (Error: listen EADDRINUSE: address already in use :::5000)
+    at new Promise (<anonymous>) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+[?25h

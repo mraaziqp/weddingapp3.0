@@ -372,7 +372,7 @@ export default function TablePlannerPage() {
                     {/* Visual selection outline highlight */}
                     {isSelected && (
                       item.shape === 'circle' ? (
-                        <circle cx={itemX} cy={itemY} r={radius + 6} fill="none" stroke="#d4af37" strokeWidth="1.5" strokeDasharray="3,3" className="animate-spin duration-[15s]" />
+                        <circle cx={itemX} cy={itemY} r={radius + 6} fill="none" stroke="#d4af37" strokeWidth="1.5" strokeDasharray="3,3" className="animate-spin" style={{ animationDuration: '15s' }} />
                       ) : (
                         <rect 
                           x={itemX - (item.width * ppi) / 2 - 6} 
