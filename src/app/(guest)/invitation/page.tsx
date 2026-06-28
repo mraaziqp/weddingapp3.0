@@ -136,28 +136,33 @@ export default function InvitationPage() {
               <>
                 {/* Confetti animation */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                  {Array.from({ length: 30 }).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute text-2xl"
-                      initial={{
-                        opacity: 1,
-                        y: -50,
-                        x: Math.random() * window.innerWidth,
-                      }}
-                      animate={{
-                        opacity: 0,
-                        y: window.innerHeight,
-                      }}
-                      transition={{
-                        duration: 3,
-                        delay: Math.random() * 0.5,
-                        ease: 'easeIn',
-                      }}
-                    >
-                      {['🎉', '💍', '✨', '🎊', '💕'][Math.floor(Math.random() * 5)]}
-                    </motion.div>
-                  ))}
+                  {Array.from({ length: 30 }).map((_, i) => {
+                    const randomX = Math.random() * 100;
+                    const randomDelay = Math.random() * 0.5;
+                    const confetti = ['🎉', '💍', '✨', '🎊', '💕'][Math.floor(Math.random() * 5)];
+                    return (
+                      <motion.div
+                        key={i}
+                        className="absolute text-2xl pointer-events-none"
+                        initial={{
+                          opacity: 1,
+                          y: 0,
+                          x: `${randomX}%`,
+                        }}
+                        animate={{
+                          opacity: 0,
+                          y: '100vh',
+                        }}
+                        transition={{
+                          duration: 3,
+                          delay: randomDelay,
+                          ease: 'easeIn',
+                        }}
+                      >
+                        {confetti}
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 <motion.div

@@ -52,3 +52,338 @@ JIT TOTAL: 35.693ms
  ○ Compiling /middleware ...
  ✓ Compiled /middleware in 983ms (800 modules)
  ○ Compiling /invitation-editor ...
+ ✓ Compiled /invitation-editor in 2.1s (1569 modules)
+ GET /invitation-editor 200 in 2456ms
+ ✓ Compiled /api/invitation/config in 348ms (1590 modules)
+ GET /api/invitation/config 200 in 4143ms
+ ✓ Compiled /api/rsvp in 277ms (1592 modules)
+ GET /api/rsvp 200 in 696ms
+ GET /invitation 200 in 201ms
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 11.1ms
+Reading changed files: 7.517ms
+Sorting candidates: 0.193ms
+Generate rules: 3.534ms
+Build stylesheet: 4.806ms
+Potential classes:  482
+Active contexts:  1
+JIT TOTAL: 55.047ms
+
+
+ ✓ Compiled in 305ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 8.59ms
+Reading changed files: 4.294ms
+Sorting candidates: 0.018ms
+Generate rules: 0.603ms
+Build stylesheet: 2.779ms
+Potential classes:  55
+Active contexts:  1
+JIT TOTAL: 38.547ms
+
+
+ ✓ Compiled in 184ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 7.88ms
+Reading changed files: 0.004ms
+Sorting candidates: 0.002ms
+Generate rules: 0.036ms
+Build stylesheet: 0.001ms
+Potential classes:  1
+Active contexts:  1
+JIT TOTAL: 27.527ms
+
+
+ ✓ Compiled in 317ms (831 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 13.659ms
+Reading changed files: 8.532ms
+Sorting candidates: 0.161ms
+Generate rules: 1.428ms
+Build stylesheet: 0.002ms
+Potential classes:  249
+Active contexts:  1
+JIT TOTAL: 72.026ms
+
+
+ ✓ Compiled in 365ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 7.308ms
+Reading changed files: 5.128ms
+Sorting candidates: 0.148ms
+Generate rules: 2.208ms
+Build stylesheet: 2.265ms
+Potential classes:  372
+Active contexts:  1
+JIT TOTAL: 44.076ms
+
+
+ ✓ Compiled in 184ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 11.484ms
+Reading changed files: 9.858ms
+Sorting candidates: 0.621ms
+Generate rules: 3.291ms
+Build stylesheet: 0.003ms
+Potential classes:  412
+Active contexts:  1
+JIT TOTAL: 62.268ms
+
+
+ ✓ Compiled in 240ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.578ms
+Reading changed files: 10.438ms
+Sorting candidates: 0.264ms
+Generate rules: 1.865ms
+Build stylesheet: 0.002ms
+Potential classes:  421
+Active contexts:  1
+JIT TOTAL: 101.113ms
+
+
+ ✓ Compiled in 265ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.164ms
+Reading changed files: 7.693ms
+Sorting candidates: 0.217ms
+Generate rules: 2.708ms
+Build stylesheet: 0.002ms
+Potential classes:  440
+Active contexts:  1
+JIT TOTAL: 43.435ms
+
+
+ ⨯ ./src/app/(guest)/invitation/page.tsx
+Error:   [31mx[0m Expected '</', got '}'
+     ,-[[36;1;4mK:\Projects\Wdding 3.0\src\app\(guest)\invitation\page.tsx[0m:320:1]
+ [2m317[0m |               </motion.div>
+ [2m318[0m |             </CardContent>
+ [2m319[0m |           </Card>
+ [2m320[0m |         )}
+     : [35;1m         ^[0m
+ [2m321[0m |       </motion.div>
+ [2m322[0m |     </div>
+ [2m323[0m |   );
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/(guest)/invitation/page.tsx
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 8.787ms
+Reading changed files: 6.537ms
+Sorting candidates: 0.141ms
+Generate rules: 2.108ms
+Build stylesheet: 0.003ms
+Potential classes:  451
+Active contexts:  1
+JIT TOTAL: 42.887ms
+
+
+ ⨯ ./src/app/(guest)/invitation/page.tsx
+Error:   [31mx[0m Expected '</', got '}'
+     ,-[[36;1;4mK:\Projects\Wdding 3.0\src\app\(guest)\invitation\page.tsx[0m:336:1]
+ [2m333[0m |               </motion.div>
+ [2m334[0m |             </CardContent>
+ [2m335[0m |           </Card>
+ [2m336[0m |         )}
+     : [35;1m         ^[0m
+ [2m337[0m |       </motion.div>
+ [2m338[0m |     </div>
+ [2m339[0m |   );
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/(guest)/invitation/page.tsx
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.008ms
+Reading changed files: 7.139ms
+Sorting candidates: 0.177ms
+Generate rules: 3.539ms
+Build stylesheet: 2.446ms
+Potential classes:  509
+Active contexts:  1
+JIT TOTAL: 50.784ms
+
+
+ ⨯ ./src/app/(guest)/invitation/page.tsx
+Error:   [31mx[0m Expected '</', got '}'
+     ,-[[36;1;4mK:\Projects\Wdding 3.0\src\app\(guest)\invitation\page.tsx[0m:392:1]
+ [2m389[0m |               </motion.div>
+ [2m390[0m |             </CardContent>
+ [2m391[0m |           </Card>
+ [2m392[0m |         )}
+     : [35;1m         ^[0m
+ [2m393[0m |       </motion.div>
+ [2m394[0m |     </div>
+ [2m395[0m |   );
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/(guest)/invitation/page.tsx
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.02ms
+Reading changed files: 0.003ms
+Sorting candidates: 0.003ms
+Generate rules: 0.037ms
+Build stylesheet: 0.001ms
+Potential classes:  1
+Active contexts:  1
+JIT TOTAL: 29.474ms
+
+
+ ⨯ ./src/app/(guest)/invitation/page.tsx
+Error:   [31mx[0m Expected '</', got '}'
+     ,-[[36;1;4mK:\Projects\Wdding 3.0\src\app\(guest)\invitation\page.tsx[0m:392:1]
+ [2m389[0m |               </motion.div>
+ [2m390[0m |             </CardContent>
+ [2m391[0m |           </Card>
+ [2m392[0m |         )}
+     : [35;1m         ^[0m
+ [2m393[0m |       </motion.div>
+ [2m394[0m |     </div>
+ [2m395[0m |   );
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/(guest)/invitation/page.tsx
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 7.34ms
+Reading changed files: 7.337ms
+Sorting candidates: 0.24ms
+Generate rules: 2.963ms
+Build stylesheet: 0.002ms
+Potential classes:  515
+Active contexts:  1
+JIT TOTAL: 42.108ms
+
+
+ ✓ Compiled in 195ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 7.069ms
+Reading changed files: 6.419ms
+Sorting candidates: 0.144ms
+Generate rules: 1.825ms
+Build stylesheet: 0.001ms
+Potential classes:  406
+Active contexts:  1
+JIT TOTAL: 35.623ms
+
+
+ ✓ Compiled in 176ms (686 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.218ms
+Reading changed files: 8.072ms
+Sorting candidates: 0.187ms
+Generate rules: 2.168ms
+Build stylesheet: 0.002ms
+Potential classes:  411
+Active contexts:  1
+JIT TOTAL: 41.355ms
+
+
+ ✓ Compiled in 251ms (686 modules)
+ ✓ Compiled /invitation in 419ms (802 modules)
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\hiberfil.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\swapfile.sys'
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2030272204'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2008112808'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2008112808'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2008112808'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2030272204'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2008112808'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2008112808'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2030272204'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2030272204'
+}
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function] {
+  digest: '1635761953'
+}
+ ⨯ Error: Could not find the module "K:\Projects\Wdding 3.0\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2030272204'
+}
+[TypeError: __webpack_modules__[moduleId] is not a function]
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function]
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function] {
+  page: '/invitation'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1329ms (1814 modules)
+ GET /invitation 500 in 4469ms
+ ✓ Compiled /invitation-editor in 307ms (1087 modules)
+ GET /invitation-editor 200 in 704ms
