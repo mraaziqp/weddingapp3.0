@@ -186,7 +186,7 @@ export async function addMenuItem(
         name,
         description: description || '—',
         course: course as any,
-        dietaryFlags,
+        dietaryFlags: (dietaryFlags as any[]) as any,
         sortOrder: 0,
     };
 }

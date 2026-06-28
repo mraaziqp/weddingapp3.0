@@ -288,7 +288,7 @@ export default function VibeControllerPage() {
 
   const addTrack = (title: string, artist: string, col: TrackColumn) => {
     startTransition(() => {
-      setTracks(prev => [...prev, { id: `t-${Date.now()}`, title, artist, column: col }]);
+      setTracks(prev => [...prev, { id: `t-${Date.now()}`, title, artist, column: col, sortOrder: prev.length } as TrackItem]);
     });
   };
 

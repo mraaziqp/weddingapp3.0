@@ -387,3 +387,25 @@ Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\swapf
  GET /invitation 500 in 4469ms
  ✓ Compiled /invitation-editor in 307ms (1087 modules)
  GET /invitation-editor 200 in 704ms
+ ○ Compiling /rsvp-analytics ...
+ ✓ Compiled /rsvp-analytics in 2.4s (2971 modules)
+ GET /rsvp-analytics 200 in 2911ms
+ ✓ Compiled /api/invitation/config in 267ms (1639 modules)
+ GET /api/invitation/config 200 in 2439ms
+ ✓ Compiled /api/rsvp in 224ms (1641 modules)
+ GET /api/rsvp 200 in 628ms
+ GET /invitation 200 in 199ms
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 13.108ms
+Reading changed files: 84.503ms
+Sorting candidates: 0.386ms
+Generate rules: 3.94ms
+Build stylesheet: 0.002ms
+Potential classes:  513
+Active contexts:  1
+JIT TOTAL: 170.881ms
+
+
+ ✓ Compiled in 712ms (2264 modules)

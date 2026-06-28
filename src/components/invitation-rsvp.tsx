@@ -176,7 +176,7 @@ export function InvitationRSVP({ household }: { household: Household }) {
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
-                                  <p className="font-semibold text-gray-800">{guest.name || `Guest ${idx + 1}`}</p>
+                                  <p className="font-semibold text-gray-800">{`${guest.firstName} ${guest.lastName}` || `Guest ${idx + 1}`}</p>
                                   {guest.dietaryRestrictions && (
                                     <p className="text-xs text-gray-500 mt-1">📌 {guest.dietaryRestrictions}</p>
                                   )}

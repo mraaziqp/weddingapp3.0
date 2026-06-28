@@ -1,0 +1,85 @@
+
+> nextn@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Setting up new context...
+Finding changed files: 12.364ms
+Reading changed files: 202.537ms
+Sorting candidates: 7.129ms
+Generate rules: 234.992ms
+Build stylesheet: 4.736ms
+Potential classes:  12868
+Active contexts:  1
+JIT TOTAL: 587.534ms
+
+
+ ✓ Compiled successfully in 6.5s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/39) ...
+   Generating static pages (9/39) 
+   Generating static pages (19/39) 
+   Generating static pages (29/39) 
+ ✓ Generating static pages (39/39)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                      153 B         102 kB
+├ ○ /_not-found                             1 kB         103 kB
+├ ƒ /admin                                 153 B         102 kB
+├ ○ /ai-secretary                        7.17 kB         214 kB
+├ ƒ /api/export/guests                     153 B         102 kB
+├ ƒ /api/invitation/config                 153 B         102 kB
+├ ƒ /api/rsvp                              153 B         102 kB
+├ ƒ /api/std/config                        153 B         102 kB
+├ ƒ /api/std/track                         153 B         102 kB
+├ ƒ /api/upload                            153 B         102 kB
+├ ○ /budget                              6.33 kB         296 kB
+├ ○ /dashboard                           16.2 kB         232 kB
+├ ○ /event                               12.3 kB         243 kB
+├ ○ /gifts                               10.2 kB         160 kB
+├ ○ /guest-tester                        10.8 kB         162 kB
+├ ○ /guests                              17.3 kB         282 kB
+├ ○ /invitation                          6.03 kB         153 kB
+├ ○ /invitation-editor                   6.98 kB         154 kB
+├ ƒ /invite/[guestId]                    21.5 kB         210 kB
+├ ƒ /invite/[guestId]/camera             1.53 kB         236 kB
+├ ○ /invites                             9.31 kB         176 kB
+├ ○ /live-wall                           2.43 kB         155 kB         15s      1y
+├ ○ /planner                             5.15 kB         149 kB
+├ ○ /planner/culinary                    10.2 kB         238 kB
+├ ○ /planner/music                       6.56 kB         175 kB
+├ ○ /planner/table-planner               9.85 kB         169 kB
+├ ○ /planner/timeline                    12.2 kB         222 kB
+├ ○ /playlist                            7.61 kB         214 kB
+├ ○ /qr-scanner                          9.23 kB         220 kB
+├ ○ /registry                            6.23 kB         281 kB
+├ ○ /rsvp-analytics                      5.63 kB         258 kB
+├ ○ /save-the-date                       38.6 kB         199 kB
+├ ○ /seating                             13.7 kB         213 kB
+├ ○ /sitemap.xml                           153 B         102 kB
+├ ○ /std                                 9.47 kB         157 kB
+├ ○ /theme                                6.4 kB         186 kB
+├ ○ /vault                               7.07 kB         219 kB
+├ ○ /vendors                              6.6 kB         190 kB
+└ ○ /venue-screen                        5.47 kB         151 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-de0c1abd22c7cccd.js      45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js  54.2 kB
+  └ other shared chunks (total)          2.24 kB
+
+
+ƒ Middleware                             33.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -185,7 +185,9 @@ export default function RunOfShowPage() {
           description: '',
           category: 'other',
           isPublic: false,
-        },
+          duration: 30,
+          sortOrder: prev.length,
+        } as TimelineEvent,
       ]);
     });
   };

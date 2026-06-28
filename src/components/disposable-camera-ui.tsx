@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
 
 const TOTAL_SHOTS = 20;

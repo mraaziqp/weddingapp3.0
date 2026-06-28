@@ -105,7 +105,6 @@ export function QRCodeModal({
               value={invitationUrl}
               size={200}
               level="H"
-              includeMargin={true}
             />
           </div>
 

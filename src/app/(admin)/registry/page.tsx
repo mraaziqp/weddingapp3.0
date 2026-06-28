@@ -20,15 +20,15 @@ import { fetchGifts } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 const mockGifts = [
-    { id: 1, name: "Le Creuset Dutch Oven", price: 3500, imageUrl: "https://picsum.photos/seed/dutch-oven/400/300", imageHint: "kitchenware cooking", storeUrl: "#", isCrowdfund: true, fundedAmount: 2500, category: "Kitchen", store: 'Yuppiechef' },
-    { id: 2, name: "Sonos One Speaker Set", price: 4000, imageUrl: "https://picsum.photos/seed/sonos/400/300", imageHint: "tech audio", storeUrl: "#", isCrowdfund: false, fundedAmount: 4000, category: "Electronics", store: 'Takealot' },
-    { id: 3, name: "Parachute Linen Sheets", price: 2500, imageUrl: "https://picsum.photos/seed/sheets/400/300", imageHint: "bedroom decor", storeUrl: "#", isCrowdfund: false, fundedAmount: 0, category: "Home", store: '@home' },
-    { id: 4, name: "Honeymoon Airfare", price: 10000, imageUrl: "https://picsum.photos/seed/honeymoon/400/300", imageHint: "travel airplane", storeUrl: "#", isCrowdfund: true, fundedAmount: 8000, category: "Honeymoon", store: 'Custom' },
-    { id: 5, name: "Vitamix Blender", price: 5000, imageUrl: "https://picsum.photos/seed/blender/400/300", imageHint: "kitchen appliance", storeUrl: "#", isCrowdfund: false, fundedAmount: 5000, category: "Kitchen", store: 'Yuppiechef' },
-    { id: 6, name: "National Park Pass", price: 800, imageUrl: "https://picsum.photos/seed/park-pass/400/300", imageHint: "travel adventure", storeUrl: "#", isCrowdfund: false, fundedAmount: 0, category: "Experiences", store: 'Custom' },
+    { id: '1', name: "Le Creuset Dutch Oven", price: 3500, imageUrl: "https://picsum.photos/seed/dutch-oven/400/300", storeUrl: "#", isCrowdfund: true, fundedAmount: 2500 },
+    { id: '2', name: "Sonos One Speaker Set", price: 4000, imageUrl: "https://picsum.photos/seed/sonos/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 4000 },
+    { id: '3', name: "Parachute Linen Sheets", price: 2500, imageUrl: "https://picsum.photos/seed/sheets/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 0 },
+    { id: '4', name: "Honeymoon Airfare", price: 10000, imageUrl: "https://picsum.photos/seed/honeymoon/400/300", storeUrl: "#", isCrowdfund: true, fundedAmount: 8000 },
+    { id: '5', name: "Vitamix Blender", price: 5000, imageUrl: "https://picsum.photos/seed/blender/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 5000 },
+    { id: '6', name: "National Park Pass", price: 800, imageUrl: "https://picsum.photos/seed/park-pass/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 0 },
 ];
 
-type Gift = typeof initialGifts[0];
+type Gift = typeof mockGifts[0];
 
 const giftSchema = z.object({
     name: z.string().min(1, 'Item name is required'),
@@ -55,9 +55,8 @@ const GiftCard = ({ gift }: { gift: Gift }) => {
         <motion.div variants={itemVariants}>
             <Card className="glass-card !p-0 !rounded-2xl overflow-hidden group">
                 <div className="relative">
-                    <Image src={gift.imageUrl} alt={gift.name} width={400} height={300} className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" data-ai-hint={gift.imageHint}/>
+                    <Image src={gift.imageUrl} alt={gift.name} width={400} height={300} className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" />
                     {isFunded && <Badge className="absolute top-2 right-2 bg-aurora-gold text-black">Funded</Badge>}
-                    <Badge variant="secondary" className="absolute top-2 left-2 bg-black/50 text-white border-none">{gift.store}</Badge>
                 </div>
                 <div className="p-4 space-y-3">
                     <h3 className="font-headline text-lg truncate text-aurora-soft-gold">{gift.name}</h3>

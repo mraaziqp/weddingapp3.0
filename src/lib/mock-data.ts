@@ -63,25 +63,25 @@ export const initialMenuItems: MenuItem[] = [
 ];
 
 export const initialTimeline: TimelineEvent[] = [
-    { id: 'tl-1', time: '13:30', title: 'Venue Opens',         description: 'Decorators complete final setup',             category: 'other',         isPublic: false, duration: 30  },
-    { id: 'tl-2', time: '14:00', title: 'Guest Arrival',       description: 'Doors open, welcome drinks & canapés',        category: 'arrival',       isPublic: true,  duration: 90  },
-    { id: 'tl-3', time: '15:30', title: 'Nikkah Ceremony',     description: 'The official union of Razia & Abduraziq',     category: 'ceremony',      isPublic: true,  duration: 45  },
-    { id: 'tl-4', time: '16:15', title: 'Photoshoots',         description: 'Couple portraits & family photos',            category: 'reception',     isPublic: true,  duration: 60  },
-    { id: 'tl-5', time: '17:00', title: 'Speeches & Toasts',   description: 'Best man, maid of honour, father of bride',   category: 'entertainment', isPublic: true,  duration: 45  },
-    { id: 'tl-6', time: '18:00', title: 'Dinner Service',      description: 'Starters, mains, desserts',                   category: 'dinner',        isPublic: true,  duration: 90  },
-    { id: 'tl-7', time: '19:30', title: 'First Dance',         description: 'Razia & Abduraziq take the floor',            category: 'entertainment', isPublic: true,  duration: 15  },
-    { id: 'tl-8', time: '20:00', title: 'Dance Floor Opens',   description: 'DJ set begins, full party mode activated',    category: 'entertainment', isPublic: true,  duration: 180 },
-    { id: 'tl-9', time: '23:00', title: 'Grand Farewell',      description: 'Sparkler send-off & guest departure',         category: 'other',         isPublic: true,  duration: 30  },
+    { id: 'tl-1', time: '13:30', title: 'Venue Opens',         description: 'Decorators complete final setup',             category: 'other',         isPublic: false, duration: 30,  sortOrder: 0 },
+    { id: 'tl-2', time: '14:00', title: 'Guest Arrival',       description: 'Doors open, welcome drinks & canapés',        category: 'arrival',       isPublic: true,  duration: 90,  sortOrder: 1 },
+    { id: 'tl-3', time: '15:30', title: 'Nikkah Ceremony',     description: 'The official union of Razia & Abduraziq',     category: 'ceremony',      isPublic: true,  duration: 45,  sortOrder: 2 },
+    { id: 'tl-4', time: '16:15', title: 'Photoshoots',         description: 'Couple portraits & family photos',            category: 'reception',     isPublic: true,  duration: 60,  sortOrder: 3 },
+    { id: 'tl-5', time: '17:00', title: 'Speeches & Toasts',   description: 'Best man, maid of honour, father of bride',   category: 'entertainment', isPublic: true,  duration: 45,  sortOrder: 4 },
+    { id: 'tl-6', time: '18:00', title: 'Dinner Service',      description: 'Starters, mains, desserts',                   category: 'dinner',        isPublic: true,  duration: 90,  sortOrder: 5 },
+    { id: 'tl-7', time: '19:30', title: 'First Dance',         description: 'Razia & Abduraziq take the floor',            category: 'entertainment', isPublic: true,  duration: 15,  sortOrder: 6 },
+    { id: 'tl-8', time: '20:00', title: 'Dance Floor Opens',   description: 'DJ set begins, full party mode activated',    category: 'entertainment', isPublic: true,  duration: 180, sortOrder: 7 },
+    { id: 'tl-9', time: '23:00', title: 'Grand Farewell',      description: 'Sparkler send-off & guest departure',         category: 'other',         isPublic: true,  duration: 30,  sortOrder: 8 },
 ];
 
 export const initialTracks: TrackItem[] = [
-    { id: 'tr-1',  title: 'Perfect',              artist: 'Ed Sheeran',             column: 'must-play' },
-    { id: 'tr-2',  title: 'Marry You',            artist: 'Bruno Mars',             column: 'must-play' },
-    { id: 'tr-3',  title: 'At Last',              artist: 'Etta James',             column: 'must-play' },
-    { id: 'tr-4',  title: 'September',            artist: 'Earth, Wind & Fire',     column: 'must-play' },
-    { id: 'tr-5',  title: 'Thinking Out Loud',    artist: 'Ed Sheeran',             column: 'if-time' },
-    { id: 'tr-6',  title: 'Adore You',            artist: 'Harry Styles',           column: 'if-time' },
-    { id: 'tr-7',  title: 'Can\'t Stop the Feeling', artist: 'Justin Timberlake',  column: 'if-time' },
-    { id: 'tr-8',  title: 'My Heart Will Go On',  artist: 'Celine Dion',           column: 'do-not-play' },
-    { id: 'tr-9',  title: 'Disco Inferno',        artist: 'The Trammps',            column: 'do-not-play' },
+    { id: 'tr-1',  title: 'Perfect',              artist: 'Ed Sheeran',             column: 'must-play',   sortOrder: 0 },
+    { id: 'tr-2',  title: 'Marry You',            artist: 'Bruno Mars',             column: 'must-play',   sortOrder: 1 },
+    { id: 'tr-3',  title: 'At Last',              artist: 'Etta James',             column: 'must-play',   sortOrder: 2 },
+    { id: 'tr-4',  title: 'September',            artist: 'Earth, Wind & Fire',     column: 'must-play',   sortOrder: 3 },
+    { id: 'tr-5',  title: 'Thinking Out Loud',    artist: 'Ed Sheeran',             column: 'if-time',     sortOrder: 4 },
+    { id: 'tr-6',  title: 'Adore You',            artist: 'Harry Styles',           column: 'if-time',     sortOrder: 5 },
+    { id: 'tr-7',  title: 'Can\'t Stop the Feeling', artist: 'Justin Timberlake',  column: 'if-time',     sortOrder: 6 },
+    { id: 'tr-8',  title: 'My Heart Will Go On',  artist: 'Celine Dion',           column: 'do-not-play', sortOrder: 7 },
+    { id: 'tr-9',  title: 'Disco Inferno',        artist: 'The Trammps',            column: 'do-not-play', sortOrder: 8 },
 ];
