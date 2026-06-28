@@ -41,25 +41,50 @@ export function InvitationEditor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please upload an image file', variant: 'destructive' });
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 10MB', variant: 'destructive' });
+      return;
+    }
+
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setConfig({ ...config, imageUrl: data.url });
+      // For now, use a data URL to allow offline testing
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setConfig({ ...config, imageUrl: dataUrl });
         toast({ title: 'Image uploaded!', description: 'Your invitation image is ready.' });
-      }
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       toast({ title: 'Upload failed', variant: 'destructive' });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      const input = document.getElementById('image-upload') as HTMLInputElement;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      input.files = dataTransfer.files;
+      await handleImageUpload({ target: input } as any);
     }
   };
 
@@ -99,7 +124,11 @@ export function InvitationEditor() {
             {/* Image Upload */}
             <div className="space-y-3">
               <Label>Invitation Background Image</Label>
-              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer">
+              <div
+                className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
                 <input
                   type="file"
                   accept="image/*"
@@ -112,19 +141,30 @@ export function InvitationEditor() {
                   {uploading ? (
                     <>
                       <Loader className="mx-auto animate-spin text-amber-400" size={32} />
-                      <p className="text-sm text-white/60">Uploading...</p>
+                      <p className="text-sm text-white/60">Processing image...</p>
+                    </>
+                  ) : config.imageUrl ? (
+                    <>
+                      <ImageIcon className="mx-auto text-emerald-400" size={32} />
+                      <p className="text-sm text-emerald-400 font-semibold">Image uploaded ✓</p>
+                      <p className="text-xs text-white/40">Click to change</p>
                     </>
                   ) : (
                     <>
                       <Upload className="mx-auto text-white/40" size={32} />
-                      <p className="text-sm text-white/60">Click to upload or drag and drop</p>
+                      <p className="text-sm text-white/60">Click to upload or drag & drop</p>
                       <p className="text-xs text-white/40">PNG, JPG up to 10MB</p>
                     </>
                   )}
                 </label>
               </div>
               {config.imageUrl && (
-                <Badge className="bg-emerald-500/20 text-emerald-400">✓ Image ready</Badge>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                >
+                  <Badge className="bg-emerald-500/20 text-emerald-400">✓ Ready for guests</Badge>
+                </motion.div>
               )}
             </div>
 

@@ -47,20 +47,28 @@ export default function InvitationPage() {
       return;
     }
 
-    await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        guestId: params?.get('id') || 'guest-' + Date.now(),
-        householdId: params?.get('household'),
-        guestName,
-        status: 'Accepted',
-        dietaryRestrictions: dietaryRestrictions || undefined,
-        message: message || undefined,
-      }),
-    });
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestId: params?.get('id') || 'guest-' + Date.now(),
+          householdId: params?.get('household'),
+          guestName,
+          status: 'Accepted',
+          dietaryRestrictions: dietaryRestrictions || undefined,
+          message: message || undefined,
+        }),
+      });
 
-    setStatus('accepted');
+      if (res.ok) {
+        setStatus('accepted');
+      } else {
+        alert('Failed to submit RSVP. Please try again.');
+      }
+    } catch (err) {
+      alert('Error submitting RSVP');
+    }
   };
 
   const handleDecline = async () => {
@@ -69,18 +77,26 @@ export default function InvitationPage() {
       return;
     }
 
-    await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        guestId: params.get('id') || 'guest-' + Date.now(),
-        householdId: params.get('household'),
-        guestName,
-        status: 'Declined',
-      }),
-    });
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestId: params?.get('id') || 'guest-' + Date.now(),
+          householdId: params?.get('household'),
+          guestName,
+          status: 'Declined',
+        }),
+      });
 
-    setStatus('declined');
+      if (res.ok) {
+        setStatus('declined');
+      } else {
+        alert('Failed to submit RSVP. Please try again.');
+      }
+    } catch (err) {
+      alert('Error submitting RSVP');
+    }
   };
 
   if (loading || !config) {
@@ -114,48 +130,104 @@ export default function InvitationPage() {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-center space-y-8"
+            className="text-center space-y-8 min-h-screen flex flex-col items-center justify-center"
           >
             {status === 'accepted' ? (
               <>
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                  <Heart size={80} className="mx-auto text-pink-500" fill="currentColor" />
+                {/* Confetti animation */}
+                <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute text-2xl"
+                      initial={{
+                        opacity: 1,
+                        y: -50,
+                        x: Math.random() * window.innerWidth,
+                      }}
+                      animate={{
+                        opacity: 0,
+                        y: window.innerHeight,
+                      }}
+                      transition={{
+                        duration: 3,
+                        delay: Math.random() * 0.5,
+                        ease: 'easeIn',
+                      }}
+                    >
+                      {['🎉', '💍', '✨', '🎊', '💕'][Math.floor(Math.random() * 5)]}
+                    </motion.div>
+                  ))}
+                </div>
+
+                <motion.div
+                  animate={{ y: [0, -15, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Heart size={100} className="mx-auto text-pink-500" fill="currentColor" />
                 </motion.div>
-                <div className="space-y-2">
-                  <h1 className="text-4xl md:text-6xl font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-300 to-emerald-400">
+
+                <div className="space-y-4 max-w-2xl">
+                  <h1 className="text-5xl md:text-7xl font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-300 to-emerald-400">
                     We Can't Wait!
                   </h1>
-                  <p className="text-white/70 text-xl">
-                    Thank you for accepting our invitation. We're so excited to celebrate with you on September 6th!
+                  <p className="text-white/70 text-xl leading-relaxed">
+                    Thank you for accepting, <span className="font-semibold text-emerald-400">{guestName}</span>. We're so excited to celebrate this special day with you on <span className="font-semibold text-amber-400">September 6th!</span>
                   </p>
+                  {dietaryRestrictions && (
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg mt-4">
+                      <p className="text-sm text-emerald-300">
+                        ✓ We've noted your dietary restrictions: <strong>{dietaryRestrictions}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-white/60 text-sm">Check your inbox for more details</p>
+                  <Button
+                    onClick={() => {
+                      setStatus(null);
+                      setGuestName('');
+                      setDietaryRestrictions('');
+                      setMessage('');
+                      setShowForm(false);
+                    }}
+                    className="bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-semibold"
+                  >
+                    ← Back to Invitation
+                  </Button>
                 </div>
               </>
             ) : (
               <>
-                <motion.div animate={{ rotate: [0, 180] }} transition={{ duration: 2 }}>
-                  <Heart size={80} className="mx-auto text-gray-400" />
+                <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 3 }}>
+                  <Heart size={100} className="mx-auto text-gray-400" />
                 </motion.div>
-                <div className="space-y-2">
-                  <h1 className="text-4xl md:text-6xl font-light text-white">We'll Miss You</h1>
-                  <p className="text-white/70 text-xl">Thanks for letting us know. We hope to celebrate with you soon!</p>
+
+                <div className="space-y-4 max-w-2xl">
+                  <h1 className="text-5xl md:text-7xl font-light text-white">We'll Miss You</h1>
+                  <p className="text-white/70 text-xl leading-relaxed">
+                    Thanks for letting us know, <span className="font-semibold text-white">{guestName}</span>. We hope to celebrate with you another time!
+                  </p>
                 </div>
+
+                <Button
+                  onClick={() => {
+                    setStatus(null);
+                    setGuestName('');
+                    setDietaryRestrictions('');
+                    setMessage('');
+                    setShowForm(false);
+                  }}
+                  className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold"
+                >
+                  ← Back to Invitation
+                </Button>
               </>
             )}
-
-            <Button
-              onClick={() => {
-                setStatus(null);
-                setGuestName('');
-                setDietaryRestrictions('');
-                setMessage('');
-                setShowForm(false);
-              }}
-              className="bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-semibold"
-            >
-              ← Back to Invitation
-            </Button>
           </motion.div>
-        ) : (
+        ) : !showForm ? (
           // Invitation Display
           <Card className="glass-card overflow-hidden border-white/10 backdrop-blur-2xl shadow-2xl">
             {/* Image */}
@@ -314,6 +386,78 @@ export default function InvitationPage() {
                 <p className="text-white/60 text-sm">
                   We can't wait to celebrate the union of our love with you! 💍
                 </p>
+              </motion.div>
+            </CardContent>
+          </Card>
+        ) : (
+          // RSVP Form
+          <Card className="glass-card overflow-hidden border-white/10 backdrop-blur-2xl shadow-2xl">
+            <CardContent className="pt-8 md:pt-12">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-semibold text-white mb-2">RSVP Details</h2>
+                  <p className="text-white/60">Please complete your response</p>
+                </div>
+
+                <div className="space-y-4 p-6 bg-white/5 border border-white/10 rounded-lg">
+                  <div>
+                    <Label className="text-white/70">Your Name *</Label>
+                    <Input
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="How should we address you?"
+                      className="mt-2 border-white/20 bg-white/5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-white/70">Dietary Restrictions (Optional)</Label>
+                    <Input
+                      value={dietaryRestrictions}
+                      onChange={(e) => setDietaryRestrictions(e.target.value)}
+                      placeholder="e.g., vegetarian, gluten-free, allergies"
+                      className="mt-2 border-white/20 bg-white/5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-white/70">Message (Optional)</Label>
+                    <Input
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Send us a message!"
+                      className="mt-2 border-white/20 bg-white/5"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleAccept}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      ✓ Confirm Accept
+                    </Button>
+                    <Button
+                      onClick={handleDecline}
+                      variant="outline"
+                      className="flex-1 border-white/20 text-white/70 hover:bg-white/10"
+                    >
+                      ✕ Confirm Decline
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setShowForm(false)}
+                  variant="outline"
+                  className="w-full border-white/20 text-white/70"
+                >
+                  ← Back
+                </Button>
               </motion.div>
             </CardContent>
           </Card>

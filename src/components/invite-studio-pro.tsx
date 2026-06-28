@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import type { Household } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { QRCodeManager } from './qr-code-manager';
 
 interface InviteStatus {
   id: string;
@@ -281,6 +282,17 @@ export function InviteStudioPro() {
           );
         })}
       </motion.div>
+
+      {/* QR Code Manager */}
+      {households.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <QRCodeManager households={households} />
+        </motion.div>
+      )}
 
       {/* Empty State */}
       {filteredHouseholds.length === 0 && (

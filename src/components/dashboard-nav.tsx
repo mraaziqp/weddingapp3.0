@@ -35,6 +35,7 @@ const navItems = [
   { href: "/ai-secretary", icon: <Bot size={28} />, label: "AI Secretary" },
   { href: "/invites", icon: <Mail size={28} />, label: "Invite Studio" },
   { href: "/invitation-editor", icon: <Sparkles size={28} />, label: "Invitation Editor" },
+  { href: "/rsvp-analytics", icon: <QrCode size={28} />, label: "RSVP Analytics" },
   { href: "/save-the-date", icon: <CalendarHeart size={28} />, label: "Save the Date" },
   { href: "/qr-scanner", icon: <QrCode size={28} />, label: "Bouncer Mode" },
   { href: "/planner", icon: <CalendarDays size={28} />, label: "Planner Suite" },
