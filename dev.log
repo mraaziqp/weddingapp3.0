@@ -35,3 +35,153 @@ Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\Syste
 Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\hiberfil.sys'
 Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\pagefile.sys'
 Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'K:\swapfile.sys'
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 9.835ms
+Reading changed files: 0.005ms
+Sorting candidates: 0.004ms
+Generate rules: 0.083ms
+Build stylesheet: 0.003ms
+Potential classes:  1
+Active contexts:  1
+JIT TOTAL: 37.877ms
+
+
+ ✓ Compiled /budget in 6.8s (2756 modules)
+ GET /admin?adminKey=razia-abdu-2026 307 in 97ms
+ ○ Compiling /event ...
+ ✓ Compiled /event in 1627ms (2964 modules)
+ GET /event 200 in 2230ms
+ GET /admin?adminKey=razia-abdu-2026 307 in 75ms
+ GET /admin?adminKey=razia-abdu-2026 307 in 65ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 882ms (3007 modules)
+motion() is deprecated. Use motion.create() instead.
+ GET /dashboard 200 in 1516ms
+ GET /admin?adminKey=razia-abdu-2026 307 in 96ms
+ GET /dashboard 200 in 159ms
+ ○ Compiling /guests ...
+ ✓ Compiled /guests in 1129ms (2556 modules)
+ GET /guests 200 in 1592ms
+ ○ Compiling /seating ...
+ ✓ Compiled /seating in 1132ms (2600 modules)
+ GET /seating 200 in 1633ms
+ ○ Compiling /invites ...
+ ✓ Compiled /invites in 814ms (2654 modules)
+ GET /invites 200 in 1284ms
+ ○ Compiling /invitation-editor ...
+ ✓ Compiled /invitation-editor in 614ms (2674 modules)
+ GET /invitation-editor 200 in 955ms
+ ○ Compiling /rsvp-analytics ...
+ ✓ Compiled /rsvp-analytics in 762ms (3201 modules)
+ GET /rsvp-analytics 200 in 1261ms
+ ○ Compiling /api/invitation/config ...
+ ✓ Compiled /api/invitation/config in 832ms (3176 modules)
+ GET /api/invitation/config 200 in 4574ms
+ ○ Compiling /api/rsvp ...
+ ✓ Compiled /api/rsvp in 651ms (3178 modules)
+ GET /api/rsvp 200 in 1061ms
+ GET /api/invitation/config 200 in 323ms
+ GET /api/rsvp 200 in 322ms
+ GET /admin?adminKey=razia-abdu-2026 307 in 361ms
+motion() is deprecated. Use motion.create() instead.
+ GET /dashboard 200 in 350ms
+ GET /admin 307 in 69ms
+ GET /dashboard 200 in 226ms
+ GET /guests 200 in 287ms
+ GET /seating 200 in 425ms
+ ○ Compiling /budget ...
+ ✓ Compiled /budget in 616ms (1640 modules)
+ GET /budget 200 in 1358ms
+ ○ Compiling /vendors ...
+ ✓ Compiled /vendors in 938ms (3128 modules)
+ GET /vendors 200 in 1332ms
+ ○ Compiling /registry ...
+ ✓ Compiled /registry in 1501ms (3160 modules)
+ GET /registry 200 in 1861ms
+ ○ Compiling /vault ...
+ ✓ Compiled /vault in 855ms (3169 modules)
+ GET /vault 200 in 1152ms
+ ○ Compiling /playlist ...
+ ✓ Compiled /playlist in 629ms (3182 modules)
+ GET /playlist 200 in 919ms
+ ○ Compiling /ai-secretary ...
+ ✓ Compiled /ai-secretary in 4.7s (4416 modules)
+motion() is deprecated. Use motion.create() instead.
+ GET /ai-secretary 200 in 5320ms
+ ○ Compiling /invites ...
+ ✓ Compiled /invites in 839ms (2931 modules)
+ GET /invites 200 in 1341ms
+ ○ Compiling /invitation-editor ...
+ ✓ Compiled /invitation-editor in 632ms (2942 modules)
+ GET /invitation-editor 200 in 984ms
+ ○ Compiling /rsvp-analytics ...
+ ✓ Compiled /rsvp-analytics in 527ms (2951 modules)
+ GET /rsvp-analytics 200 in 925ms
+ ○ Compiling /save-the-date ...
+ ✓ Compiled /save-the-date in 1350ms (4626 modules)
+ GET /save-the-date 200 in 1730ms
+ ○ Compiling /qr-scanner ...
+ ✓ Compiled /qr-scanner in 1549ms (4691 modules)
+ GET /qr-scanner 200 in 1949ms
+ ○ Compiling /planner ...
+ ✓ Compiled /planner in 962ms (4706 modules)
+ GET /planner 200 in 1330ms
+ ○ Compiling /std ...
+ ✓ Compiled /std in 929ms (4720 modules)
+ GET /std 200 in 1134ms
+ ○ Compiling /event ...
+ ✓ Compiled /event in 814ms (3140 modules)
+ GET /event 200 in 1188ms
+ ○ Compiling /api/invitation/config ...
+ ✓ Compiled /api/invitation/config in 830ms (3158 modules)
+ GET /api/invitation/config 200 in 1911ms
+ ○ Compiling /api/rsvp ...
+ ✓ Compiled /api/rsvp in 3.1s (3160 modules)
+ GET /api/rsvp 200 in 4887ms
+ ○ Compiling /api/std/config ...
+ ✓ Compiled /api/std/config in 1006ms (4780 modules)
+ GET /api/std/config 200 in 1373ms
+motion() is deprecated. Use motion.create() instead.
+ GET /dashboard 200 in 434ms
+ HEAD /dashboard 200 in 231ms
+ GET /dashboard 200 in 249ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1036ms (4785 modules)
+ GET /invalid-route-xyz 404 in 1251ms
+ GET /invitation-editor 200 in 187ms
+ GET /rsvp-analytics 200 in 272ms
+ GET /std 200 in 92ms
+ GET /api/invitation/config 200 in 990ms
+ GET /api/rsvp 200 in 326ms
+ GET /api/std/config 200 in 322ms
+ GET /nonexistent-page-xyz-123 404 in 39ms
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 15.235ms
+Reading changed files: 2.076ms
+Sorting candidates: 0.041ms
+Generate rules: 0.663ms
+Build stylesheet: 0.002ms
+Potential classes:  73
+Active contexts:  1
+JIT TOTAL: 62.843ms
+
+
+ ✓ Compiled in 1073ms (1632 modules)
+
+
+Source path: K:\Projects\Wdding 3.0\src\app\globals.css
+Finding changed files: 19.116ms
+Reading changed files: 22.76ms
+Sorting candidates: 0.728ms
+Generate rules: 3.342ms
+Build stylesheet: 0.003ms
+Potential classes:  889
+Active contexts:  1
+JIT TOTAL: 118.435ms
+
+
+ ✓ Compiled in 1005ms (1632 modules)
