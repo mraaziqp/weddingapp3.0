@@ -1,8 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import QRCode from 'qrcode';
-import { SaveTheDateEditor } from '@/components/save-the-date/editor';
+
+const SaveTheDateEditor = dynamic(() => import('@/components/save-the-date/editor').then(mod => ({ default: mod.SaveTheDateEditor })), {
+  loading: () => (
+    <div className="flex-1 bg-black/40 border border-white/10 rounded-lg animate-pulse flex items-center justify-center">
+      <div className="text-muted-foreground">Loading editor...</div>
+    </div>
+  ),
+});
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
