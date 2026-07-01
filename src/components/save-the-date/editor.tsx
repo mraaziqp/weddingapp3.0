@@ -27,6 +27,7 @@ import {
   AlignRight, Sparkles, Link, RefreshCw, Check, X,
   ChevronUp, ChevronDown, Settings, Copy,
 } from 'lucide-react';
+import { compressImageFile, withTimeout } from '@/lib/image-utils';
 import { BACKGROUND_THEMES, DEFAULT_THEME } from './themes';
 import { STICKERS } from './stickers';
 import type {
@@ -419,15 +420,19 @@ export function SaveTheDateEditor() {
 
     try {
       const { supabase } = await import('@/lib/supabase');
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const compressedFile = await compressImageFile(file, { maxDimension: 1800, quality: 0.85 });
+      const filename = `${Date.now()}-${compressedFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const bucketName = 'wedding-assets';
 
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(`save-the-date/${filename}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const { data, error } = await withTimeout(
+        supabase.storage
+          .from(bucketName)
+          .upload(`save-the-date/${filename}`, compressedFile, {
+            cacheControl: '3600',
+            upsert: false
+          }),
+        30000
+      );
 
       if (error) {
         throw error;

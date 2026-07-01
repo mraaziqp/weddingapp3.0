@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Users, Edit2, Save, X, Maximize2, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { fetchHouseholds } from '@/lib/supabase';
 
 interface Table {
   id: string;
@@ -26,13 +27,6 @@ interface SeatingAnalytics {
   averageTableFill: number;
 }
 
-const mockGuests = [
-  'Ahmad Hassan', 'Fatima Ahmed', 'Mohammed Ali', 'Aisha Khan',
-  'Omar Ibrahim', 'Layla Hassan', 'Khalid Ahmed', 'Sara Mohammed',
-  'Hassan Ahmed', 'Noor Ibrahim', 'Ali Khan', 'Hana Hassan',
-  'Yusuf Ahmed', 'Zainab Ali', 'Abdullah Khan', 'Mariam Hassan',
-];
-
 export function SeatingManager() {
   const [tables, setTables] = useState<Table[]>([]);
   const [unassignedGuests, setUnassignedGuests] = useState<string[]>([]);
@@ -40,14 +34,14 @@ export function SeatingManager() {
   const [newTableCapacity, setNewTableCapacity] = useState('8');
   const { toast } = useToast();
 
-  // Initialize tables and guests
+  // Load the real guest list — no seats pre-assigned until you drag guests in.
   useEffect(() => {
-    const initialTables: Table[] = [
-      { id: '1', number: 1, capacity: 8, assignedGuests: mockGuests.slice(0, 8) },
-      { id: '2', number: 2, capacity: 8, assignedGuests: mockGuests.slice(8, 12) },
-    ];
-    setTables(initialTables);
-    setUnassignedGuests(mockGuests.slice(12));
+    fetchHouseholds()
+      .then(households => {
+        const names = households.flatMap(h => h.guests.map(g => `${g.firstName} ${g.lastName}`));
+        setUnassignedGuests(names);
+      })
+      .catch(() => setUnassignedGuests([]));
   }, []);
 
   const addTable = () => {

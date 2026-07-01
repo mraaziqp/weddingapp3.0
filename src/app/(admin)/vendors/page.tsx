@@ -31,30 +31,7 @@ const vendorSchema = z.object({
 type Vendor = z.infer<typeof vendorSchema> & { id: string };
 
 export default function VendorsPage() {
-  const [vendors, setVendors] = useState<Vendor[]>([
-    {
-      id: '1',
-      name: 'Tuscany in Rylands',
-      category: 'Venue',
-      contactName: 'John Smith',
-      contactEmail: 'john@tuscany.co.za',
-      contactPhone: '+27 21 123 4567',
-      price: 25000,
-      status: 'Confirmed',
-      depositPaid: 12500,
-    },
-    {
-      id: '2',
-      name: 'Premier Photography',
-      category: 'Photography',
-      contactName: 'Sarah Jones',
-      contactEmail: 'sarah@photos.co.za',
-      contactPhone: '+27 83 456 7890',
-      price: 8000,
-      status: 'Confirmed',
-      depositPaid: 4000,
-    },
-  ]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();

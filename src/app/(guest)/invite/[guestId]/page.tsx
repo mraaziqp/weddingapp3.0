@@ -1,7 +1,7 @@
 
 'use client';
-import { households } from '@/lib/mock-data';
 import type { Household } from '@/lib/types';
+import { lookupHouseholdByQr } from '@/lib/supabase';
 import { EnvelopeReveal } from '@/components/envelope-reveal';
 import { InvitationRSVP } from '@/components/invitation-rsvp';
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ export default function InvitePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showInvitation, setShowInvitation] = useState(false);
+  const [household, setHousehold] = useState<Household | null>(null);
 
   // This logic runs only on the client, avoiding SSR issues with localStorage.
   useEffect(() => {
@@ -26,22 +27,17 @@ export default function InvitePage() {
           // Redirect to the new event-day experience
           router.replace(`/event?guestId=${guestId}`);
         } else {
-          // Check if invitation mode is enabled
-          fetch('/api/std/config')
-            .then(r => r.json())
-            .then(data => {
-              setShowInvitation(data.config?.invitationMode === true);
-              setIsLoading(false);
-            })
-            .catch(() => {
-              setShowInvitation(false);
-              setIsLoading(false);
-            });
+          Promise.all([
+            fetch('/api/std/config').then(r => r.json()).catch(() => ({})),
+            guestId ? lookupHouseholdByQr(guestId).catch(() => null) : Promise.resolve(null),
+          ]).then(([configRes, householdRes]) => {
+            setShowInvitation(configRes?.config?.invitationMode === true);
+            setHousehold(householdRes);
+            setIsLoading(false);
+          });
         }
     }
   }, [guestId, router]);
-
-  const household: Household | undefined = households.find(h => h.qrCode === guestId);
 
   // Show a loading skeleton while we decide which route to show
   if (isLoading) {

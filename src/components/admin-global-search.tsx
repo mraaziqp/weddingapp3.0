@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, Armchair, LayoutDashboard, Gift, Heart, Music, ChevronDown, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { households } from '@/lib/mock-data';
+import { fetchHouseholds } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { Guest } from '@/lib/types';
@@ -30,7 +30,7 @@ const PAGES: Result[] = [
   { id: 'p-playlist', label: 'Playlist', href: '/playlist', type: 'page', icon: <Music size={14} /> },
 ];
 
-function buildGuestIndex(): Result[] {
+function buildGuestIndex(households: { name: string; guests: Guest[] }[]): Result[] {
   return households.flatMap(h =>
     h.guests.map(g => ({
       id: g.id,
@@ -43,8 +43,6 @@ function buildGuestIndex(): Result[] {
     }))
   );
 }
-
-const ALL_RESULTS: Result[] = [...PAGES, ...buildGuestIndex()];
 
 const RSVP_CONFIG: Record<RsvpStatus, { color: string; dot: string }> = {
   Confirmed: { color: 'hover:bg-green-500/20 text-green-400', dot: 'bg-green-400' },
@@ -117,13 +115,22 @@ export function AdminGlobalSearch() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rsvpOverrides, setRsvpOverrides] = useState<Record<string, RsvpStatus>>({});
   const [tableOverrides, setTableOverrides] = useState<Record<string, string>>({});
+  const [guestResults, setGuestResults] = useState<Result[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchHouseholds()
+      .then(households => setGuestResults(buildGuestIndex(households)))
+      .catch(() => setGuestResults([]));
+  }, []);
+
+  const allResults: Result[] = [...PAGES, ...guestResults];
+
   // Results with RSVP overrides reflected in the sublabel
   const results: Result[] = query.trim().length > 0
-    ? ALL_RESULTS.filter(r =>
+    ? allResults.filter(r =>
         r.label.toLowerCase().includes(query.toLowerCase()) ||
         r.sublabel?.toLowerCase().includes(query.toLowerCase())
       )

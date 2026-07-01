@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Image as ImageIcon, Eye, Save, Loader } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { compressImageFile } from '@/lib/image-utils';
 
 interface InvitationConfig {
   title: string;
@@ -55,14 +56,16 @@ export function InvitationEditor() {
 
     setUploading(true);
     try {
+      const compressed = await compressImageFile(file, { maxDimension: 1600, quality: 0.85 });
       // For now, use a data URL to allow offline testing
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setConfig({ ...config, imageUrl: dataUrl });
-        toast({ title: 'Image uploaded!', description: 'Your invitation image is ready.' });
-      };
-      reader.readAsDataURL(file);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(compressed);
+      });
+      setConfig({ ...config, imageUrl: dataUrl });
+      toast({ title: 'Image uploaded!', description: 'Your invitation image is ready.' });
     } catch (err) {
       toast({ title: 'Upload failed', variant: 'destructive' });
     } finally {

@@ -29,7 +29,7 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 100, damping: 20 } },
 };
 
-const MotionCard = motion(Card);
+const MotionCard = motion.create(Card);
 
 const weddingDate = new Date('2026-09-06T15:00:00');
 
@@ -90,9 +90,10 @@ const CountdownCard = () => {
             className="md:col-span-2 row-span-2 !p-0 relative overflow-hidden flex flex-col items-center justify-center gap-8 bg-black/40 border border-white/10 shadow-2xl backdrop-blur-xl group rounded-3xl"
         >
             <Image
-                src="https://images.unsplash.com/photo-1596789390299-b42743899351?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3ZWRkaW5nJTIwY291cGxlfGVufDB8fHx8MTcyMDgwODQxNnww&ixlib=rb-4.1.0&q=80&w=1080"
+                src="/couple-bg.jpg"
                 alt="Couple"
                 fill
+                priority
                 className="object-cover z-0 opacity-20 group-hover:opacity-30 transition-opacity duration-1000 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/80 z-10" />

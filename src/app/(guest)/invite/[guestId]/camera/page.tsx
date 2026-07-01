@@ -1,18 +1,37 @@
 'use client';
 
 import { DisposableCameraUI } from '@/components/disposable-camera-ui';
-import { households } from '@/lib/mock-data';
+import { lookupHouseholdByQr } from '@/lib/supabase';
+import type { Household } from '@/lib/types';
 import { useRouter, useParams, notFound } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { LuxuryLoader } from '@/components/luxury-loader';
 
 export default function CameraPageForGuest() {
   const params = useParams();
   const router = useRouter();
   const guestId = params?.guestId as string;
 
-  const household = households.find(h => h.qrCode === guestId);
+  const [isLoading, setIsLoading] = useState(true);
+  const [household, setHousehold] = useState<Household | null>(null);
+
+  useEffect(() => {
+    if (!guestId) { setIsLoading(false); return; }
+    lookupHouseholdByQr(guestId)
+      .catch(() => null)
+      .then(res => { setHousehold(res); setIsLoading(false); });
+  }, [guestId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#111]">
+        <LuxuryLoader label="Loading camera..." size="lg" />
+      </div>
+    );
+  }
 
   if (!household) {
     // notFound() can still be called in client components via next/navigation

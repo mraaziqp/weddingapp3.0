@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Guest, Household, MenuItem, TimelineEvent, TrackItem, Gift } from './types';
+import type { Guest, GuestTag, Household, MenuItem, TimelineEvent, TrackItem, Gift } from './types';
 
 // Fall back to a dummy URL/key during static-generation (build) so that the
 // module can be loaded without throwing. Real env vars must be set on Vercel
@@ -36,7 +36,7 @@ export function dbToGuest(g: Record<string, any>): Guest {
         rsvpStatus: g.rsvp_status as 'Confirmed' | 'Pending' | 'Regret',
         dietaryRestrictions: g.dietary_restrictions ?? undefined,
         songRequest: g.song_request ?? undefined,
-        tags: g.tags ?? undefined,
+        tags: g.tags ? (g.tags.split(',') as GuestTag[]) : undefined,
     };
 }
 
@@ -74,7 +74,7 @@ export async function fetchHouseholds(): Promise<Household[]> {
 
 export async function addHousehold(
     name: string,
-    guests: { firstName: string; lastName: string }[]
+    guests: { firstName: string; lastName: string; tags?: GuestTag[] }[]
 ): Promise<Household> {
     const ts = Date.now();
     const id = `household-${ts}`;
@@ -91,6 +91,7 @@ export async function addHousehold(
         first_name: g.firstName,
         last_name: g.lastName,
         rsvp_status: 'Pending',
+        tags: g.tags && g.tags.length > 0 ? g.tags.join(',') : null,
     }));
     const { error: gErr } = await supabase.from('guests').insert(guestRows);
     if (gErr) throw gErr;

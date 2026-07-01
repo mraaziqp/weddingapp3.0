@@ -1,6 +1,6 @@
 'use client';
 
-import { households } from '@/lib/mock-data';
+import { fetchHouseholds } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,24 +43,34 @@ const itemVariants = {
 };
 
 export function InviteStudioPro() {
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [inviteStatuses, setInviteStatuses] = useState<Record<string, InviteStatus>>({});
   const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | InviteStatus['status']>('all');
   const { toast } = useToast();
 
-  // Initialize invite statuses
+  // Load real households and seed each as not-yet-sent — no fake demo status.
   useEffect(() => {
-    const statuses: Record<string, InviteStatus> = {};
-    households.forEach(h => {
-      statuses[h.id] = {
-        id: h.id,
-        status: Math.random() > 0.6 ? 'sent' : 'pending',
-        rsvpStatus: ['Confirmed', 'Pending', 'Regret'][Math.floor(Math.random() * 3)] as any,
-        guestCount: h.guests.length,
-      };
-    });
-    setInviteStatuses(statuses);
-  }, []);
+    fetchHouseholds()
+      .then(data => {
+        setHouseholds(data);
+        const statuses: Record<string, InviteStatus> = {};
+        data.forEach(h => {
+          statuses[h.id] = {
+            id: h.id,
+            status: 'pending',
+            rsvpStatus: h.guests[0]?.rsvpStatus,
+            guestCount: h.guests.length,
+          };
+        });
+        setInviteStatuses(statuses);
+      })
+      .catch(() => {
+        toast({ title: 'Could not load households', variant: 'destructive' });
+      })
+      .finally(() => setIsLoading(false));
+  }, [toast]);
 
   const handleSendInvite = (household: Household) => {
     setInviteStatuses(prev => ({
@@ -85,6 +95,24 @@ export function InviteStudioPro() {
     { label: 'Responded', value: Object.values(inviteStatuses).filter(s => s.status === 'responded').length, icon: CheckCircle },
     { label: 'Expected Guests', value: Object.values(inviteStatuses).reduce((sum, s) => sum + (s.guestCount || 0), 0), icon: Users },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-white/60">
+        Loading households...
+      </div>
+    );
+  }
+
+  if (households.length === 0) {
+    return (
+      <div className="text-center py-24 text-white/60">
+        <Users size={48} className="mx-auto mb-4 opacity-30" />
+        <p className="text-lg">No households yet</p>
+        <p className="text-sm text-white/40 mt-1">Add your first household in Guest Ledger to start generating invites.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

@@ -9,7 +9,7 @@ import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, Rot
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { allGuests, initialTables as mockTables } from '@/lib/mock-data';
+import { fetchHouseholds } from '@/lib/supabase';
 import type { Guest, Table, GuestTag } from '@/lib/types';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -289,15 +289,18 @@ const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRe
 export function SeatingChart() {
   const isMobile = useIsMobile();
   const canvasBoundsRef = useRef<HTMLDivElement>(null);
-  const usingVenuePreset = allGuests.length === 0;
+  const [realGuests, setRealGuests] = useState<Guest[] | null>(null);
+  useEffect(() => {
+    fetchHouseholds()
+      .then(households => setRealGuests(households.flatMap(h => h.guests)))
+      .catch(() => setRealGuests([]));
+  }, []);
+  const usingVenuePreset = realGuests !== null && realGuests.length === 0;
   const guestPool = useMemo(
-    () => (allGuests.length > 0 ? allGuests : VENUE_SAMPLE_GUESTS),
-    []
+    () => (realGuests && realGuests.length > 0 ? realGuests : VENUE_SAMPLE_GUESTS),
+    [realGuests]
   );
-  const tablePreset = useMemo(
-    () => (allGuests.length > 0 ? mockTables : VENUE_LAYOUT_TABLES),
-    []
-  );
+  const tablePreset = VENUE_LAYOUT_TABLES;
   const initiallySeatedIds = useMemo(
     () => new Set(tablePreset.flatMap((table) => table.guests.map((guest) => guest.id))),
     [tablePreset]
@@ -326,6 +329,11 @@ export function SeatingChart() {
     try {
       const raw = window.localStorage.getItem(SEATING_LAYOUT_STORAGE_KEY);
       if (!raw) {
+        // No saved layout yet — seed from whatever guest pool is currently known
+        // (placeholder preset until real guests load, then the real list).
+        const seatedIds = new Set(tablePreset.flatMap((table) => table.guests.map((guest) => guest.id)));
+        setTables(tablePreset.map((table) => ({ ...table, guests: [...table.guests] })));
+        setUnseatedGuests(guestPool.filter((guest) => !seatedIds.has(guest.id)));
         setHasHydratedLayout(true);
         return;
       }
@@ -354,7 +362,7 @@ export function SeatingChart() {
     } finally {
       setHasHydratedLayout(true);
     }
-  }, [guestPool, toast]);
+  }, [guestPool, tablePreset, toast]);
 
   useEffect(() => {
     if (!hasHydratedLayout) return;

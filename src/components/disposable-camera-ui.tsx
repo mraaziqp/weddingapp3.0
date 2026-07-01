@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Check, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -95,6 +96,9 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   const [isAnimating, setIsAnimating] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStalled, setUploadStalled] = useState(false);
+  const [lastFailedUpload, setLastFailedUpload] = useState<{ file: File; previewSrc?: string } | null>(null);
+  const uploadRequestIdRef = useRef(0);
   const [flashOn, setFlashOn] = useState(true);
   const [recentShots, setRecentShots] = useState<string[]>([]);
   const [polaroidSrc, setPolaroidSrc] = useState<string | null>(null);
@@ -181,15 +185,28 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     });
   }, [activeCssFilter]);
 
-  const processUpload = useCallback(async (file: File, previewSrc?: string) => {
+  const processUpload = useCallback(async (rawFile: File, previewSrc?: string) => {
+    const requestId = ++uploadRequestIdRef.current;
     setIsFlashing(true);
     setIsUploading(true);
+    setUploadStalled(false);
+    setLastFailedUpload(null);
+
+    const stalledTimer = setTimeout(() => {
+      if (uploadRequestIdRef.current === requestId) setUploadStalled(true);
+    }, 6000);
 
     try {
+      const file = await compressImageFile(rawFile);
       const path = `photos/${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('wedding-photos')
-        .upload(path, file, { contentType: file.type, upsert: false });
+
+      const { data: uploadData, error: uploadError } = await withTimeout(
+        supabase.storage.from('wedding-photos').upload(path, file, { contentType: file.type, upsert: false }),
+        30000
+      );
+
+      // A stale response (user already retried/moved on) should be ignored.
+      if (uploadRequestIdRef.current !== requestId) return;
 
       if (uploadError) throw uploadError;
 
@@ -197,14 +214,20 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
         .from('wedding-photos')
         .getPublicUrl(uploadData.path);
 
-      await supabase.from('media').insert({
-        storage_path: uploadData.path,
-        public_url: publicUrl,
-        media_type: 'image',
-        visibility: localVisibility,
-        quest_tag: questTag ?? null,
-        guest_id: guestId,
-      });
+      // The file is safely in storage at this point — don't fail the whole
+      // upload (and re-prompt the guest to retake the shot) just because the
+      // metadata row failed to write; log it instead so it can be reconciled later.
+      try {
+        await supabase.from('media').insert({
+          media_url: publicUrl,
+          media_type: 'image',
+          visibility: localVisibility,
+          quest_tag: questTag ?? null,
+          guest_id: guestId,
+        });
+      } catch (metaError) {
+        console.error('Media metadata insert failed (file uploaded fine):', metaError);
+      }
 
       toast({
         title: localVisibility === 'public' ? '🌍 Shared to the Live Wall!' : '🔒 Secretly sent to the Couple!',
@@ -232,16 +255,38 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       setTimeout(() => setIsWinding(false), 700);
 
     } catch (error) {
+      if (uploadRequestIdRef.current !== requestId) return;
       console.error('Upload error:', error);
+      const timedOut = error instanceof UploadTimeoutError;
+      setLastFailedUpload({ file: rawFile, previewSrc });
       toast({
         variant: 'destructive',
-        title: 'Upload failed',
-        description: 'Could not upload your memory. Please try again.',
+        title: timedOut ? 'Upload is taking too long' : 'Upload failed',
+        description: timedOut
+          ? 'Your connection looks slow. Tap "Try Again" to retry this shot.'
+          : 'Could not upload your memory. Tap "Try Again" to retry.',
       });
     } finally {
-      setIsUploading(false);
+      clearTimeout(stalledTimer);
+      if (uploadRequestIdRef.current === requestId) {
+        setIsUploading(false);
+        setUploadStalled(false);
+      }
     }
   }, [guestId, localVisibility, questTag, onUploadComplete, toast]);
+
+  const handleRetryUpload = useCallback(() => {
+    if (!lastFailedUpload) return;
+    const { file, previewSrc } = lastFailedUpload;
+    processUpload(file, previewSrc);
+  }, [lastFailedUpload, processUpload]);
+
+  const handleCancelUpload = useCallback(() => {
+    // Abandon waiting on this request; a late response will be ignored (see requestId check above).
+    uploadRequestIdRef.current++;
+    setIsUploading(false);
+    setUploadStalled(false);
+  }, []);
 
   const handleShutterClick = async () => {
     if (shotsLeft <= 0 || isUploading || isAnimating) return;
@@ -264,13 +309,10 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await processUpload(file, reader.result as string);
-    };
-    reader.readAsDataURL(file);
     event.target.value = '';
+    if (!file) return;
+    const previewSrc = URL.createObjectURL(file);
+    await processUpload(file, previewSrc);
   };
 
   useEffect(() => {
@@ -329,7 +371,50 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
               style={{ textShadow: '0 0 10px rgba(245,166,35,0.6)' }}>
               Developing memory…
             </p>
-            <p className="text-xs text-white/40 tracking-widest uppercase">Please hold still</p>
+            {uploadStalled ? (
+              <div className="flex flex-col items-center gap-3 text-center px-6">
+                <p className="text-xs text-white/60 max-w-xs">
+                  This is taking longer than usual — your connection may be slow. You can keep waiting or cancel and try again.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                  onClick={handleCancelUpload}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-white/40 tracking-widest uppercase">Please hold still</p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Retry banner after a failed upload */}
+      <AnimatePresence>
+        {!isUploading && lastFailedUpload && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between gap-3 rounded-xl border border-red-400/30 bg-red-950/80 backdrop-blur-md px-4 py-2.5 shadow-lg"
+          >
+            <p className="text-xs text-red-200">Your last shot didn&apos;t upload.</p>
+            <div className="flex items-center gap-2">
+              <Button type="button" size="sm" className="h-7 bg-amber-400 text-black hover:bg-amber-300" onClick={handleRetryUpload}>
+                Try Again
+              </Button>
+              <button
+                type="button"
+                className="text-[10px] text-red-200/60 hover:text-red-200 uppercase tracking-wide"
+                onClick={() => setLastFailedUpload(null)}
+              >
+                Dismiss
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

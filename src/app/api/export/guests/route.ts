@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { households } from '@/lib/mock-data';
+import { fetchHouseholds } from '@/lib/supabase';
 
 /**
  * GET /api/export/guests
  * Returns a downloadable CSV with all guest data for venue coordinators.
  */
 export async function GET() {
+  const households = await fetchHouseholds().catch(() => []);
   const rows: string[] = [];
 
   // Header row

@@ -67,7 +67,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const tones = ["Formal", "Casual", "Funny"] as const;
 
-const MotionButton = motion(Button);
+const MotionButton = motion.create(Button);
 
 function TypingEffect({ text }: { text: string }) {
     const [displayedText, setDisplayedText] = useState("");

@@ -7,9 +7,26 @@ runConfig:
 env:
   - variable: ADMIN_ACCESS_KEY
     value: razia-abdu-2026
-  # SUPABASE_SERVICE_ROLE_KEY is stored in Google Cloud Secret Manager.
-  # Run once to create the secret:
+  - variable: ADMIN_ACCESS_KEYS
+    value: razia-abdu-2026
+  - variable: FAMILY_ACCESS_KEY_BRIDE
+    value: razia-family-2026
+  - variable: FAMILY_ACCESS_KEY_GROOM
+    value: abduraziq-family-2026
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: https://ljrzrlywesvpxnlbgrqr.supabase.co
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqcnpybHl3ZXN2cHhubGJncnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5Mjc5NDgsImV4cCI6MjA5MzUwMzk0OH0.vSUwv_pP5AtT1CDBQqWSLYKt-CioFRfc7Mbx3jZvR30
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://www.raziaraaziq.co.za
+  - variable: NEXT_PUBLIC_ADMIN_URL
+    value: https://www.raziaraaziq.co.za/admin
+  # SUPABASE_SERVICE_ROLE_KEY and DATABASE_URL contain credentials — store both
+  # in Google Cloud Secret Manager, not as plain values here:
   #   gcloud secrets create supabase-service-role-key --data-file=- (then paste the key)
+  #   gcloud secrets create database-url --data-file=- (then paste the Neon connection string)
   # OR use Firebase Console > App Hosting > your backend > Environment variables > Add.
   - variable: SUPABASE_SERVICE_ROLE_KEY
     secret: supabase-service-role-key
+  - variable: DATABASE_URL
+    secret: database-url

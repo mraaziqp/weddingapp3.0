@@ -7,7 +7,7 @@ import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 
 import { GuestEventHub } from '@/components/guest-event-hub';
 import { LuxuryLoader } from '@/components/luxury-loader';
-import { households } from '@/lib/mock-data';
+import { lookupHouseholdByQr } from '@/lib/supabase';
 import type { Household } from '@/lib/types';
 import { useAudio } from '@/lib/audio-context';
 import {
@@ -269,13 +269,28 @@ function EventPageContent() {
   const searchParams = useSearchParams();
   const guestId = searchParams.get('guestId');
   const [introDone, setIntroDone] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [household, setHousehold] = useState<Household | null>(null);
 
   useEffect(() => {
     const hasSeenIntro = sessionStorage.getItem('hasSeenEventIntro') === 'true';
     if (hasSeenIntro) setIntroDone(true);
   }, []);
 
-  const household: Household | undefined = households.find(h => h.qrCode === guestId);
+  useEffect(() => {
+    if (!guestId) { setIsLoading(false); return; }
+    lookupHouseholdByQr(guestId)
+      .catch(() => null)
+      .then(res => { setHousehold(res); setIsLoading(false); });
+  }, [guestId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[radial-gradient(circle_at_22%_18%,rgba(212,175,55,0.14),transparent_34%),linear-gradient(145deg,#fffdf9,#f5ecdd)]">
+        <LuxuryLoader label="Curating..." size="lg" />
+      </div>
+    );
+  }
 
   if (!guestId || !household) {
     return (

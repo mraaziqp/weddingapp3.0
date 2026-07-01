@@ -27,12 +27,8 @@ const budgetItemSchema = z.object({
 type BudgetItem = z.infer<typeof budgetItemSchema> & { id: string };
 
 export default function BudgetPage() {
-  const [items, setItems] = useState<BudgetItem[]>([
-    { id: '1', category: 'Venue', name: 'Tuscany in Rylands', budgeted: 25000, actual: 25000 },
-    { id: '2', category: 'Catering', name: 'Premier Catering Co', budgeted: 35000, actual: 32000 },
-    { id: '3', category: 'Photography', name: 'Pro Photography', budgeted: 8000, actual: 8000 },
-  ]);
-  const [totalBudget, setTotalBudget] = useState(100000);
+  const [items, setItems] = useState<BudgetItem[]>([]);
+  const [totalBudget, setTotalBudget] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
   const { toast } = useToast();
@@ -41,7 +37,7 @@ export default function BudgetPage() {
   const totalBudgeted = items.reduce((sum, item) => sum + item.budgeted, 0);
   const totalActual = items.reduce((sum, item) => sum + item.actual, 0);
   const remaining = totalBudget - totalActual;
-  const percentUsed = Math.round((totalActual / totalBudget) * 100);
+  const percentUsed = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
 
   const chartData = CATEGORIES.map(cat => ({
     category: cat,
@@ -135,8 +131,20 @@ export default function BudgetPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="glass-card bg-black/40 border border-white/10">
+          <CardContent className="pt-6">
+            <Label htmlFor="total-budget" className="text-white/60 text-sm">Total Budget (ZAR)</Label>
+            <Input
+              id="total-budget"
+              type="number"
+              value={totalBudget || ''}
+              placeholder="0"
+              onChange={e => setTotalBudget(Number(e.target.value) || 0)}
+              className="mt-2 text-2xl font-bold text-blue-400 bg-transparent border-white/10 h-auto py-1"
+            />
+          </CardContent>
+        </Card>
         {[
-          { label: 'Total Budget', value: `R${totalBudget.toLocaleString()}`, color: 'blue' },
           { label: 'Total Spent', value: `R${totalActual.toLocaleString()}`, color: 'amber' },
           { label: 'Remaining', value: `R${remaining.toLocaleString()}`, color: remaining >= 0 ? 'green' : 'red' },
           { label: '% Used', value: `${percentUsed}%`, color: 'purple' },
