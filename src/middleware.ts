@@ -1,37 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_COOKIE_NAME, ADMIN_COOKIE_MAX_AGE, getAllowedAdminKeys } from "@/lib/admin-auth";
 
 const ADMIN_ROUTES = [
   "/dashboard",
   "/ai-secretary",
+  "/budget",
+  "/guest-tester",
   "/guests",
+  "/invitation-editor",
   "/invites",
   "/planner",
   "/playlist",
   "/qr-scanner",
   "/registry",
+  "/rsvp-analytics",
   "/seating",
   "/theme",
   "/vault",
+  "/vendors",
   "/save-the-date",
 ];
 
-const ADMIN_COOKIE_NAME = "wedding_admin_session";
 const ADMIN_KEY_QUERY_PARAM = "adminKey";
-const INVITE_FALLBACK_ROUTE = "/event";
-
-function getAllowedAdminKeys(): string[] {
-  const combinedKeys = [
-    process.env.ADMIN_ACCESS_KEYS,
-    process.env.ADMIN_ACCESS_KEY,
-  ]
-    .filter(Boolean)
-    .join(",");
-
-  return combinedKeys
-    .split(",")
-    .map((key) => key.trim())
-    .filter(Boolean);
-}
+const LOGIN_FALLBACK_ROUTE = "/admin";
 
 function isAdminRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some(
@@ -68,7 +59,7 @@ export function middleware(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 12,
+      maxAge: ADMIN_COOKIE_MAX_AGE,
     });
     return response;
   }
@@ -77,25 +68,30 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const inviteUrl = request.nextUrl.clone();
-  inviteUrl.pathname = INVITE_FALLBACK_ROUTE;
-  inviteUrl.search = "";
-  return NextResponse.redirect(inviteUrl);
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = LOGIN_FALLBACK_ROUTE;
+  loginUrl.search = "";
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/ai-secretary/:path*",
+    "/budget/:path*",
+    "/guest-tester/:path*",
     "/guests/:path*",
+    "/invitation-editor/:path*",
     "/invites/:path*",
     "/planner/:path*",
     "/playlist/:path*",
     "/qr-scanner/:path*",
     "/registry/:path*",
+    "/rsvp-analytics/:path*",
     "/seating/:path*",
     "/theme/:path*",
     "/vault/:path*",
+    "/vendors/:path*",
     "/save-the-date/:path*",
   ],
 };

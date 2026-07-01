@@ -31,7 +31,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           animate={{ x: [0, 18, -15, 0], y: [0, -12, 14, 0] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
         />
-        
+        <motion.div
+          className="fixed -z-10 bottom-1/4 left-1/4 h-56 w-56 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(107,63,143,0.18) 0%, rgba(107,63,143,0.01) 75%, transparent 100%)', filter: 'blur(26px)' }}
+          animate={{ x: [0, -16, 20, 0], y: [0, 14, -10, 0], scale: [1, 1.04, 0.97, 1] }}
+          transition={{ duration: 23, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
         <div className="flex min-h-screen flex-col">
           <header className="flex flex-col items-center justify-center gap-3 px-4 py-4 sm:py-5 text-center" data-print-hide>
             <h1 className="font-headline text-3xl italic text-luxe-gradient drop-shadow-[0_0_18px_rgba(212,175,55,0.35)]">

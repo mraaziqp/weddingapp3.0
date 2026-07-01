@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Heart, ChevronDown } from 'lucide-react';
+import { Heart, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 interface InvitationConfig {
@@ -19,6 +19,8 @@ interface InvitationConfig {
   rsvpDeadline: string;
   extraInfo: string;
   imageUrl?: string;
+  musicUrl?: string;
+  videoUrl?: string;
 }
 
 export default function InvitationPage() {
@@ -30,6 +32,8 @@ export default function InvitationPage() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [params, setParams] = useState<URLSearchParams | null>(null);
+  const [isMusicOn, setIsMusicOn] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -40,6 +44,24 @@ export default function InvitationPage() {
       .then(setConfig)
       .finally(() => setLoading(false));
   }, []);
+
+  // Browsers block un-muted autoplay, so try muted-autoplay for ambience,
+  // then let the guest opt into full volume with one tap.
+  useEffect(() => {
+    if (config?.musicUrl && audioRef.current) {
+      audioRef.current.volume = 0.4;
+      audioRef.current.play().catch(() => {});
+    }
+  }, [config?.musicUrl]);
+
+  const toggleMusic = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const turningOn = !isMusicOn;
+    audio.muted = !turningOn;
+    if (turningOn) audio.play().catch(() => {});
+    setIsMusicOn(turningOn);
+  };
 
   const handleAccept = async () => {
     if (!guestName.trim()) {
@@ -234,9 +256,31 @@ export default function InvitationPage() {
           </motion.div>
         ) : !showForm ? (
           // Invitation Display
-          <Card className="glass-card overflow-hidden border-white/10 backdrop-blur-2xl shadow-2xl">
-            {/* Image */}
-            {config.imageUrl && (
+          <Card className="glass-card relative overflow-hidden border-white/10 backdrop-blur-2xl shadow-2xl">
+            {config.musicUrl && (
+              <>
+                <audio ref={audioRef} src={config.musicUrl} loop muted={!isMusicOn} />
+                <button
+                  onClick={toggleMusic}
+                  aria-label={isMusicOn ? 'Mute background music' : 'Play background music'}
+                  className="absolute top-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white/80 backdrop-blur-md hover:bg-black/60 hover:text-white transition-colors"
+                >
+                  {isMusicOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                </button>
+              </>
+            )}
+
+            {/* Video takes priority over the static image when present */}
+            {config.videoUrl ? (
+              <video
+                src={config.videoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-64 md:h-96 object-cover"
+              />
+            ) : config.imageUrl && (
               <motion.img
                 src={config.imageUrl}
                 alt="Invitation"

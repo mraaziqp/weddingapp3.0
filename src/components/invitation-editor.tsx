@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Image as ImageIcon, Eye, Save, Loader } from 'lucide-react';
+import { Upload, Image as ImageIcon, Eye, Save, Loader, Music, Video, X, Play, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { compressImageFile } from '@/lib/image-utils';
+import { compressImageFile, withTimeout } from '@/lib/image-utils';
+import { supabase } from '@/lib/supabase';
 
 interface InvitationConfig {
   title: string;
@@ -21,6 +22,21 @@ interface InvitationConfig {
   rsvpDeadline: string;
   extraInfo: string;
   imageUrl?: string;
+  musicUrl?: string;
+  videoUrl?: string;
+}
+
+const BUCKET = 'wedding-assets';
+
+async function uploadToStorage(file: File, folder: string): Promise<string> {
+  const path = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+  const { data, error } = await withTimeout(
+    supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false }),
+    30000
+  );
+  if (error) throw error;
+  const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
+  return publicUrl;
 }
 
 export function InvitationEditor() {
@@ -36,7 +52,22 @@ export function InvitationEditor() {
 
   const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingMusic, setUploadingMusic] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+
+  const toggleMusicPreview = () => {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+    if (isMusicPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+    setIsMusicPlaying(!isMusicPlaying);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,19 +88,63 @@ export function InvitationEditor() {
     setUploading(true);
     try {
       const compressed = await compressImageFile(file, { maxDimension: 1600, quality: 0.85 });
-      // For now, use a data URL to allow offline testing
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(compressed);
-      });
-      setConfig({ ...config, imageUrl: dataUrl });
+      const publicUrl = await uploadToStorage(compressed, 'invitation-photos');
+      setConfig(current => ({ ...current, imageUrl: publicUrl }));
       toast({ title: 'Image uploaded!', description: 'Your invitation image is ready.' });
     } catch (err) {
-      toast({ title: 'Upload failed', variant: 'destructive' });
+      toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('audio/')) {
+      toast({ title: 'Invalid file', description: 'Please upload an audio file (MP3, WAV, etc.)', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 20MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingMusic(true);
+    try {
+      const publicUrl = await uploadToStorage(file, 'invitation-music');
+      setConfig(current => ({ ...current, musicUrl: publicUrl }));
+      toast({ title: 'Music uploaded!', description: 'Your invitation soundtrack is ready.' });
+    } catch (err) {
+      toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
+    } finally {
+      setUploadingMusic(false);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast({ title: 'Invalid file', description: 'Please upload a video file (MP4, MOV, etc.)', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 100MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingVideo(true);
+    try {
+      const publicUrl = await uploadToStorage(file, 'invitation-videos');
+      setConfig(current => ({ ...current, videoUrl: publicUrl }));
+      toast({ title: 'Video uploaded!', description: 'Your invitation video is ready.' });
+    } catch (err) {
+      toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -169,6 +244,107 @@ export function InvitationEditor() {
                   <Badge className="bg-emerald-500/20 text-emerald-400">✓ Ready for guests</Badge>
                 </motion.div>
               )}
+            </div>
+
+            {/* Music Upload */}
+            <div className="space-y-3">
+              <Label>Background Music (optional)</Label>
+              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors bg-white/5">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleMusicUpload}
+                  disabled={uploadingMusic}
+                  className="hidden"
+                  id="music-upload"
+                />
+                {config.musicUrl ? (
+                  <div className="space-y-3">
+                    <audio ref={previewAudioRef} src={config.musicUrl} onEnded={() => setIsMusicPlaying(false)} className="hidden" />
+                    <div className="flex items-center justify-center gap-3">
+                      <Button type="button" size="icon" variant="outline" onClick={toggleMusicPreview}>
+                        {isMusicPlaying ? <Pause size={16} /> : <Play size={16} />}
+                      </Button>
+                      <p className="text-sm text-emerald-400 font-semibold">Music uploaded ✓</p>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => { setConfig(c => ({ ...c, musicUrl: undefined })); setIsMusicPlaying(false); }}
+                      >
+                        <X size={14} className="text-red-400" />
+                      </Button>
+                    </div>
+                    <label htmlFor="music-upload" className="cursor-pointer text-xs text-white/40 hover:text-white/60">
+                      Click to replace
+                    </label>
+                  </div>
+                ) : (
+                  <label htmlFor="music-upload" className="cursor-pointer space-y-2 block">
+                    {uploadingMusic ? (
+                      <>
+                        <Loader className="mx-auto animate-spin text-amber-400" size={28} />
+                        <p className="text-sm text-white/60">Uploading music...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Music className="mx-auto text-white/40" size={28} />
+                        <p className="text-sm text-white/60">Click to upload background music</p>
+                        <p className="text-xs text-white/40">MP3, WAV up to 20MB</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Video Upload */}
+            <div className="space-y-3">
+              <Label>Welcome Video (optional)</Label>
+              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors bg-white/5">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  disabled={uploadingVideo}
+                  className="hidden"
+                  id="video-upload"
+                />
+                {config.videoUrl ? (
+                  <div className="space-y-2">
+                    <video src={config.videoUrl} controls className="w-full max-h-40 rounded-lg mx-auto" />
+                    <div className="flex items-center justify-center gap-3">
+                      <p className="text-sm text-emerald-400 font-semibold">Video uploaded ✓</p>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setConfig(c => ({ ...c, videoUrl: undefined }))}
+                      >
+                        <X size={14} className="text-red-400" />
+                      </Button>
+                    </div>
+                    <label htmlFor="video-upload" className="cursor-pointer text-xs text-white/40 hover:text-white/60">
+                      Click to replace
+                    </label>
+                  </div>
+                ) : (
+                  <label htmlFor="video-upload" className="cursor-pointer space-y-2 block">
+                    {uploadingVideo ? (
+                      <>
+                        <Loader className="mx-auto animate-spin text-amber-400" size={28} />
+                        <p className="text-sm text-white/60">Uploading video...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Video className="mx-auto text-white/40" size={28} />
+                        <p className="text-sm text-white/60">Click to upload a welcome video</p>
+                        <p className="text-xs text-white/40">MP4, MOV up to 100MB</p>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* Text Fields */}
@@ -271,7 +447,9 @@ export function InvitationEditor() {
               <CardDescription>How guests will see it</CardDescription>
             </CardHeader>
             <CardContent>
-              {config.imageUrl ? (
+              {config.videoUrl ? (
+                <video src={config.videoUrl} controls className="w-full h-64 object-cover rounded-lg mb-4 bg-black" />
+              ) : config.imageUrl ? (
                 <motion.img
                   src={config.imageUrl}
                   alt="Invitation preview"
@@ -281,7 +459,14 @@ export function InvitationEditor() {
                 />
               ) : (
                 <div className="w-full h-64 bg-white/5 border-2 border-dashed border-white/10 rounded-lg flex items-center justify-center mb-4">
-                  <p className="text-white/40 text-center">Upload an image to see preview</p>
+                  <p className="text-white/40 text-center">Upload an image or video to see preview</p>
+                </div>
+              )}
+
+              {config.musicUrl && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <Music size={14} className="text-amber-400" />
+                  <p className="text-xs text-white/60">Background music will play softly when guests open this invitation</p>
                 </div>
               )}
 

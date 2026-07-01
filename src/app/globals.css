@@ -42,6 +42,8 @@
     --aurora-soft-gold: #f6e7b7;
     --aurora-copper: #c97a45;
     --aurora-rose: #b96a8e;
+    --aurora-sapphire: #1e3a6f;
+    --aurora-amethyst: #6b3f8f;
     --cream: 54 83% 95%; /* #fefce8 - Soft Cream */
 
     --chart-1: 158 44% 28%;
@@ -81,14 +83,31 @@
   }
   body {
     @apply bg-transparent text-foreground;
+    position: relative;
     background:
-      radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--aurora-peacock) 30%, transparent) 0%, transparent 34%),
-      radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--aurora-gold) 22%, transparent) 0%, transparent 30%),
-      radial-gradient(circle at 80% 84%, color-mix(in srgb, var(--aurora-rose) 18%, transparent) 0%, transparent 28%),
+      radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--aurora-peacock) 32%, transparent) 0%, transparent 34%),
+      radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--aurora-gold) 24%, transparent) 0%, transparent 30%),
+      radial-gradient(circle at 80% 84%, color-mix(in srgb, var(--aurora-rose) 20%, transparent) 0%, transparent 30%),
+      radial-gradient(circle at 30% 92%, color-mix(in srgb, var(--aurora-amethyst) 16%, transparent) 0%, transparent 32%),
+      radial-gradient(circle at 96% 60%, color-mix(in srgb, var(--aurora-sapphire) 18%, transparent) 0%, transparent 30%),
       linear-gradient(140deg, var(--aurora-midnight) 0%, var(--aurora-emerald-deep) 38%, #010305 100%);
+    background-size: 180% 180%, 180% 180%, 180% 180%, 180% 180%, 180% 180%, 220% 220%;
     background-attachment: fixed;
+    animation: auroraDrift 34s ease-in-out infinite;
     /* Prevent iOS rubber-band scroll on the envelope page */
     overscroll-behavior: none;
+  }
+
+  /* Fine film-grain layered over the aurora so gradients never look banded/flat */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20700%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.7%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E");
   }
 
   /* Prevent iOS callout/selection on long press */
@@ -105,7 +124,7 @@
 
 @layer components {
   .glass-card {
-    @apply relative overflow-hidden bg-white/[0.055] backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-[0_18px_55px_rgba(0,0,0,0.38)] transition-all duration-500 hover:bg-white/[0.09] hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)];
+    @apply relative overflow-hidden bg-white/[0.055] backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-[0_18px_55px_rgba(0,0,0,0.38)] transition-all duration-500 ease-out hover:bg-white/[0.09] hover:border-[#d4af37]/30 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(0,0,0,0.5),0_0_40px_rgba(212,175,55,0.08)];
   }
 
   .glass-card::before {
@@ -115,6 +134,11 @@
     pointer-events: none;
     background: linear-gradient(120deg, rgba(212,175,55,0.08) 0%, transparent 42%, rgba(15,118,110,0.08) 100%);
     opacity: 0.8;
+    transition: opacity 0.5s ease;
+  }
+
+  .glass-card:hover::before {
+    opacity: 1;
   }
 
   .aurora-orb {
@@ -133,9 +157,11 @@
   }
 
   .text-luxe-gradient {
-    background: linear-gradient(140deg, #f9e8b6 8%, #d4af37 52%, #b56f3f 100%);
+    background: linear-gradient(110deg, #f9e8b6 0%, #d4af37 30%, #f9e8b6 45%, #b56f3f 70%, #d4af37 100%);
+    background-size: 250% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: shimmerText 8s ease-in-out infinite;
   }
 
   .glossy-sweep {
@@ -192,6 +218,16 @@
   }
 
   @keyframes auroraShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes auroraDrift {
+    0%, 100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 100% 50%, 0% 50%; }
+    50% { background-position: 20% 30%, 80% 20%, 70% 80%, 20% 70%, 60% 40%, 100% 50%; }
+  }
+
+  @keyframes shimmerText {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
   }
