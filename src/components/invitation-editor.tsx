@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,19 +12,7 @@ import { Upload, Image as ImageIcon, Eye, Save, Loader, Music, Video, X, Play, P
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout } from '@/lib/image-utils';
 import { supabase } from '@/lib/supabase';
-
-interface InvitationConfig {
-  title: string;
-  subtitle: string;
-  dateTime: string;
-  location: string;
-  dressCode: string;
-  rsvpDeadline: string;
-  extraInfo: string;
-  imageUrl?: string;
-  musicUrl?: string;
-  videoUrl?: string;
-}
+import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 
 const BUCKET = 'wedding-assets';
 
@@ -40,15 +28,17 @@ async function uploadToStorage(file: File, folder: string): Promise<string> {
 }
 
 export function InvitationEditor() {
-  const [config, setConfig] = useState<InvitationConfig>({
-    title: 'Together in Love',
-    subtitle: 'Abduraziq & Razia',
-    dateTime: 'Saturday, 6th September 2026 at 6:00 PM',
-    location: 'Tuscany in Rylands, Cape Town',
-    dressCode: 'Formal Attire',
-    rsvpDeadline: 'August 20, 2026',
-    extraInfo: 'Reception to follow. Transportation available. Hotel accommodations arranged.',
-  });
+  const [config, setConfig] = useState<InvitationConfig>(DEFAULT_INVITATION_CONFIG);
+
+  // Load the live config so Save never silently overwrites saved media with defaults.
+  useEffect(() => {
+    fetch('/api/invitation/config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(saved => {
+        if (saved && saved.title) setConfig(current => ({ ...current, ...saved }));
+      })
+      .catch(() => {});
+  }, []);
 
   const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -244,6 +234,12 @@ export function InvitationEditor() {
                   <Badge className="bg-emerald-500/20 text-emerald-400">✓ Ready for guests</Badge>
                 </motion.div>
               )}
+              <Input
+                value={config.imageUrl ?? ''}
+                onChange={(e) => setConfig(c => ({ ...c, imageUrl: e.target.value.trim() || undefined }))}
+                placeholder="…or paste a hero image URL (hero_image_url)"
+                className="border-white/15 bg-white/5 text-xs placeholder:text-white/25"
+              />
             </div>
 
             {/* Music Upload */}
@@ -296,6 +292,12 @@ export function InvitationEditor() {
                   </label>
                 )}
               </div>
+              <Input
+                value={config.musicUrl ?? ''}
+                onChange={(e) => { setConfig(c => ({ ...c, musicUrl: e.target.value.trim() || undefined })); setIsMusicPlaying(false); }}
+                placeholder="…or paste a music URL (background_music_url)"
+                className="border-white/15 bg-white/5 text-xs placeholder:text-white/25"
+              />
             </div>
 
             {/* Video Upload */}
@@ -345,6 +347,12 @@ export function InvitationEditor() {
                   </label>
                 )}
               </div>
+              <Input
+                value={config.videoUrl ?? ''}
+                onChange={(e) => setConfig(c => ({ ...c, videoUrl: e.target.value.trim() || undefined }))}
+                placeholder="…or paste a video URL (hero_video_url)"
+                className="border-white/15 bg-white/5 text-xs placeholder:text-white/25"
+              />
             </div>
 
             {/* Text Fields */}

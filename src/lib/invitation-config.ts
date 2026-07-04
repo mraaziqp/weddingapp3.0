@@ -1,0 +1,32 @@
+/**
+ * Single source of truth for the invitation config shape.
+ * Stored as one JSONB row in Neon (`invitation_config`, id = 'main'),
+ * so extending this type requires no SQL migration.
+ *
+ * Media field mapping (kept for back-compat with the upload flow):
+ *   musicUrl → background_music_url
+ *   videoUrl → hero_video_url (looping, muted, plays behind the card)
+ *   imageUrl → hero_image_url (fallback when no video is set)
+ */
+export interface InvitationConfig {
+  title: string;
+  subtitle: string;
+  dateTime: string;
+  location: string;
+  dressCode: string;
+  rsvpDeadline: string;
+  extraInfo: string;
+  imageUrl?: string;
+  musicUrl?: string;
+  videoUrl?: string;
+}
+
+export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
+  title: 'Together in Love',
+  subtitle: 'Abduraziq & Razia',
+  dateTime: 'Saturday, 6th September 2026 at 6:00 PM',
+  location: 'Tuscany in Rylands, Cape Town',
+  dressCode: 'Formal Attire',
+  rsvpDeadline: 'August 20, 2026',
+  extraInfo: 'Reception to follow. Transportation available. Hotel accommodations arranged.',
+};

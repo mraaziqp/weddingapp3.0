@@ -288,3 +288,32 @@
     margin: 15mm;
   }
 }
+
+/* ─── Print Styles for the Invitation Card ───────────────────────────── */
+/* When the page contains the 5×7 invitation card, print ONLY the card at
+   its exact physical size (5in × 7in), dark background and gold intact,
+   centered on the sheet so a print shop can trim to the card edges. */
+@media print {
+  body:has(#invitation-print-card) * {
+    visibility: hidden !important;
+  }
+
+  body:has(#invitation-print-card) #invitation-print-card,
+  body:has(#invitation-print-card) #invitation-print-card * {
+    visibility: visible !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body:has(#invitation-print-card) #invitation-print-card {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 5in !important;
+    height: 7in !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}
