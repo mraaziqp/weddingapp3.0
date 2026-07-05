@@ -5,67 +5,12 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Volume2, VolumeX, Music } from 'lucide-react';
+import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin } from 'lucide-react';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
+import { InvitationCard, GoldDust, easeLuxe } from '@/components/invitation-card';
 
-/* ─── Motion presets ──────────────────────────────────────────────────── */
-
-const easeLuxe = [0.16, 1, 0.3, 1] as const;
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.18, delayChildren: 0.35 } },
-};
-
-const riseIn = {
-  hidden: { opacity: 0, y: 26 },
-  show: { opacity: 1, y: 0, transition: { duration: 1.3, ease: easeLuxe } },
-};
-
-const drawLine = {
-  hidden: { scaleX: 0, opacity: 0 },
-  show: { scaleX: 1, opacity: 1, transition: { duration: 1.4, ease: easeLuxe } },
-};
-
-/* ─── Floating gold dust ──────────────────────────────────────────────── */
-/* Positions derive from the index only, so server and client render the
-   exact same markup — no hydration mismatch. */
-
-function GoldDust({ count = 26 }: { count?: number }) {
-  return (
-    <div className="pointer-events-none fixed inset-0 z-[5] overflow-hidden" aria-hidden data-print-hide>
-      {Array.from({ length: count }).map((_, i) => {
-        const left = (i * 37 + 11) % 100;
-        const top = (i * 53 + 23) % 100;
-        const size = 2 + (i % 3);
-        const duration = 9 + (i % 5) * 2.4;
-        const delay = (i % 7) * 1.15;
-        const drift = ((i % 4) - 1.5) * 14;
-        return (
-          <motion.span
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${left}%`,
-              top: `${top}%`,
-              width: size,
-              height: size,
-              background: 'radial-gradient(circle, rgba(246,231,183,0.95) 0%, rgba(212,175,55,0.55) 55%, transparent 100%)',
-              boxShadow: '0 0 8px 2px rgba(212,175,55,0.35)',
-            }}
-            animate={{
-              y: [0, -46, 0],
-              x: [0, drift, 0],
-              opacity: [0, 0.85, 0],
-              scale: [0.6, 1.15, 0.6],
-            }}
-            transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        );
-      })}
-    </div>
-  );
-}
+/* Ceremony start: Saturday 6 September 2026, 18:00 SAST (UTC+2). */
+const WEDDING_DATE = new Date('2026-09-06T18:00:00+02:00');
 
 /* ─── Cinematic backdrop: video > image > aurora, with parallax ───────── */
 
@@ -171,140 +116,77 @@ function AudioPlayer({ src }: { src: string }) {
   );
 }
 
-/* ─── The 5×7 print-locked invitation card ────────────────────────────── */
-/* container-type: inline-size + cqw typography means every element scales
-   in exact proportion to the card's width. The layout is pixel-identical
-   at any size — on a phone, a desktop, or exported at high-res for print. */
+/* ─── Countdown to the big day ────────────────────────────────────────── */
 
-function InvitationCard({ config }: { config: InvitationConfig }) {
-  // "Abduraziq & Razia" → two names joined by a script ampersand.
-  const [nameA, nameB] = config.subtitle.includes('&')
-    ? config.subtitle.split('&').map(s => s.trim())
-    : [config.subtitle, ''];
+function Countdown() {
+  const [left, setLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
+
+  useEffect(() => {
+    const tick = () => {
+      const ms = WEDDING_DATE.getTime() - Date.now();
+      if (ms <= 0) {
+        setLeft({ d: 0, h: 0, m: 0, s: 0 });
+        return;
+      }
+      setLeft({
+        d: Math.floor(ms / 86_400_000),
+        h: Math.floor(ms / 3_600_000) % 24,
+        m: Math.floor(ms / 60_000) % 60,
+        s: Math.floor(ms / 1000) % 60,
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!left) return <div className="h-[52px]" aria-hidden />;
+
+  const cells: Array<[number, string]> = [
+    [left.d, 'Days'],
+    [left.h, 'Hours'],
+    [left.m, 'Min'],
+    [left.s, 'Sec'],
+  ];
 
   return (
-    <motion.div
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-      id="invitation-print-card"
-      className="relative mx-auto aspect-[5/7] w-[min(92vw,520px)] [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_40px_120px_rgba(0,0,0,0.65),0_0_60px_rgba(212,175,55,0.10)]"
-      style={{
-        background:
-          'radial-gradient(circle at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 46%),' +
-          'radial-gradient(circle at 85% 100%, rgba(15,118,110,0.16) 0%, transparent 52%),' +
-          'radial-gradient(circle at 12% 88%, rgba(107,63,143,0.10) 0%, transparent 46%),' +
-          'linear-gradient(160deg, #0c1210 0%, #060a09 55%, #04070a 100%)',
-      }}
-    >
-      {/* Foil frame: outer hairline + inner double border with corner flourishes */}
-      <div className="pointer-events-none absolute inset-[3cqw] rounded-[1.6cqw] border border-[#d4af37]/45" />
-      <div className="pointer-events-none absolute inset-[4.4cqw] rounded-[1.2cqw] border border-[#d4af37]/20" />
-      {(['top-0 left-0 border-t-2 border-l-2 rounded-tl-[1.6cqw]', 'top-0 right-0 border-t-2 border-r-2 rounded-tr-[1.6cqw]', 'bottom-0 left-0 border-b-2 border-l-2 rounded-bl-[1.6cqw]', 'bottom-0 right-0 border-b-2 border-r-2 rounded-br-[1.6cqw]'] as const).map(pos => (
-        <div
-          key={pos}
-          className={`pointer-events-none absolute m-[3cqw] h-[7cqw] w-[7cqw] border-[#d4af37]/80 ${pos}`}
-        />
-      ))}
-
-      {/* Soft sheen sweeping across the card once on entrance */}
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        initial={{ x: '-130%' }}
-        animate={{ x: '130%' }}
-        transition={{ delay: 1.6, duration: 2.4, ease: 'easeInOut' }}
-        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(246,231,183,0.09) 50%, transparent 58%)' }}
-      />
-
-      {/* Card content */}
-      <div className="relative flex h-full flex-col items-center justify-between px-[9cqw] py-[8.5cqw] text-center">
-        {/* Monogram seal */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[2.2cqw]">
-          <div className="relative flex h-[13cqw] w-[13cqw] items-center justify-center rounded-full border border-[#d4af37]/60">
-            <div className="absolute inset-[1.1cqw] rounded-full border border-[#d4af37]/25" />
+    <div className="flex items-center justify-center gap-5 sm:gap-7">
+      {cells.map(([value, label], i) => (
+        <div key={label} className="flex items-center gap-5 sm:gap-7">
+          {i > 0 && <span className="text-[#d4af37]/40 text-lg font-light">·</span>}
+          <div className="flex flex-col items-center">
             <span
-              className="text-[4.6cqw] text-[#f6e7b7]"
-              style={{ fontFamily: "'Cinzel', serif", letterSpacing: '0.08em' }}
+              className="text-2xl sm:text-3xl text-[#f6e7b7] tabular-nums"
+              style={{ fontFamily: "'Cinzel', serif" }}
             >
-              A·R
+              {String(value).padStart(2, '0')}
+            </span>
+            <span className="font-body mt-0.5 text-[9px] uppercase tracking-[0.28em] text-white/40">
+              {label}
             </span>
           </div>
-          <motion.p
-            initial={{ opacity: 0, letterSpacing: '0.55em' }}
-            animate={{ opacity: 1, letterSpacing: '0.34em' }}
-            transition={{ delay: 0.5, duration: 1.6, ease: easeLuxe }}
-            className="text-[2.5cqw] uppercase text-[#d4af37]/85"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Together with their families
-          </motion.p>
-        </motion.div>
-
-        {/* Script flourish + names */}
-        <motion.div variants={riseIn} className="flex flex-col items-center">
-          <p
-            className="text-[7.5cqw] leading-none text-[#e8c96b]"
-            style={{ fontFamily: "'Great Vibes', cursive", textShadow: '0 0 24px rgba(212,175,55,0.35)' }}
-          >
-            {config.title}
-          </p>
-          <h1
-            className="mt-[3.4cqw] text-[10.5cqw] italic leading-[1.18] text-transparent"
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              backgroundImage: 'linear-gradient(115deg, #fdf6dd 0%, #e9cf8a 38%, #d4af37 62%, #f6e7b7 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-            }}
-          >
-            {nameA}
-            {nameB && (
-              <>
-                <span
-                  className="mx-[2.2cqw] not-italic text-[9cqw] text-[#e8c96b]"
-                  style={{ fontFamily: "'Great Vibes', cursive", WebkitTextFillColor: '#e8c96b' }}
-                >
-                  &amp;
-                </span>
-                <br />
-                {nameB}
-              </>
-            )}
-          </h1>
-        </motion.div>
-
-        {/* Divider */}
-        <motion.div variants={drawLine} className="luxe-divider w-[62cqw]" />
-
-        {/* Event particulars */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[2.6cqw]">
-          <p
-            className="text-[3.4cqw] uppercase tracking-[0.28em] text-white/90"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            {config.dateTime}
-          </p>
-          <p className="font-body text-[3cqw] tracking-[0.14em] text-white/60 uppercase">
-            {config.location}
-          </p>
-          <p className="font-body text-[2.6cqw] tracking-[0.2em] text-[#d4af37]/75 uppercase">
-            {config.dressCode}
-          </p>
-        </motion.div>
-
-        {/* RSVP line */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[1.6cqw]">
-          <div className="luxe-divider w-[30cqw] opacity-70" />
-          <p
-            className="text-[2.6cqw] uppercase tracking-[0.3em] text-white/55"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Kindly respond by {config.rsvpDeadline}
-          </p>
-        </motion.div>
-      </div>
-    </motion.div>
+        </div>
+      ))}
+    </div>
   );
+}
+
+/* ─── Calendar + directions helpers ───────────────────────────────────── */
+
+function googleCalendarUrl(config: InvitationConfig) {
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Wedding of ${config.subtitle}`,
+    // 18:00–23:59 SAST expressed in UTC
+    dates: '20260906T160000Z/20260906T215900Z',
+    details: `${config.title} — ${config.dateTime}. Dress code: ${config.dressCode}.`,
+    location: config.location,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function directionsUrl(config: InvitationConfig) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.location)}`;
 }
 
 /* ─── Page ────────────────────────────────────────────────────────────── */
@@ -451,6 +333,19 @@ export default function InvitationPage() {
               ✓ Dietary notes received: {dietaryRestrictions}
             </motion.p>
           )}
+          {accepted && (
+            <motion.a
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              href={googleCalendarUrl(config)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-full border border-[#d4af37]/40 px-6 py-2.5 font-body text-xs uppercase tracking-[0.22em] text-[#f6e7b7] transition-colors hover:bg-[#d4af37]/10"
+            >
+              <CalendarPlus size={14} /> Add to calendar
+            </motion.a>
+          )}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
             <Button
               onClick={resetToInvitation}
@@ -474,11 +369,40 @@ export default function InvitationPage() {
 
       {/* Hero: the card, centered in the first viewport */}
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-14">
-        <InvitationCard config={config} />
+        <InvitationCard config={config} printId />
+
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.3, duration: 1.1, ease: easeLuxe }}
+          className="mt-9 space-y-6"
+          data-print-hide
+        >
+          <Countdown />
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={googleCalendarUrl(config)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/30 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10"
+            >
+              <CalendarPlus size={13} /> Add to calendar
+            </a>
+            <a
+              href={directionsUrl(config)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/30 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10"
+            >
+              <MapPin size={13} /> Directions
+            </a>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, y: [0, 8, 0] }}
-          transition={{ opacity: { delay: 2.6, duration: 1 }, y: { delay: 2.6, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
+          transition={{ opacity: { delay: 2.8, duration: 1 }, y: { delay: 2.8, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
           className="mt-8 flex flex-col items-center gap-1 text-white/45"
           data-print-hide
         >

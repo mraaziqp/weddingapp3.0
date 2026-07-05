@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout } from '@/lib/image-utils';
 import { supabase } from '@/lib/supabase';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
+import { InvitationCard } from '@/components/invitation-card';
 
 const BUCKET = 'wedding-assets';
 
@@ -40,7 +41,7 @@ export function InvitationEditor() {
       .catch(() => {});
   }, []);
 
-  const [preview, setPreview] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingMusic, setUploadingMusic] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -157,6 +158,7 @@ export function InvitationEditor() {
   };
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
       const res = await fetch('/api/invitation/config', {
         method: 'POST',
@@ -165,10 +167,14 @@ export function InvitationEditor() {
       });
 
       if (res.ok) {
-        toast({ title: 'Saved!', description: 'Invitation config updated' });
+        toast({ title: 'Saved! 🎉', description: 'Guests now see this version of the invitation.' });
+      } else {
+        toast({ title: 'Save failed', description: 'The server rejected the update. Please try again.', variant: 'destructive' });
       }
     } catch (err) {
-      toast({ title: 'Save failed', variant: 'destructive' });
+      toast({ title: 'Save failed', description: 'Check your connection and try again.', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -189,9 +195,19 @@ export function InvitationEditor() {
             <CardDescription>Customize your beautiful invitation</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* ── Section: Media ── */}
+            <div className="flex items-center gap-3 pt-1">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4af37]/80 whitespace-nowrap">✨ Set the mood</p>
+              <div className="luxe-divider flex-1 opacity-50" />
+            </div>
+            <p className="-mt-3 text-xs text-white/40">
+              Upload from your phone or paste a link. The photo/video plays full-screen behind the
+              invitation card; the music plays softly while guests read it.
+            </p>
+
             {/* Image Upload */}
             <div className="space-y-3">
-              <Label>Invitation Background Image</Label>
+              <Label>Backdrop Photo (hero_image_url)</Label>
               <div
                 className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors cursor-pointer bg-white/5"
                 onDragOver={handleDragOver}
@@ -244,7 +260,7 @@ export function InvitationEditor() {
 
             {/* Music Upload */}
             <div className="space-y-3">
-              <Label>Background Music (optional)</Label>
+              <Label>Background Music (background_music_url)</Label>
               <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors bg-white/5">
                 <input
                   type="file"
@@ -302,7 +318,7 @@ export function InvitationEditor() {
 
             {/* Video Upload */}
             <div className="space-y-3">
-              <Label>Welcome Video (optional)</Label>
+              <Label>Backdrop Video (hero_video_url) — plays instead of the photo</Label>
               <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors bg-white/5">
                 <input
                   type="file"
@@ -355,9 +371,15 @@ export function InvitationEditor() {
               />
             </div>
 
+            {/* ── Section: Wording ── */}
+            <div className="flex items-center gap-3 pt-2">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4af37]/80 whitespace-nowrap">✍️ Wording</p>
+              <div className="luxe-divider flex-1 opacity-50" />
+            </div>
+
             {/* Text Fields */}
             <div className="space-y-3">
-              <Label>Title</Label>
+              <Label>Script line above the names</Label>
               <Input
                 value={config.title}
                 onChange={(e) => setConfig({ ...config, title: e.target.value })}
@@ -367,7 +389,7 @@ export function InvitationEditor() {
             </div>
 
             <div className="space-y-3">
-              <Label>Subtitle (Names)</Label>
+              <Label>Your names — keep the &amp; between them</Label>
               <Input
                 value={config.subtitle}
                 onChange={(e) => setConfig({ ...config, subtitle: e.target.value })}
@@ -424,22 +446,24 @@ export function InvitationEditor() {
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button
-                onClick={() => setPreview(!preview)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Eye size={16} className="mr-2" />
-                {preview ? 'Edit' : 'Preview'}
+              <Button asChild variant="outline" className="flex-1">
+                <a href="/invitation" target="_blank" rel="noopener noreferrer">
+                  <Eye size={16} className="mr-2" />
+                  Open Live Page
+                </a>
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={isSaving}
+                className="flex-1 bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] font-semibold text-black hover:shadow-[0_6px_24px_rgba(212,175,55,0.35)]"
               >
-                <Save size={16} className="mr-2" />
-                Save Config
+                {isSaving ? <Loader size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
+                {isSaving ? 'Publishing…' : 'Save & Publish'}
               </Button>
             </div>
+            <p className="text-center text-[11px] text-white/35">
+              Nothing changes for guests until you press Save &amp; Publish.
+            </p>
           </CardContent>
         </Card>
 
@@ -452,58 +476,44 @@ export function InvitationEditor() {
           <Card className="glass-card h-full">
             <CardHeader>
               <CardTitle>Live Preview</CardTitle>
-              <CardDescription>How guests will see it</CardDescription>
+              <CardDescription>The exact card guests see — it updates as you type</CardDescription>
             </CardHeader>
-            <CardContent>
-              {config.videoUrl ? (
-                <video src={config.videoUrl} controls className="w-full h-64 object-cover rounded-lg mb-4 bg-black" />
-              ) : config.imageUrl ? (
-                <motion.img
-                  src={config.imageUrl}
-                  alt="Invitation preview"
-                  className="w-full h-64 object-cover rounded-lg mb-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-              ) : (
-                <div className="w-full h-64 bg-white/5 border-2 border-dashed border-white/10 rounded-lg flex items-center justify-center mb-4">
-                  <p className="text-white/40 text-center">Upload an image or video to see preview</p>
+            <CardContent className="space-y-4">
+              {/* The real invitation card, rendered over the chosen backdrop */}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 p-5 sm:p-7">
+                <div className="absolute inset-0 -z-0">
+                  {config.videoUrl ? (
+                    <video src={config.videoUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                  ) : config.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={config.imageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(150deg,var(--aurora-midnight)_0%,var(--aurora-emerald-deep)_45%,#03040a_100%)]" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/70" />
                 </div>
-              )}
+                <div className="relative">
+                  <InvitationCard config={config} widthClass="w-full max-w-[380px]" />
+                </div>
+              </div>
 
               {config.musicUrl && (
-                <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                   <Music size={14} className="text-amber-400" />
                   <p className="text-xs text-white/60">Background music will play softly when guests open this invitation</p>
                 </div>
               )}
 
-              <div className="space-y-4 text-white">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <h1 className="text-4xl font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-300 to-amber-500">
-                    {config.title}
-                  </h1>
-                  <p className="text-2xl text-white/80 mt-2">{config.subtitle}</p>
-                </motion.div>
-
-                <div className="border-t border-white/10 pt-4 space-y-2 text-sm">
-                  <p>📅 <span className="text-white/70">{config.dateTime}</span></p>
-                  <p>📍 <span className="text-white/70">{config.location}</span></p>
-                  <p>👔 <span className="text-white/70">{config.dressCode}</span></p>
-                  <p>🔔 <span className="text-white/70">RSVP by {config.rsvpDeadline}</span></p>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
+              {config.extraInfo && (
+                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/70 mb-1">Good to know (shown under the card)</p>
                   <p className="text-xs text-white/50 leading-relaxed">{config.extraInfo}</p>
                 </div>
+              )}
 
-                <Button className="w-full bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white mt-6">
-                  Accept / Decline RSVP
-                </Button>
-              </div>
+              <p className="text-center text-[11px] text-white/35">
+                🖨️ Printing tip: open the live page and press Ctrl+P — only the card prints, at exactly 5×7 inches.
+              </p>
             </CardContent>
           </Card>
         </motion.div>
