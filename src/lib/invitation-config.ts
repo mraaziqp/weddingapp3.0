@@ -31,7 +31,7 @@ export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
   location: 'Tuscany in Rylands, Cape Town',
   dressCode: 'Formal Attire',
   rsvpDeadline: 'August 20, 2026',
-  extraInfo: 'Reception to follow. Transportation available. Hotel accommodations arranged.',
+  extraInfo: 'Reception to follow. Hotel accommodations arranged.',
   weddingDate: '2026-09-06T18:00:00+02:00',
   giftingPoem:
     "With all that we have, we've been truly blessed,\n" +

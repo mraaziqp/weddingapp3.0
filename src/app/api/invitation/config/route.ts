@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 
 function getDb() {
   const url = process.env.DATABASE_URL;
@@ -25,15 +26,7 @@ export async function GET() {
     const rows = await sql`SELECT config FROM invitation_config WHERE id = 'main'`;
 
     if (!rows.length) {
-      return NextResponse.json({
-        title: 'Together in Love',
-        subtitle: 'Abduraziq & Razia',
-        dateTime: 'Saturday, 6th September 2026 at 6:00 PM',
-        location: 'Tuscany in Rylands, Cape Town',
-        dressCode: 'Formal Attire',
-        rsvpDeadline: 'August 20, 2026',
-        extraInfo: 'Reception to follow. Transportation available.',
-      });
+      return NextResponse.json(DEFAULT_INVITATION_CONFIG);
     }
 
     return NextResponse.json(rows[0].config);

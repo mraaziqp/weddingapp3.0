@@ -9,6 +9,7 @@ import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin, Sparkles, Heart } 
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard, GoldDust, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
+import { supabase } from '@/lib/supabase';
 
 /* Default fallback ceremony start: Saturday 6 September 2026, 18:00 SAST (UTC+2). */
 const DEFAULT_WEDDING_DATE = new Date('2026-09-06T18:00:00+02:00');
@@ -154,6 +155,7 @@ export default function InvitationPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
+  const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
 
   /* Interactive Envelope Reveal states */
   const [isOpening, setIsOpening] = useState(false);
@@ -173,6 +175,38 @@ export default function InvitationPage() {
       .then(data => setConfig({ ...DEFAULT_INVITATION_CONFIG, ...data }))
       .catch(() => setConfig(DEFAULT_INVITATION_CONFIG));
   }, []);
+
+  // Auto-populate the guest's name from their personal invite link.
+  // Links look like /invitation?household=<id>; a ?name= param wins outright.
+  useEffect(() => {
+    if (!params) return;
+
+    const nameParam = params.get('name');
+    if (nameParam) {
+      setGuestName(nameParam);
+      return;
+    }
+
+    const householdId = params.get('household') || params.get('id');
+    if (!householdId) return;
+
+    supabase
+      .from('guests')
+      .select('id, first_name, last_name')
+      .eq('household_id', householdId)
+      .then(({ data }) => {
+        if (!data?.length) return;
+        const guests = data.map(g => ({
+          id: g.id as string,
+          name: [g.first_name, g.last_name].filter(Boolean).join(' ').trim(),
+        })).filter(g => g.name);
+        setHouseholdGuests(guests);
+        // A single-guest household gets their name filled in for them.
+        if (guests.length === 1) {
+          setGuestName(current => current || guests[0].name);
+        }
+      });
+  }, [params]);
 
   const handleOpenEnvelope = () => {
     setIsOpening(true);
@@ -636,10 +670,28 @@ export default function InvitationPage() {
                 <div className="space-y-4">
                   <div>
                     <Label className="font-body text-xs uppercase tracking-[0.18em] text-white/55">Your name *</Label>
+                    {householdGuests.length > 0 && (
+                      <div className="mt-2 flex flex-wrap justify-center gap-2">
+                        {householdGuests.map(g => (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => setGuestName(g.name)}
+                            className={`rounded-full border px-4 py-1.5 font-body text-xs transition-colors ${
+                              guestName === g.name
+                                ? 'border-[#d4af37]/80 bg-[#d4af37]/20 text-[#f6e7b7]'
+                                : 'border-white/15 bg-white/5 text-white/60 hover:border-[#d4af37]/40 hover:text-white/85'
+                            }`}
+                          >
+                            {g.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <Input
                       value={guestName}
                       onChange={e => setGuestName(e.target.value)}
-                      placeholder="How should we address you?"
+                      placeholder={householdGuests.length ? 'Tap your name above, or type it' : 'How should we address you?'}
                       className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
                     />
                   </div>
