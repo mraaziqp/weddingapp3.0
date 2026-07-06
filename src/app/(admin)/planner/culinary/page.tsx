@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchMenuItems, addMenuItem, deleteMenuItem, updateMenuItemsOrder } from '@/lib/supabase';
-import { allGuests } from '@/lib/mock-data';
+import { useRealGuests } from '@/hooks/use-real-guests';
+import type { Guest } from '@/lib/types';
 import type { MenuItem, MenuCourse, DietaryFlag } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -55,9 +56,9 @@ const PRINT_STYLES = `
 `;
 
 // ── Chef's Snapshot ───────────────────────────────────────────────────────
-function buildSnapshot() {
+function buildSnapshot(guests: Guest[]) {
   const flags: Record<string, number> = {};
-  allGuests.filter(g => g.rsvpStatus === 'Confirmed').forEach(g => {
+  guests.filter(g => g.rsvpStatus === 'Confirmed').forEach(g => {
     const d = g.dietaryRestrictions?.toLowerCase();
     if (!d || d === 'none') return;
     flags[d] = (flags[d] ?? 0) + 1;
@@ -229,7 +230,9 @@ export default function CulinaryPage() {
   const [loading, setLoading] = useState(true);
   const [, startTransition] = useTransition();
   const { toast } = useToast();
-  const snapshot = useMemo(buildSnapshot, []);
+  const { guests } = useRealGuests();
+  const snapshot = useMemo(() => buildSnapshot(guests), [guests]);
+  const confirmedCount = guests.filter(g => g.rsvpStatus === 'Confirmed').length;
 
   useEffect(() => {
     fetchMenuItems()
@@ -304,7 +307,7 @@ export default function CulinaryPage() {
       {/* Hidden print target */}
       <div id="kitchen-manifest" className="hidden print:block">
         <h1>Kitchen Manifest — Razia &amp; Abduraziq · 6 September 2026</h1>
-        <p style={{ fontSize: '11pt', color: '#555' }}>Tuscany in Rylands · Confirmed guests: {allGuests.filter(g => g.rsvpStatus === 'Confirmed').length}</p>
+        <p style={{ fontSize: '11pt', color: '#555' }}>Tuscany in Rylands · Confirmed guests: {confirmedCount}</p>
         <div className="snapshot-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '16pt 0' }}>
           {Object.entries(snapshot).map(([k, v]) => (
             <span key={k} className="snapshot-pill" style={{ border: '1px solid #333', padding: '3pt 10pt', borderRadius: 4, fontSize: 10 }}>

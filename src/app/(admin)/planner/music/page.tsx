@@ -14,7 +14,7 @@ import {
   Music2, GripVertical, Plus, Check, X, ArrowLeft, Radio,
 } from 'lucide-react';
 import Link from 'next/link';
-import { allGuests, initialTracks } from '@/lib/mock-data';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import type { TrackItem, TrackColumn } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -221,17 +221,18 @@ function GuestRequestCard({
 
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function VibeControllerPage() {
-  const [tracks, setTracks] = useState<TrackItem[]>(initialTracks);
+  const [tracks, setTracks] = useState<TrackItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addedRequests, setAddedRequests] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+  const { guests } = useRealGuests();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  // Guest requests
-  const guestRequests = allGuests
-    .filter(g => g.rsvpStatus === 'Confirmed' && (g as any).songRequest)
-    .map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`, song: (g as any).songRequest as string }));
+  // Guest requests — live from the real guest list
+  const guestRequests = guests
+    .filter(g => g.rsvpStatus === 'Confirmed' && g.songRequest)
+    .map(g => ({ id: g.id, name: `${g.firstName} ${g.lastName}`, song: g.songRequest as string }));
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
 

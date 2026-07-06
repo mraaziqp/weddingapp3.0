@@ -11,13 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { households } from '@/lib/mock-data';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function GuestTesterPage() {
   const { toast } = useToast();
-  const [selectedGuestQr, setSelectedGuestQr] = useState<string>('fatima-fassi');
+  const { households } = useRealGuests();
+  const [selectedGuestQr, setSelectedGuestQr] = useState<string>('');
   const [iframeKey, setIframeKey] = useState<number>(0);
   const [deviceFrame, setDeviceFrame] = useState<'iphone' | 'ipad' | 'desktop'>('iphone');
 
@@ -25,12 +26,19 @@ export default function GuestTesterPage() {
   const [simEventDay, setSimEventDay] = useState<boolean>(false);
   const [partyMode, setPartyMode] = useState<boolean>(false);
 
-  // Real households from mock data
+  // Live households from the real guest list
   const availableHouseholds = households.map(h => ({
     id: h.qrCode,
     name: h.name,
     guestCount: h.guests?.length || 0,
   }));
+
+  // Default to the first real household once loaded
+  useEffect(() => {
+    if (!selectedGuestQr && households.length) {
+      setSelectedGuestQr(households[0].qrCode);
+    }
+  }, [households, selectedGuestQr]);
 
   // Sync state with localStorage/cookies on mount
   useEffect(() => {

@@ -6,15 +6,13 @@ import {
   Armchair, ChefHat, Music2, Clock, ArrowRight,
   CheckCircle2, Circle, Crown,
 } from 'lucide-react';
-import { allGuests, initialMenuItems, initialTimeline, initialTracks } from '@/lib/mock-data';
+import { useRealGuests } from '@/hooks/use-real-guests';
 
-// ── Derived stats ─────────────────────────────────────────────────────────
-const confirmedGuests = allGuests.filter(g => g.rsvpStatus === 'Confirmed');
-const unseatedCount   = confirmedGuests.length; // before any seating is done
-const dishCount       = initialMenuItems.length;
-const dietaryCount    = confirmedGuests.filter(g => g.dietaryRestrictions && g.dietaryRestrictions !== 'None').length;
-const mustPlayCount   = initialTracks.filter(t => t.column === 'must-play').length;
-const nextEvent       = initialTimeline.find(e => e.isPublic);
+// Menu, playlist and timeline counts start at zero until the couple adds
+// real entries in their planner tools — no sample data in production.
+const dishCount = 0;
+const mustPlayCount = 0;
+const nextEvent: { time: string; title: string; description: string } | null = null;
 
 const container = {
   hidden: { opacity: 0 },
@@ -148,6 +146,11 @@ function ModuleCard({
 
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function PlannerPage() {
+  const { guests } = useRealGuests();
+  const confirmedGuests = guests.filter(g => g.rsvpStatus === 'Confirmed');
+  const unseatedCount = confirmedGuests.length; // before any seating is done
+  const dietaryCount = confirmedGuests.filter(g => g.dietaryRestrictions && g.dietaryRestrictions !== 'None').length;
+
   return (
     <div className="space-y-10 pb-10">
       {/* Hero header */}
@@ -248,10 +251,10 @@ export default function PlannerPage() {
           subtitle="DJ Queue · Guest Requests"
           stats={[
             { label: 'Must Play',    value: mustPlayCount },
-            { label: 'Requests In', value: allGuests.filter(g => g.songRequest).length },
+            { label: 'Requests In', value: guests.filter(g => g.songRequest).length },
           ]}
           tasks={[
-            { label: 'Seed DJ queue',              done: true },
+            { label: 'Seed DJ queue',              done: false },
             { label: 'Review guest requests',      done: false },
             { label: 'Confirm Do Not Play list',   done: false },
           ]}
@@ -263,11 +266,11 @@ export default function PlannerPage() {
           title="Run of Show"
           subtitle="Event Timeline · Guest Program Sync"
           stats={[
-            { label: 'Events',      value: initialTimeline.length },
-            { label: 'Public',     value: initialTimeline.filter(e => e.isPublic).length },
+            { label: 'Events',      value: 0 },
+            { label: 'Public',     value: 0 },
           ]}
           tasks={[
-            { label: 'Set arrival & ceremony times', done: true },
+            { label: 'Set arrival & ceremony times', done: false },
             { label: 'Adjust speeches timing',       done: false },
             { label: 'Publish to guest program',     done: false },
           ]}
