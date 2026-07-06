@@ -19,6 +19,9 @@ export interface InvitationConfig {
   imageUrl?: string;
   musicUrl?: string;
   videoUrl?: string;
+  weddingDate?: string;
+  /** Poem shown on the cream "Gifting" enclosure card. Empty string hides the card. */
+  giftingPoem?: string;
 }
 
 export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
@@ -29,4 +32,10 @@ export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
   dressCode: 'Formal Attire',
   rsvpDeadline: 'August 20, 2026',
   extraInfo: 'Reception to follow. Transportation available. Hotel accommodations arranged.',
+  weddingDate: '2026-09-06T18:00:00+02:00',
+  giftingPoem:
+    "With all that we have, we've been truly blessed,\n" +
+    'your presence and prayers are all that we request,\n' +
+    'but should you decide to give nonetheless,\n' +
+    'a monetary gift is what we suggest.',
 };

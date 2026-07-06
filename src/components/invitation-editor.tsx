@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout } from '@/lib/image-utils';
 import { supabase } from '@/lib/supabase';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
-import { InvitationCard } from '@/components/invitation-card';
+import { InvitationCard, GiftingCard } from '@/components/invitation-card';
 
 const BUCKET = 'wedding-assets';
 
@@ -399,12 +399,28 @@ export function InvitationEditor() {
             </div>
 
             <div className="space-y-3">
-              <Label>Date & Time</Label>
+              <Label>Date & Time (Display Text)</Label>
               <Input
                 value={config.dateTime}
                 onChange={(e) => setConfig({ ...config, dateTime: e.target.value })}
                 className="border-white/20"
               />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Countdown Target Date & Time (SAST)</Label>
+              <Input
+                type="datetime-local"
+                value={config.weddingDate ? config.weddingDate.substring(0, 16) : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setConfig(c => ({ ...c, weddingDate: val ? `${val}:00+02:00` : undefined }));
+                }}
+                className="border-white/20 bg-white/5 text-white"
+              />
+              <p className="text-[10px] text-white/40 -mt-1">
+                Select the exact date and time for the countdown clock. Timezone is SAST (GMT+2).
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -442,6 +458,20 @@ export function InvitationEditor() {
                 placeholder="Reception details, transportation, accommodations, etc."
                 className="border-white/20 min-h-24"
               />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Gifting card poem — shown on a cream enclosure card</Label>
+              <Textarea
+                value={config.giftingPoem ?? ''}
+                onChange={(e) => setConfig({ ...config, giftingPoem: e.target.value })}
+                placeholder="Leave empty to hide the gifting card"
+                className="border-white/20 min-h-28"
+              />
+              <p className="text-[11px] text-white/35">
+                Each line of the poem stays on its own line, exactly as typed. Clear the box to
+                remove the card from the invitation.
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -508,6 +538,13 @@ export function InvitationEditor() {
                 <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                   <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/70 mb-1">Good to know (shown under the card)</p>
                   <p className="text-xs text-white/50 leading-relaxed">{config.extraInfo}</p>
+                </div>
+              )}
+
+              {config.giftingPoem?.trim() && (
+                <div>
+                  <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/70">Gifting card (shown under the invitation)</p>
+                  <GiftingCard poem={config.giftingPoem} widthClass="w-full max-w-[380px]" />
                 </div>
               )}
 
