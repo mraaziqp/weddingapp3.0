@@ -385,7 +385,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
             transition={{ delay: 0.5, duration: 0.7 }}
           >
             <p className="text-2xl md:text-3xl font-headline italic text-[#1C1C1C]/80">Tuscany in Rylands</p>
-            <p className="text-[#1C1C1C]/50 tracking-widest text-sm uppercase">Cape Town, South Africa</p>
+            <p className="text-[#1C1C1C]/50 text-sm">2 Jane Avenue, Rylands, Cape Town</p>
           </motion.div>
 
           <motion.div
@@ -403,7 +403,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
               </a>
             </motion.div>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}>
-              <a href="https://www.google.com/maps/place/Tuscany+in+Rylands/@-33.9575971,18.5135235,17z" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.google.com/maps/place/2+Jane+Avenue,+Rylands,+Cape+Town" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-medium tracking-widest rounded-full px-8 h-12 gap-2">
                   <MapPin size={16} /> Get Directions
                 </Button>

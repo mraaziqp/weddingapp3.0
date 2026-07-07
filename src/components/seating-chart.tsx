@@ -321,6 +321,7 @@ export function SeatingChart() {
     tablePreset.map((table) => ({ ...table, guests: [...table.guests] }))
   );
   const [activeDrag, setActiveDrag] = useState<Active | null>(null);
+  const [overContainer, setOverContainer] = useState<string | null>(null);
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
   const [showUnseatedPanel, setShowUnseatedPanel] = useState(true);
   const [hasHydratedLayout, setHasHydratedLayout] = useState(false);
@@ -463,18 +464,26 @@ export function SeatingChart() {
     return table?.id;
   };
   
-  const handleDragStart = (event: DragStartEvent) => setActiveDrag(event.active);
-  
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDrag(event.active);
+  };
+
+  const handleDragOver = (event: any) => {
+    const { over } = event;
+    setOverContainer(over?.id as string || null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+    setOverContainer(null);
+
     if (!over) {
       setActiveDrag(null);
       return;
     }
-    
+
     const originalContainerId = findContainer(active.id as string);
-    const overContainerId = findContainer(over.id as string);
+    const overContainerId = over.id as string || findContainer(over.id as string);
     
     if (!originalContainerId || !overContainerId || active.id === over.id) {
         setActiveDrag(null);
@@ -734,7 +743,7 @@ export function SeatingChart() {
       </div>
 
       <div id="seating-print-area" className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         {(showUnseatedPanel || !isMobile) && (
           <Card className="glass-card lg:col-span-3" data-print-hide>
             <CardHeader><CardTitle>Unseated Guests</CardTitle></CardHeader>
@@ -792,7 +801,7 @@ export function SeatingChart() {
                       id={table.id}
                       table={table}
                       guests={table.guests}
-                      isOver={!!activeDrag && findContainer(activeDrag.id as string) !== table.id && findContainer(activeDrag.id as string) !== 'unseated'}
+                      isOver={overContainer === table.id && !!activeDrag && table.guests.length < table.capacity}
                       isAtCapacity={!!activeDrag && table.guests.length >= table.capacity}
                       justFilled={justFilledTable === table.id}
                       hasConflict={tableConflicts[table.id] ?? false}

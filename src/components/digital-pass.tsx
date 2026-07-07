@@ -2,7 +2,7 @@
 import QRCode from 'react-qr-code';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { Download, Camera, Plane } from 'lucide-react';
+import { Download, Camera, Heart, Share2, MapPin, Calendar } from 'lucide-react';
 import type { Household } from '@/lib/types';
 import { motion, useAnimationControls } from 'framer-motion';
 import Link from 'next/link';
@@ -86,13 +86,7 @@ export function DigitalPass({ household }: { household: Household }) {
   }, []);
 
   return (
-    <motion.div
-      className="min-h-screen w-full flex items-center justify-center p-4"
-      style={{ background: 'radial-gradient(ellipse at 50% 30%, #0d2318 0%, #030a06 100%)' }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-    >
+    <div className="min-h-screen w-full flex flex-col p-4" style={{ background: 'linear-gradient(135deg, #fdfbf5 0%, #fef9f0 50%, #faf5e8 100%)' }}>
       {/* Gold dust in the background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
         {goldDust.map(p => (
@@ -100,142 +94,109 @@ export function DigitalPass({ household }: { household: Household }) {
             key={p.id}
             className="absolute w-1 h-1 rounded-full bg-[#d4af37]"
             style={{ left: `${p.left}%`, top: `${p.top}%`, opacity: 0 }}
-            animate={{ opacity: [0, 0.4, 0], scale: [0, 1, 0] }}
+            animate={{ opacity: [0, 0.3, 0], scale: [0, 1, 0] }}
             transition={{ duration: p.dur, delay: p.dly, repeat: Infinity }}
           />
         ))}
       </div>
 
+      {/* ── Invitation Card ── */}
       <motion.div
         ref={cardRef}
-        initial={{ opacity: 0, y: 60, rotateX: 8 }}
+        initial={{ opacity: 0, y: 40, rotateX: 8 }}
         animate={controls}
-        className="relative w-full max-w-sm rounded-3xl overflow-hidden"
+        className="relative max-w-2xl mx-auto w-full rounded-3xl overflow-hidden mb-8 mt-8"
         style={{
-          background: 'linear-gradient(145deg, #0d2318 0%, #051209 40%, #0a1a10 70%, #081510 100%)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 1px rgba(212,175,55,0.4), inset 0 1px 0 rgba(212,175,55,0.15)',
+          background: 'linear-gradient(145deg, rgba(12,18,16,0.95) 0%, rgba(5,18,9,0.95) 40%, rgba(10,26,16,0.95) 100%)',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.15), inset 0 1px 0 rgba(212,175,55,0.15)',
           transformStyle: 'preserve-3d',
           transition: 'transform 0.15s ease-out',
         }}
       >
         <HoloSweep />
-
-        {/* Gold border line */}
         <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ border: '1px solid rgba(212,175,55,0.25)' }} />
 
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="relative w-8 h-8">
-              <Image src="/RA-logo.svg" alt="R&A" fill className="filter-gold object-contain" />
+        <div className="relative z-10 px-8 py-12 text-center space-y-6">
+          <motion.h1 className="font-headline text-5xl italic text-[#f6e7b7]" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            We Can't Wait
+          </motion.h1>
+
+          <motion.p className="text-xl text-[#d4af37]/80 font-light" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+            Thank you for saying yes, <span className="font-semibold text-[#f6e7b7]">{household.name}</span>
+          </motion.p>
+
+          <div className="h-px bg-gradient-to-r from-transparent via-[#d4af37]/40 to-transparent my-4" />
+
+          <motion.div className="space-y-4 text-[#f6e7b7]/80" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
+            <div className="flex items-center justify-center gap-3">
+              <Calendar size={18} className="text-[#d4af37]" />
+              <span>Saturday, September 6, 2026 at 3:00 PM</span>
             </div>
-            <div>
-              <p className="font-headline text-xs uppercase tracking-[0.2em] text-[#d4af37]/60">Wedu 3.0</p>
-              <p className="font-headline text-sm italic text-[#f6e7b7]/80">Boarding Pass</p>
+            <div className="flex items-center justify-center gap-3">
+              <MapPin size={18} className="text-[#d4af37]" />
+              <span>Tuscany in Rylands, 2 Jane Avenue, Cape Town</span>
             </div>
-          </div>
-          <Plane size={18} className="text-[#d4af37]/40 rotate-45" />
-        </div>
+          </motion.div>
 
-        {/* ── Dashed divider ── */}
-        <div className="mx-6 border-t border-dashed border-[#d4af37]/15" />
+          <div className="h-px bg-gradient-to-r from-transparent via-[#d4af37]/40 to-transparent my-4" />
 
-        {/* ── Route section ── */}
-        <div className="flex items-center justify-between px-6 py-5">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Origin</p>
-            <p className="font-headline text-4xl text-[#d4af37]">CPT</p>
-            <p className="text-xs text-[#f6e7b7]/40 mt-0.5">Cape Town</p>
-          </div>
-          {/* Animated flight path */}
-          <div className="flex items-center gap-1 flex-1 mx-4">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent" />
-            <motion.div
-              animate={{ x: [0, 4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Plane size={14} className="text-[#d4af37]/50 rotate-45" />
-            </motion.div>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent" />
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Destination</p>
-            <p className="font-headline text-4xl text-[#d4af37]">UNION</p>
-            <p className="text-xs text-[#f6e7b7]/40 mt-0.5">Forever</p>
-          </div>
-        </div>
-
-        {/* ── Dashed divider ── */}
-        <div className="mx-6 border-t border-dashed border-[#d4af37]/15" />
-
-        {/* ── Guest info ── */}
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Passenger</p>
-            <motion.p
-              className="font-headline text-2xl italic text-[#f6e7b7]"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              {household.name}
-            </motion.p>
-          </div>
-          <div className="flex gap-8">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Date</p>
-              <p className="text-sm font-medium text-[#f6e7b7]/80">Sept 6, 2026</p>
+          <motion.div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-[#d4af37]/20" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.9 }}>
+            <p className="text-sm text-[#d4af37]/60 uppercase tracking-wider mb-3">Your Personal QR Code</p>
+            <div className="p-3 rounded-xl bg-white mx-auto w-fit">
+              <QRCode value={household.qrCode} size={100} bgColor="#ffffff" fgColor="#0a1f18" level="H" />
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Time</p>
-              <p className="text-sm font-medium text-[#f6e7b7]/80">15:00 SAST</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37]/40 mb-1">Class</p>
-              <p className="text-sm font-medium text-[#d4af37]">First</p>
-            </div>
-          </div>
-        </div>
+          </motion.div>
 
-        {/* ── Dashed divider ── */}
-        <div className="mx-6 border-t border-dashed border-[#d4af37]/15" />
-
-        {/* ── QR code ── */}
-        <motion.div
-          className="flex flex-col items-center gap-3 px-6 py-5"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7, duration: 0.5, type: 'spring' }}
-        >
-          <div className="p-3 rounded-2xl bg-white relative">
-            <QRCode value={household.qrCode} size={110} bgColor="#ffffff" fgColor="#0a1f18" level="H" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-md">
-              <Image src="/RA-logo.svg" alt="R&A" width={26} height={26} className="filter-black" />
-            </div>
-          </div>
-          <p className="text-[10px] font-mono text-[#d4af37]/30 tracking-widest">{household.qrCode}</p>
-        </motion.div>
-
-        {/* ── Action buttons ── */}
-        <div className="px-6 pb-6 grid gap-2">
-          <Button
-            asChild
-            className="w-full rounded-2xl bg-[#d4af37] hover:bg-[#c8a030] text-black font-semibold tracking-wide h-12 shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
-          >
-            <Link href={`/invite/${household.qrCode}/camera`}>
-              <Camera size={16} className="mr-2" /> Leave a Memory
-            </Link>
-          </Button>
-          <Button
-            onClick={downloadPass}
-            variant="outline"
-            className="w-full rounded-2xl bg-transparent border border-[#d4af37]/20 text-[#f6e7b7]/60 hover:bg-[#d4af37]/5 hover:text-[#f6e7b7] h-12 tracking-wide"
-          >
-            <Download size={16} className="mr-2" /> Save to Device
-          </Button>
+          <motion.div className="grid grid-cols-2 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1 }}>
+            <Button asChild className="rounded-2xl bg-[#d4af37] hover:bg-[#c8a030] text-black font-semibold h-12 shadow-[0_4px_20px_rgba(212,175,55,0.35)]">
+              <Link href={`/invite/${household.qrCode}/camera`}>
+                <Heart size={16} className="mr-2" /> Memories
+              </Link>
+            </Button>
+            <Button variant="outline" className="rounded-2xl bg-transparent border border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10 h-12 font-semibold">
+              <Share2 size={16} className="mr-2" /> Share
+            </Button>
+          </motion.div>
         </div>
       </motion.div>
-    </motion.div>
+
+      {/* ── Dashboard Section ── */}
+      <motion.div className="max-w-2xl mx-auto w-full space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>
+        <h2 className="text-3xl font-headline italic text-[#1C1C1C] text-center mb-6">Your Wedding Dashboard</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Timeline Card */}
+          <motion.div whileHover={{ y: -4 }} className="bg-white rounded-2xl p-6 border border-[#d4af37]/20 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="h-10 w-10 rounded-full bg-[#d4af37]/20 flex items-center justify-center mb-4">
+              <Calendar className="text-[#d4af37]" size={20} />
+            </div>
+            <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Timeline</h3>
+            <p className="text-sm text-[#1C1C1C]/60 mb-4">View the wedding day schedule and events</p>
+            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">View Timeline</Button>
+          </motion.div>
+
+          {/* Venue Card */}
+          <motion.div whileHover={{ y: -4 }} className="bg-white rounded-2xl p-6 border border-[#d4af37]/20 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="h-10 w-10 rounded-full bg-[#d4af37]/20 flex items-center justify-center mb-4">
+              <MapPin className="text-[#d4af37]" size={20} />
+            </div>
+            <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Venue Details</h3>
+            <p className="text-sm text-[#1C1C1C]/60 mb-4">2 Jane Avenue, Rylands, Cape Town</p>
+            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">Get Directions</Button>
+          </motion.div>
+
+          {/* Connect Card */}
+          <motion.div whileHover={{ y: -4 }} className="bg-white rounded-2xl p-6 border border-[#d4af37]/20 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="h-10 w-10 rounded-full bg-[#d4af37]/20 flex items-center justify-center mb-4">
+              <Heart className="text-[#d4af37]" size={20} />
+            </div>
+            <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Share Memories</h3>
+            <p className="text-sm text-[#1C1C1C]/60 mb-4">Leave photos and messages for us</p>
+            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">Contribute</Button>
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
