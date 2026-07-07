@@ -8,6 +8,8 @@ import { LuxuryToaster } from '@/components/luxury-toaster';
 import { SwRegistration } from '@/components/sw-registration';
 import { ExperienceSettingsSync } from '@/components/experience-settings-sync';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Wedu 3.0 — The Union of Razia & Abduraziq',
   description: 'Your exclusive digital invitation and event companion.',
