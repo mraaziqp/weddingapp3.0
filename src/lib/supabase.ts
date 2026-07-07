@@ -115,18 +115,69 @@ export async function updateHousehold(
         .eq('id', householdId);
     if (hhErr) throw hhErr;
 
-    // Delete all existing guests and re-insert (simplest approach)
-    await supabase.from('guests').delete().eq('household_id', householdId);
+    // Fetch existing guests to compare and do a differential update
+    const { data: existingGuests, error: fetchErr } = await supabase
+        .from('guests')
+        .select('*')
+        .eq('household_id', householdId);
+    if (fetchErr) throw fetchErr;
+
+    const existingGuestIds = (existingGuests ?? []).map(g => g.id);
+    const newGuestIds = guests.map(g => g.id).filter(Boolean) as string[];
+
+    // 1. Delete guests who are not in the new list
+    const idsToDelete = existingGuestIds.filter(id => !newGuestIds.includes(id));
+    if (idsToDelete.length > 0) {
+        const { error: delErr } = await supabase
+            .from('guests')
+            .delete()
+            .in('id', idsToDelete);
+        if (delErr) throw delErr;
+    }
+
+    // 2. Separate into inserts and updates
     const ts = Date.now();
-    const guestRows = guests.map((g, i) => ({
-        id: g.id ?? `guest-${ts}-${i}`,
-        household_id: householdId,
-        first_name: g.firstName,
-        last_name: g.lastName,
-        rsvp_status: g.rsvpStatus ?? 'Pending',
-    }));
-    const { error: gErr } = await supabase.from('guests').insert(guestRows);
-    if (gErr) throw gErr;
+    const toInsert: any[] = [];
+    const toUpdate: any[] = [];
+
+    guests.forEach((g, i) => {
+        if (g.id && existingGuestIds.includes(g.id)) {
+            toUpdate.push({
+                id: g.id,
+                first_name: g.firstName,
+                last_name: g.lastName,
+                rsvp_status: g.rsvpStatus ?? 'Pending',
+            });
+        } else {
+            toInsert.push({
+                id: g.id ?? `guest-${ts}-${i}`,
+                household_id: householdId,
+                first_name: g.firstName,
+                last_name: g.lastName,
+                rsvp_status: g.rsvpStatus ?? 'Pending',
+            });
+        }
+    });
+
+    // 3. Insert new guests
+    if (toInsert.length > 0) {
+        const { error: insErr } = await supabase.from('guests').insert(toInsert);
+        if (insErr) throw insErr;
+    }
+
+    // 4. Update existing guests (update only specific fields to avoid overwriting dietary/song details)
+    for (const g of toUpdate) {
+        const { error: updErr } = await supabase
+            .from('guests')
+            .update({
+                first_name: g.first_name,
+                last_name: g.last_name,
+                rsvp_status: g.rsvp_status,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', g.id);
+        if (updErr) throw updErr;
+    }
 }
 
 export async function deleteHousehold(householdId: string): Promise<void> {

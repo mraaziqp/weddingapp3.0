@@ -287,7 +287,7 @@ export default function GuestTesterPage() {
             <div className="w-full h-full rounded-[42px] overflow-hidden bg-black relative">
               <iframe
                 key={`${selectedGuestQr}-${iframeKey}`}
-                src={`/event?guestId=${selectedGuestQr}`}
+                src={simEventDay ? `/event?guestId=${selectedGuestQr}` : `/invite/${selectedGuestQr}`}
                 className="w-full h-full border-none select-none"
                 style={{ height: '100%', width: '100%' }}
               />

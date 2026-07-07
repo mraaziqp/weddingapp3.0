@@ -1,5 +1,6 @@
 'use server';
 
+import { supabaseAdmin } from "@/lib/supabase";
 import { autoDraftWhatsAppMessage, type AutoDraftWhatsAppMessageInput } from "@/ai/flows/auto-draft-whatsapp-message";
 import { generateSaveDateCopy, generateSaveDateGradient, type CopyInput, type GradientInput } from "@/ai/flows/save-the-date-ai";
 import { z } from "zod";
@@ -67,3 +68,33 @@ export async function generateSaveDateGradientAction(input: GradientInput) {
         return { success: false, error: 'Failed to generate background.' };
     }
 }
+
+export async function submitRsvpAction(input: {
+  householdId: string;
+  rsvpStatus: 'Confirmed' | 'Regret';
+  dietary: string;
+  song: string;
+}) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('guests')
+      .update({
+        rsvp_status: input.rsvpStatus,
+        dietary_restrictions: input.dietary || null,
+        song_request: input.song || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('household_id', input.householdId);
+
+    if (error) {
+      console.error('[RSVP Action] DB error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[RSVP Action] server error:', error);
+    return { success: false, error: 'Internal server error.' };
+  }
+}
+

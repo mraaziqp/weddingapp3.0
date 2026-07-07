@@ -18,11 +18,7 @@ const GOOGLE_CALENDAR_URL =
   '&details=The+union+of+Razia+%26+Abduraziq.+We+cannot+wait+to+celebrate+with+you!' +
   '&location=Tuscany+in+Rylands%2C+Cape+Town%2C+South+Africa' +
   '&sf=true&output=xml';
-
-async function submitRsvpAction(_data: unknown) {
-  await new Promise(res => setTimeout(res, 1500));
-  return { success: true };
-}
+import { submitRsvpAction } from '@/app/actions';
 
 // ── Floating petal/particle overlay for the invite hero ──────────────────
 type Petal = { id: number; x: number; size: number; dur: number; delay: number; drift: number; rot: number; type: 'petal' | 'spark' }
@@ -131,13 +127,30 @@ export function StoryScrollInvite({ household }: { household: Household }) {
     return <DigitalPass household={household} />;
   }
 
-  const handleRsvp = (accepted: boolean) => {
+  const handleRsvp = async (accepted: boolean) => {
     if (accepted) {
       setFormStep('details');
     } else {
-      setRsvpState('declined');
-      setFormStep('done');
-      toast({ title: 'RSVP Received', description: "We're sad you can't make it. We appreciate you letting us know." });
+      setIsLoading(true);
+      try {
+        const result = await submitRsvpAction({
+          householdId: household.id,
+          rsvpStatus: 'Regret',
+          dietary: '',
+          song: ''
+        });
+        if (result.success) {
+          setRsvpState('declined');
+          setFormStep('done');
+          toast({ title: 'RSVP Received', description: "We're sad you can't make it. We appreciate you letting us know." });
+        } else {
+          toast({ variant: 'destructive', title: 'Oops!', description: 'Something went wrong. Please try again.' });
+        }
+      } catch (err) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to submit RSVP.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -145,7 +158,12 @@ export function StoryScrollInvite({ household }: { household: Household }) {
     event.preventDefault();
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
-    const data = { dietary: formData.get('dietary'), song: formData.get('song'), householdId: household.id };
+    const data = {
+      householdId: household.id,
+      rsvpStatus: 'Confirmed' as const,
+      dietary: String(formData.get('dietary') || ''),
+      song: String(formData.get('song') || '')
+    };
     const result = await submitRsvpAction(data);
     setIsLoading(false);
 

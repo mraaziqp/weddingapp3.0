@@ -1,5 +1,5 @@
-
 'use client';
+import { households } from '@/lib/mock-data';
 import type { Household } from '@/lib/types';
 import { lookupHouseholdByQr } from '@/lib/supabase';
 import { EnvelopeReveal } from '@/components/envelope-reveal';
@@ -17,7 +17,7 @@ export default function InvitePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showInvitation, setShowInvitation] = useState(false);
-  const [household, setHousehold] = useState<Household | null>(null);
+  const [dbHousehold, setDbHousehold] = useState<Household | null>(null);
 
   // This logic runs only on the client, avoiding SSR issues with localStorage.
   useEffect(() => {
@@ -32,12 +32,14 @@ export default function InvitePage() {
             guestId ? lookupHouseholdByQr(guestId).catch(() => null) : Promise.resolve(null),
           ]).then(([configRes, householdRes]) => {
             setShowInvitation(configRes?.config?.invitationMode === true);
-            setHousehold(householdRes);
+            setDbHousehold(householdRes);
             setIsLoading(false);
           });
         }
     }
   }, [guestId, router]);
+
+  const household: Household | undefined = dbHousehold || households.find(h => h.qrCode === guestId);
 
   // Show a loading skeleton while we decide which route to show
   if (isLoading) {
