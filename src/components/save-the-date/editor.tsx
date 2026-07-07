@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -424,7 +423,7 @@ export function SaveTheDateEditor() {
       const filename = `${Date.now()}-${compressedFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const bucketName = 'wedding-assets';
 
-      const { data, error } = await withTimeout(
+      const { error } = await withTimeout(
         supabase.storage
           .from(bucketName)
           .upload(`save-the-date/${filename}`, compressedFile, {
@@ -453,7 +452,7 @@ export function SaveTheDateEditor() {
       dispatch({ type: 'ADD_ELEMENT', element: el });
       setSelectedId(el.id);
       toast({ title: 'Upload Complete!', description: 'Image successfully published to Supabase storage.' });
-    } catch (err: any) {
+    } catch (err) {
       console.warn('[Upload to Supabase failed]', err);
       toast({
         title: 'Saved locally',
@@ -692,7 +691,7 @@ function GridOverlay() {
 // ── Left sidebar ──────────────────────────────────────────────────────────────
 function LeftSidebar({
   activeTab, onTabChange, onAddText, onAddQR, onAddSticker, onImageUpload,
-  dispatch, design, selectedId, websiteUrl, setWebsiteUrl,
+  dispatch, design, websiteUrl, setWebsiteUrl,
   familyverseKey, setFamilyverseKey, familyverseUrl, setFamilyverseUrl,
   onFetchFamilyVerseQR, selectedEl,
 }: {
@@ -1084,7 +1083,7 @@ function AIPanel({ selectedEl, dispatch, design }: {
           {loadingCopy ? 'Writing…' : 'Generate Copy'}
         </Button>
         {lastCopy && (
-          <p className="text-[10px] italic text-[#f6e7b7]/60 leading-relaxed">"{lastCopy}"</p>
+          <p className="text-[10px] italic text-[#f6e7b7]/60 leading-relaxed">&quot;{lastCopy}&quot;</p>
         )}
       </div>
 
@@ -1492,6 +1491,9 @@ function CanvasElement({
       )}
 
       {element.type === 'image' && (
+        // Design-canvas images are arbitrary user uploads/URLs at runtime,
+        // so next/image domain allow-listing can't apply here.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={(element as ImageElement).src}
           alt=""

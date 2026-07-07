@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Trash2, Mail, Phone, FileText } from 'lucide-react';
+import { Plus, Trash2, Mail, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
@@ -36,7 +36,7 @@ export default function VendorsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
   const { toast } = useToast();
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({ resolver: zodResolver(vendorSchema), defaultValues: { status: 'Enquired' } });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(vendorSchema), defaultValues: { status: 'Enquired' } });
 
   const onSubmit = (data: typeof vendorSchema._type) => {
     startTransition(() => {

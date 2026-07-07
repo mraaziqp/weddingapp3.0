@@ -1,13 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Guest, GuestTag, Household, MenuItem, TimelineEvent, TrackItem, Gift } from './types';
+import type { Guest, GuestTag, Household, MenuItem, MenuCourse, DietaryFlag, TimelineEvent, TimelineCategory, TrackItem, TrackColumn, Gift } from './types';
+
+// Raw rows come back from Supabase untyped; this alias is the single sanctioned
+// escape hatch at the query boundary — everything past the mappers is typed.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DbRow = Record<string, any>;
 
 // Fall back to a dummy URL/key during static-generation (build) so that the
 // module can be loaded without throwing. Real env vars must be set on Vercel
 // for runtime calls to work.
+type RuntimeSupabaseConfig = { supabaseUrl?: string; supabaseAnonKey?: string };
+
 function getInitialConfig() {
-  if (typeof window !== 'undefined' && (window as any).__SUPABASE_CONFIG__) {
-    const cfg = (window as any).__SUPABASE_CONFIG__;
-    if (cfg.supabaseUrl && !cfg.supabaseUrl.includes('placeholder')) {
+  const injected = typeof window !== 'undefined'
+    ? (window as Window & { __SUPABASE_CONFIG__?: RuntimeSupabaseConfig }).__SUPABASE_CONFIG__
+    : undefined;
+  if (injected) {
+    const cfg = injected;
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey && !cfg.supabaseUrl.includes('placeholder')) {
       return { url: cfg.supabaseUrl, key: cfg.supabaseAnonKey };
     }
   }
@@ -35,7 +45,7 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 // ── Type mappers (DB snake_case ↔ app camelCase) ──────────────────────────────
 
-export function dbToGuest(g: Record<string, any>): Guest {
+export function dbToGuest(g: DbRow): Guest {
     return {
         id: g.id,
         householdId: g.household_id,
@@ -48,7 +58,7 @@ export function dbToGuest(g: Record<string, any>): Guest {
     };
 }
 
-export function dbToHousehold(h: Record<string, any>): Household {
+export function dbToHousehold(h: DbRow): Household {
     return {
         id: h.id,
         name: h.name,
@@ -58,12 +68,12 @@ export function dbToHousehold(h: Record<string, any>): Household {
     };
 }
 
-export function dbToMenuItem(m: Record<string, any>): MenuItem {
+export function dbToMenuItem(m: DbRow): MenuItem {
     return {
         id: m.id,
         name: m.name,
         description: m.description ?? '—',
-        course: m.course as any,
+        course: m.course as MenuCourse,
         dietaryFlags: m.dietary_flags ? m.dietary_flags.split(',').map((f: string) => f.trim()) : [],
         sortOrder: m.sort_order ?? 0,
     };
@@ -145,8 +155,9 @@ export async function updateHousehold(
 
     // 2. Separate into inserts and updates
     const ts = Date.now();
-    const toInsert: any[] = [];
-    const toUpdate: any[] = [];
+    type GuestRow = { id: string; household_id?: string; first_name: string; last_name: string; rsvp_status: string };
+    const toInsert: GuestRow[] = [];
+    const toUpdate: GuestRow[] = [];
 
     guests.forEach((g, i) => {
         if (g.id && existingGuestIds.includes(g.id)) {
@@ -263,8 +274,8 @@ export async function addMenuItem(
         id,
         name,
         description: description || '—',
-        course: course as any,
-        dietaryFlags: (dietaryFlags as any[]) as any,
+        course: course as MenuCourse,
+        dietaryFlags: dietaryFlags as DietaryFlag[],
         sortOrder: 0,
     };
 }
@@ -290,13 +301,13 @@ export async function updateMenuItemsOrder(items: MenuItem[]): Promise<void> {
 
 // ── Timeline Events ───────────────────────────────────────────────────────────
 
-export function dbToTimelineEvent(e: Record<string, any>): TimelineEvent {
+export function dbToTimelineEvent(e: DbRow): TimelineEvent {
     return {
         id: e.id,
         time: e.time,
         title: e.title,
         description: e.description ?? '',
-        category: e.category as any,
+        category: e.category as TimelineCategory,
         isPublic: e.is_public ?? true,
         duration: e.duration ?? 30,
         sortOrder: e.sort_order ?? 0,
@@ -324,12 +335,12 @@ export async function updateTimelineEventsOrder(events: TimelineEvent[]): Promis
 
 // ── Tracks (Playlist) ─────────────────────────────────────────────────────────
 
-export function dbToTrackItem(t: Record<string, any>): TrackItem {
+export function dbToTrackItem(t: DbRow): TrackItem {
     return {
         id: t.id,
         title: t.title,
         artist: t.artist ?? 'Unknown',
-        column: t.column as any,
+        column: t.column as TrackColumn,
         requestedBy: t.requested_by ?? null,
         sortOrder: t.sort_order ?? 0,
     };
@@ -367,7 +378,7 @@ export async function updateTracksOrder(tracks: TrackItem[]): Promise<void> {
 
 // ── Gifts ─────────────────────────────────────────────────────────────────────
 
-export function dbToGift(g: Record<string, any>): Gift {
+export function dbToGift(g: DbRow): Gift {
     return {
         id: g.id,
         name: g.name,

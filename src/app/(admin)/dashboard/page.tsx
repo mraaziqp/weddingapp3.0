@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react';
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarHeart, MailOpen, Globe, Sparkles, Play, Users, Clock, Trophy } from "lucide-react";
+import { CalendarHeart, MailOpen, Sparkles, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,7 +26,7 @@ export default function DashboardPage() {
   const [invitationMode, setInvitationMode] = useState(false);
   const [weddingDayMode, setWeddingDayMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [showGuestView, setShowGuestView] = useState(false);
+  const [_showGuestView, _setShowGuestView] = useState(false);
   const { toast } = useToast();
 
   const weddingDate = new Date('2026-09-06');
@@ -150,7 +148,7 @@ export default function DashboardPage() {
                 <Trophy className="text-amber-400" size={20} />
                 Control Panel
               </CardTitle>
-              <CardDescription>Manage your wedding's public experience</CardDescription>
+              <CardDescription>Manage your wedding&apos;s public experience</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               {/* Switch 1: Save the Date */}

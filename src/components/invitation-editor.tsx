@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,7 @@ export function InvitationEditor() {
       const publicUrl = await uploadToStorage(compressed, 'invitation-photos');
       setConfig(current => ({ ...current, imageUrl: publicUrl }));
       toast({ title: 'Image uploaded!', description: 'Your invitation image is ready.' });
-    } catch (err) {
+    } catch (_err) {
       toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
     } finally {
       setUploading(false);
@@ -107,7 +107,7 @@ export function InvitationEditor() {
       const publicUrl = await uploadToStorage(file, 'invitation-music');
       setConfig(current => ({ ...current, musicUrl: publicUrl }));
       toast({ title: 'Music uploaded!', description: 'Your invitation soundtrack is ready.' });
-    } catch (err) {
+    } catch (_err) {
       toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
     } finally {
       setUploadingMusic(false);
@@ -132,7 +132,7 @@ export function InvitationEditor() {
       const publicUrl = await uploadToStorage(file, 'invitation-videos');
       setConfig(current => ({ ...current, videoUrl: publicUrl }));
       toast({ title: 'Video uploaded!', description: 'Your invitation video is ready.' });
-    } catch (err) {
+    } catch (_err) {
       toast({ title: 'Upload failed', description: 'Please check your connection and try again.', variant: 'destructive' });
     } finally {
       setUploadingVideo(false);
@@ -153,7 +153,7 @@ export function InvitationEditor() {
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
       input.files = dataTransfer.files;
-      await handleImageUpload({ target: input } as any);
+      await handleImageUpload({ target: input } as unknown as React.ChangeEvent<HTMLInputElement>);
     }
   };
 
@@ -171,7 +171,7 @@ export function InvitationEditor() {
       } else {
         toast({ title: 'Save failed', description: 'The server rejected the update. Please try again.', variant: 'destructive' });
       }
-    } catch (err) {
+    } catch (_err) {
       toast({ title: 'Save failed', description: 'Check your connection and try again.', variant: 'destructive' });
     } finally {
       setIsSaving(false);

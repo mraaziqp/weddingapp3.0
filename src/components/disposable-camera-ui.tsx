@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Check, Eye } from 'lucide-react';
+import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
@@ -93,7 +93,7 @@ function FilmStrip({ shots }: { shots: string[] }) {
 
 export function DisposableCameraUI({ guestId, visibility: initialVisibility, questTag, onUploadComplete }: DisposableCameraUIProps) {
   const [shotsLeft, setShotsLeft] = useState(TOTAL_SHOTS);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isAnimating, _setIsAnimating] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStalled, setUploadStalled] = useState(false);

@@ -4,9 +4,8 @@ import type { Household } from '@/lib/types';
 import { lookupHouseholdByQr } from '@/lib/supabase';
 import { EnvelopeReveal } from '@/components/envelope-reveal';
 import { InvitationRSVP } from '@/components/invitation-rsvp';
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { LuxuryLoader } from '@/components/luxury-loader';
 import { motion } from 'framer-motion';
 

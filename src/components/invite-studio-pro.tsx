@@ -4,9 +4,8 @@ import { fetchHouseholds } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import QRCode from 'react-qr-code';
-import { Share2, Download, Eye, X, Send, MessageSquare, CheckCircle, Clock, XCircle, Users, FileText, Zap } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Share2, Eye, Send, MessageSquare, CheckCircle, Clock, XCircle, Users, FileText, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import type { Household } from '@/lib/types';
@@ -46,7 +45,7 @@ export function InviteStudioPro() {
   const [households, setHouseholds] = useState<Household[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inviteStatuses, setInviteStatuses] = useState<Record<string, InviteStatus>>({});
-  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
+  const [_selectedHousehold, _setSelectedHousehold] = useState<Household | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | InviteStatus['status']>('all');
   const { toast } = useToast();
 
@@ -160,7 +159,7 @@ export function InviteStudioPro() {
             <Button
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
-              onClick={() => setFilterStatus(status as any)}
+              onClick={() => setFilterStatus(status as InviteStatus['status'])}
               className={filterStatus === status ? 'bg-amber-600' : ''}
             >
               {config.label} ({count})

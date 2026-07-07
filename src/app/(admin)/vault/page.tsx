@@ -2,24 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Download, Share2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Heart, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import type { Media } from '@/lib/types';
 
 export default function VaultPage() {
-  const [mediaItems, setMediaItems] = useState<any[]>([]);
+  const [mediaItems, setMediaItems] = useState<Media[]>([]);
   const [activeTab, setActiveTab] = useState<'shared' | 'private'>('shared');
   const [loading, setLoading] = useState(true);
-  const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<Media | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   useEffect(() => {
     loadMedia();
+    // loadMedia reads activeTab, which is the dependency that matters here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const loadMedia = async () => {

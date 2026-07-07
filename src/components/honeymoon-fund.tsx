@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Plane, TrendingUp, Gift, DollarSign } from 'lucide-react';
+import { Heart, Plane, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface HoneymoonContribution {
@@ -223,7 +223,7 @@ export function HoneymoonFund() {
                       </Badge>
                     </div>
                     {contribution.message && (
-                      <p className="text-sm text-white/70 italic">"{contribution.message}"</p>
+                      <p className="text-sm text-white/70 italic">&quot;{contribution.message}&quot;</p>
                     )}
                   </div>
                 </CardContent>
@@ -265,7 +265,7 @@ export function HoneymoonFund() {
               </div>
             </div>
             <p className="text-white/70 text-sm">
-              Every contribution, big or small, helps us create the honeymoon of our dreams. We're beyond grateful for your love and support! 💕
+              Every contribution, big or small, helps us create the honeymoon of our dreams. We&apos;re beyond grateful for your love and support! 💕
             </p>
           </CardContent>
         </Card>

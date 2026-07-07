@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -85,13 +85,12 @@ const AddGiftForm = ({ onAddGift, setOpen }: { onAddGift: (data: Gift) => void; 
         resolver: zodResolver(giftSchema),
     });
 
-    const onSubmit = (data: any) => {
+    const onSubmit = (data: z.infer<typeof giftSchema>) => {
         onAddGift({
             ...data,
-            id: Math.random(),
+            id: `gift-${Date.now()}`,
             isCrowdfund: false,
             fundedAmount: 0,
-            category: 'Custom'
         });
         setOpen(false);
     };

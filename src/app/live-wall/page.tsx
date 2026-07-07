@@ -1,6 +1,6 @@
 
 import { LiveMasonryGrid } from '@/components/live-masonry-grid';
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { fetchPublicWallItems } from '@/lib/media';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LuxuryLoader } from '@/components/luxury-loader';
@@ -12,16 +12,13 @@ import { Camera } from 'lucide-react';
 export const revalidate = 15;
 
 async function getMediaItems() {
-    // In production this becomes a single cached DB read per 15-second window.
-    // const items = await db.select().from(mediaTable).orderBy(desc(mediaTable.createdAt));
-    
-    const mediaItems = PlaceHolderImages.filter(p => p.id.startsWith('gallery-') && Math.random() > 0.2).map((p, index) => ({
-      ...p,
-      id: p.id + '-' + index,
-      guestName: 'A Guest',
-    }));
-
-    return mediaItems;
+    // Real guest uploads from the media table. The 15s revalidate window means
+    // concurrent guest refreshes hit the CDN cache, not the database.
+    try {
+        return await fetchPublicWallItems(60);
+    } catch {
+        return [];
+    }
 }
 
 function GridSkeleton() {

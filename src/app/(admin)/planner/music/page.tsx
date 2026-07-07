@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -66,7 +66,7 @@ function TrackCard({ item, accent, onRemove }: { item: TrackItem; accent: string
 }
 
 // ── Add-track inline form ──────────────────────────────────────────────────
-function AddTrackForm({ column, accent, onAdd }: { column: TrackColumn; accent: string; onAdd: (title: string, artist: string) => void }) {
+function AddTrackForm({ accent, onAdd }: { column: TrackColumn; accent: string; onAdd: (title: string, artist: string) => void }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -128,7 +128,7 @@ function AddTrackForm({ column, accent, onAdd }: { column: TrackColumn; accent: 
 
 // ── Kanban column ──────────────────────────────────────────────────────────
 function KanbanColumn({
-  col, items, activeId, onAdd, onRemove,
+  col, items, onAdd, onRemove,
 }: {
   col: typeof COLUMNS[number];
   items: TrackItem[];
@@ -136,7 +136,7 @@ function KanbanColumn({
   onAdd: (title: string, artist: string, col: TrackColumn) => void;
   onRemove: (id: string) => void;
 }) {
-  const { setNodeRef, isOver } = typeof useSortable === 'function' ? { setNodeRef: null, isOver: false } : { setNodeRef: null, isOver: false };
+  const isOver = false; // droppable highlight handled by dnd-kit at the board level
 
   return (
     <div
@@ -201,7 +201,7 @@ function GuestRequestCard({
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-white/70 truncate">{guest}</p>
-        <p className="text-[11px] text-white/40 truncate italic">"{song}"</p>
+        <p className="text-[11px] text-white/40 truncate italic">&quot;{song}&quot;</p>
       </div>
       <button
         onClick={onAdd}

@@ -25,7 +25,7 @@ export default function AiSecretaryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-headline text-3xl font-bold italic tracking-tight">AI Bride's Secretary</h1>
+        <h1 className="font-headline text-3xl font-bold italic tracking-tight">AI Bride&apos;s Secretary</h1>
         <p className="text-muted-foreground">Automatically draft personalized WhatsApp messages for your guests.</p>
       </div>
       <Suspense fallback={<div>Loading...</div>}>

@@ -243,7 +243,7 @@ function EnvelopeCorner({ className }: { className?: string }) {
 }
 
 // ── Custom Dynamic Card from Canva Editor ──────────────────────────────────────
-function CustomDesignCard({ designState, cardWidth }: { designState: DesignState; cardWidth: number }) {
+function _CustomDesignCard({ designState, cardWidth }: { designState: DesignState; cardWidth: number }) {
   const scale = cardWidth / 480; // Scale canvas down to card container width (ratio 480 x 672)
 
   return (
@@ -477,7 +477,8 @@ export function SaveTheDateEnvelope() {
     };
     push(() => setPhase('intro'),  400);
     push(() => setPhase('idle'),   3700);
-    return () => timers.current.forEach(clearTimeout);
+    const pending = timers.current;
+    return () => pending.forEach(clearTimeout);
   }, [track]);
 
   // ── Seal idle pulse ─────────────────────────────────────────────────────────
@@ -526,13 +527,13 @@ export function SaveTheDateEnvelope() {
     const t2 = setTimeout(() => setPhase('revealed'), 1100);
 
     timers.current.push(t1, t2);
-  }, [phase, track, sealCtrl, flapCtrl]);
+  }, [phase, track, sealCtrl, flapCtrl, isMuted]);
 
   const showCard     = phase === 'opening' || phase === 'revealed';
   const showEnvelope = phase !== 'revealed';
 
   // Scaled card height to match aspect ratio if custom design is used
-  const calculatedCardH = designState ? Math.round(672 * (CARD_W / 480)) : CARD_H; // ≈ 518px
+  const _calculatedCardH = designState ? Math.round(672 * (CARD_W / 480)) : CARD_H; // ≈ 518px
 
   return (
     <div

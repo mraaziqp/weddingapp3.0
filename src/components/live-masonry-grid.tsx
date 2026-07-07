@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import { useState } from "react";
+import type { WallItem } from "@/lib/media";
 
 // Generates a base64 gold blur placeholder so images "reveal" from a warm
 // champagne shimmer rather than a grey void.
@@ -29,7 +30,7 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 100 } },
 };
 
-const Polaroid = ({ item, className }: {item: any, className?: string}) => {
+const Polaroid = ({ item, className }: { item: WallItem; className?: string }) => {
     const [isLiked, setIsLiked] = useState(false);
     
     return (
@@ -59,7 +60,7 @@ const Polaroid = ({ item, className }: {item: any, className?: string}) => {
     </motion.div>
 )};
 
-export function LiveMasonryGrid({ mediaItems }: { mediaItems: any[] }) {
+export function LiveMasonryGrid({ mediaItems }: { mediaItems: WallItem[] }) {
 
     return (
         <motion.div 

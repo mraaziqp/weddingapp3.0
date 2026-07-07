@@ -3,11 +3,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sparkles, Plus, Trash2, Sliders, RotateCcw, HelpCircle, 
-  ChevronRight, Compass, ShieldAlert, CheckCircle, Scale,
-  Layers, Info, Utensils, GlassWater, Flower, Pizza, Settings
+  Sparkles, Plus, Trash2, Sliders, RotateCcw, Compass, ShieldAlert, CheckCircle, Scale, Info, Utensils, GlassWater, Flower, Pizza, Settings
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -72,7 +70,7 @@ export default function TablePlannerPage() {
   const canvasSize = 520;
   
   // Calculate areas and crowd indexes
-  const { tableArea, objectsArea, crowdPercentage, crowdStatus } = useMemo(() => {
+  const { objectsArea, crowdPercentage, crowdStatus } = useMemo(() => {
     let tArea = 0;
     if (tableShape === 'circle') {
       tArea = Math.PI * Math.pow(tableDiameter / 2, 2);
@@ -222,7 +220,7 @@ export default function TablePlannerPage() {
     });
   };
 
-  const updateSelectedItem = (key: keyof PlannerItem, val: any) => {
+  const updateSelectedItem = (key: keyof PlannerItem, val: PlannerItem[keyof PlannerItem]) => {
     if (!selectedItemId) return;
     setItems(prev => prev.map(item => item.id === selectedItemId ? { ...item, [key]: val } : item));
   };
@@ -549,7 +547,7 @@ export default function TablePlannerPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-white/80">
                     <span className="text-white/60">Diameter (Round)</span>
-                    <span className="font-bold text-amber-400">{tableDiameter}" ({Math.round(tableDiameter * 2.54)} cm)</span>
+                    <span className="font-bold text-amber-400">{tableDiameter}&quot; ({Math.round(tableDiameter * 2.54)} cm)</span>
                   </div>
                   <Slider 
                     value={[tableDiameter]} 
@@ -559,10 +557,10 @@ export default function TablePlannerPage() {
                     step={6} 
                   />
                   <div className="flex justify-between text-[10px] text-white/30">
-                    <span>4ft (48")</span>
-                    <span>5ft (60")</span>
-                    <span>6ft (72")</span>
-                    <span>8ft (96")</span>
+                    <span>4ft (48&quot;)</span>
+                    <span>5ft (60&quot;)</span>
+                    <span>6ft (72&quot;)</span>
+                    <span>8ft (96&quot;)</span>
                   </div>
                 </div>
               ) : (
@@ -570,7 +568,7 @@ export default function TablePlannerPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-white/80">
                       <span className="text-white/60">Length</span>
-                      <span className="font-bold text-amber-400">{tableWidth}" ({Math.round(tableWidth * 2.54)} cm)</span>
+                      <span className="font-bold text-amber-400">{tableWidth}&quot; ({Math.round(tableWidth * 2.54)} cm)</span>
                     </div>
                     <Slider 
                       value={[tableWidth]} 
@@ -584,7 +582,7 @@ export default function TablePlannerPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-white/80">
                       <span className="text-white/60">Width</span>
-                      <span className="font-bold text-amber-400">{tableHeight}" ({Math.round(tableHeight * 2.54)} cm)</span>
+                      <span className="font-bold text-amber-400">{tableHeight}&quot; ({Math.round(tableHeight * 2.54)} cm)</span>
                     </div>
                     <Slider 
                       value={[tableHeight]} 
@@ -598,7 +596,7 @@ export default function TablePlannerPage() {
               )}
 
               <div className="flex items-center justify-between pt-3 border-t border-white/5 text-sm">
-                <span className="text-white/60">Snap-to-Grid (0.5")</span>
+                <span className="text-white/60">Snap-to-Grid (0.5&quot;)</span>
                 <Switch checked={useSnapping} onCheckedChange={setUseSnapping} className="data-[state=checked]:bg-amber-500" />
               </div>
             </CardContent>

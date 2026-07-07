@@ -146,7 +146,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
         } else {
           toast({ variant: 'destructive', title: 'Oops!', description: 'Something went wrong. Please try again.' });
         }
-      } catch (err) {
+      } catch (_err) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to submit RSVP.' });
       } finally {
         setIsLoading(false);
@@ -190,7 +190,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
         <motion.div key="done" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-4">
           <Heart className="mx-auto h-16 w-16 text-gray-300" />
           <h2 className="font-headline text-3xl italic text-[#1C1C1C]/80">Response Received</h2>
-          <p className="text-[#1C1C1C]/60">Thank you for letting us know. We'll miss you!</p>
+          <p className="text-[#1C1C1C]/60">Thank you for letting us know. We&apos;ll miss you!</p>
         </motion.div>
       );
     }
@@ -241,7 +241,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
               onSubmit={handleSubmit}
               className="w-full max-w-lg mx-auto px-6 py-10 space-y-6 text-left"
             >
-              <h2 className="font-headline text-3xl italic text-center text-[#1C1C1C] mb-2">We're so excited!</h2>
+              <h2 className="font-headline text-3xl italic text-center text-[#1C1C1C] mb-2">We&apos;re so excited!</h2>
               <p className="text-center text-[#1C1C1C]/50 text-sm mb-6">Just a few quick details to help us prepare.</p>
               <div className="space-y-2">
                 <label htmlFor="dietary" className="text-sm font-medium text-[#1C1C1C]/70 tracking-wide">Dietary requirements for your party?</label>

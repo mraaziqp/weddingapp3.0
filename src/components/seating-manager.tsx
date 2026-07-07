@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Trash2, Users, Edit2, Save, X, Maximize2, BarChart3 } from 'lucide-react';
+import { Plus, Trash2, Users, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchHouseholds } from '@/lib/supabase';
 
@@ -30,7 +29,7 @@ interface SeatingAnalytics {
 export function SeatingManager() {
   const [tables, setTables] = useState<Table[]>([]);
   const [unassignedGuests, setUnassignedGuests] = useState<string[]>([]);
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [_editingTable, _setEditingTable] = useState<Table | null>(null);
   const [newTableCapacity, setNewTableCapacity] = useState('8');
   const { toast } = useToast();
 
@@ -154,7 +153,7 @@ export function SeatingManager() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
         <AnimatePresence mode="popLayout">
-          {tables.map((table, idx) => (
+          {tables.map((table, _idx) => (
             <motion.div
               key={table.id}
               layout

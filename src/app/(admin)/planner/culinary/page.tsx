@@ -19,7 +19,6 @@ import { fetchMenuItems, addMenuItem, deleteMenuItem, updateMenuItemsOrder } fro
 import { useRealGuests } from '@/hooks/use-real-guests';
 import type { Guest } from '@/lib/types';
 import type { MenuItem, MenuCourse, DietaryFlag } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -344,7 +343,7 @@ export default function CulinaryPage() {
               </Link>
               <h1 className="font-headline text-3xl italic tracking-tight text-white/90">Culinary Manifest</h1>
             </div>
-            <p className="text-white/40 text-sm tracking-wide">Build the 4-course menu · review the Chef's Snapshot below</p>
+            <p className="text-white/40 text-sm tracking-wide">Build the 4-course menu · review the Chef&apos;s Snapshot below</p>
           </div>
           <Button
             onClick={handlePrint}
@@ -374,7 +373,7 @@ export default function CulinaryPage() {
         >
           <div className="flex items-center gap-2 mb-4">
             <ChefHat size={18} className="text-orange-400" />
-            <h2 className="font-semibold text-white/80 text-sm tracking-wide">Chef's Snapshot</h2>
+            <h2 className="font-semibold text-white/80 text-sm tracking-wide">Chef&apos;s Snapshot</h2>
             <span className="text-white/30 text-xs">— auto-read from Guest CRM</span>
           </div>
           <div className="flex flex-wrap gap-3">

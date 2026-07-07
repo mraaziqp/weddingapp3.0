@@ -64,8 +64,8 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
   const [introMusic, setIntroMusic] = useState<IntroMusic>('spark-rise');
   const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
   const introAudioCtxRef = useRef<AudioContext | null>(null);
-  const titleControls = useAnimationControls();
-  const subtitleControls = useAnimationControls();
+  const _titleControls = useAnimationControls();
+  const _subtitleControls = useAnimationControls();
   const { isMuted } = useAudio();
 
   useEffect(() => {
@@ -303,7 +303,7 @@ function EventPageContent() {
         >
           R&amp;A
         </motion.span>
-        <h2 className="font-headline text-2xl italic text-[#1C1C1C]">Oops — we couldn't find your invite.</h2>
+        <h2 className="font-headline text-2xl italic text-[#1C1C1C]">Oops — we couldn&apos;t find your invite.</h2>
         <p className="text-base text-black/40 max-w-xs leading-relaxed">
           Please scan your QR code from your original invitation link, or ask Razia or Abduraziq for help.
         </p>

@@ -6,7 +6,6 @@ import QRCode from 'react-qr-code';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Share2,
   Download,
   Printer,
   Copy,

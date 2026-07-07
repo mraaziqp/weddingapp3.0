@@ -4,7 +4,7 @@
 import type { JSX } from 'react';
 import { motion } from 'framer-motion';
 
-export const StaggeredText = ({ text, el: El = 'h1', className }: { text: string, el?: keyof JSX.IntrinsicElements, className?: string }) => {
+export const StaggeredText = ({ text, el: _El = 'h1', className }: { text: string, el?: keyof JSX.IntrinsicElements, className?: string }) => {
     const letters = Array.from(text);
     const container = {
         hidden: { opacity: 0 },

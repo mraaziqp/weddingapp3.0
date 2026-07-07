@@ -27,7 +27,7 @@ const VENUE_SAMPLE_NAMES = [
   'Test Guest 6',
 ];
 
-const VENUE_SAMPLE_GUESTS: Guest[] = VENUE_SAMPLE_NAMES.map((fullName, index) => {
+const _VENUE_SAMPLE_GUESTS: Guest[] = VENUE_SAMPLE_NAMES.map((fullName, index) => {
   const [firstName, ...rest] = fullName.split(' ');
   const lastName = rest.join(' ') || `Guest ${index + 1}`;
   const tags: GuestTag[] =

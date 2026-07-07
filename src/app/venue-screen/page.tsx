@@ -4,24 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2 } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
+import { fetchPublicWallItems, WallItem } from '@/lib/media';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const SLIDE_DURATION = 6000;   // ms between auto-advances
 const POLL_INTERVAL  = 10000;  // ms between polling for new images
 
-const GUEST_NAMES = ['A Guest'];
-
 // ── Types ─────────────────────────────────────────────────────────────────
-type SlideItem = ImagePlaceholder & { guestName: string };
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function buildInitialSlides(): SlideItem[] {
-  return PlaceHolderImages
-    .filter(p => p.id.startsWith('gallery-'))
-    .map((p, i) => ({ ...p, guestName: GUEST_NAMES[i % GUEST_NAMES.length] }));
-}
+type SlideItem = WallItem;
 
 // ── Gold ticker tape for "New Memory" notification ────────────────────────
 function TickerLine({ text }: { text: string }) {
@@ -59,11 +49,14 @@ export default function VenueScreenPage() {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Seed initial slides
+  // Seed initial slides from real guest uploads
   useEffect(() => {
-    const initial = buildInitialSlides();
-    initial.forEach(s => seenIds.current.add(s.id));
-    setSlides(initial);
+    fetchPublicWallItems(50)
+      .then(initial => {
+        initial.forEach(s => seenIds.current.add(s.id));
+        setSlides(initial);
+      })
+      .catch(() => {});
   }, []);
 
   // Auto-advance
@@ -78,34 +71,27 @@ export default function VenueScreenPage() {
     return () => clearTimeout(slideTimer.current);
   }, [currentIndex, slides.length, advance]);
 
-  // Poll for new images
-  // In production: replace the simulation block with a real fetch('/api/media/latest')
+  // Poll the real media table for newly uploaded guest photos
   useEffect(() => {
-    const poll = setInterval(() => {
-      // Simulate a 35% chance of a new photo arriving each poll tick
-      if (Math.random() > 0.65) {
-        const pool = PlaceHolderImages.filter(p => p.id.startsWith('gallery-'));
-        const base = pool[Math.floor(Math.random() * pool.length)];
-        const syntheticId = `live-${Date.now()}`;
+    const poll = setInterval(async () => {
+      try {
+        const latest = await fetchPublicWallItems(20);
+        const incoming = latest.find(item => !seenIds.current.has(item.id));
+        if (!incoming) return;
 
-        if (!seenIds.current.has(syntheticId)) {
-          seenIds.current.add(syntheticId);
-          const incoming: SlideItem = {
-            ...base,
-            id: syntheticId,
-            description: 'A new memory just captured!',
-            guestName: GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)],
-          };
+        seenIds.current.add(incoming.id);
+        const slide: SlideItem = { ...incoming, description: 'A new memory just captured!' };
 
-          // Play the "New Memory Captured!" animation for 3.2 s, then push into slideshow
-          setNewCapture(incoming);
-          setTimeout(() => {
-            setSlides(prev => [incoming, ...prev]);
-            clearTimeout(slideTimer.current);
-            setCurrentIndex(0);
-            setNewCapture(null);
-          }, 3200);
-        }
+        // Play the "New Memory Captured!" animation for 3.2 s, then push into slideshow
+        setNewCapture(slide);
+        setTimeout(() => {
+          setSlides(prev => [slide, ...prev]);
+          clearTimeout(slideTimer.current);
+          setCurrentIndex(0);
+          setNewCapture(null);
+        }, 3200);
+      } catch {
+        // Network hiccup — try again next tick
       }
     }, POLL_INTERVAL);
     return () => clearInterval(poll);
@@ -128,11 +114,11 @@ export default function VenueScreenPage() {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <motion.p
-          className="font-headline italic text-[#d4af37] text-2xl"
+          className="font-headline italic text-[#d4af37] text-2xl px-8 text-center"
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          Loading memories…
+          Waiting for the first memory… snap one with the disposable camera!
         </motion.p>
       </div>
     );

@@ -1,10 +1,10 @@
 
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download } from 'lucide-react';
+import { Download, Camera } from 'lucide-react';
 import { LiveMasonryGrid } from "../live-masonry-grid";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { fetchPublicWallItems, WallItem } from "@/lib/media";
 import { Button } from "../ui/button";
 
 const filters = ["All", "Ceremony", "Candid Vibes", "Dance Floor", "Speeches"];
@@ -16,13 +16,20 @@ interface GalleryFeedProps {
 
 export function GalleryFeed({ partyMode = false, isMorningAfter = false }: GalleryFeedProps) {
     const [activeFilter, setActiveFilter] = useState("All");
+    const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
 
-    const mediaItems = PlaceHolderImages.filter(p => p.id.startsWith('gallery-')).map((p, index) => ({
-      ...p,
-      id: p.id + '-' + index,
-      guestName: 'A Guest',
-      likes: Math.floor(Math.random() * 50),
-    }));
+    // Real guest uploads — refreshed every 20s so new captures appear live.
+    useEffect(() => {
+        let cancelled = false;
+        const load = () => {
+            fetchPublicWallItems(60)
+                .then(items => { if (!cancelled) setMediaItems(items); })
+                .catch(() => {});
+        };
+        load();
+        const id = setInterval(load, 20_000);
+        return () => { cancelled = true; clearInterval(id); };
+    }, []);
 
     // Text colours adapt to party mode dark background
     const headingColor  = partyMode ? '#f6e7b7' : '#1C1C1C';
@@ -134,7 +141,20 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
               </div>
             )}
             
-            <LiveMasonryGrid mediaItems={mediaItems} />
+            {mediaItems.length === 0 ? (
+                <div
+                    className="flex flex-col items-center justify-center py-16 text-center"
+                    style={{ color: subtitleColor }}
+                >
+                    <Camera size={36} className="mb-3 opacity-60" />
+                    <p className="font-headline italic text-xl" style={{ color: headingColor }}>
+                        No memories yet
+                    </p>
+                    <p className="text-sm mt-1">Snap the first photo with the disposable camera!</p>
+                </div>
+            ) : (
+                <LiveMasonryGrid mediaItems={mediaItems} />
+            )}
         </div>
     )
 }

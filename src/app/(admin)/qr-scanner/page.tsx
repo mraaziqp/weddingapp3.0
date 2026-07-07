@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { BoardingPass } from '@/components/boarding-pass';
@@ -21,7 +21,7 @@ export default function BouncerPage() {
     const [scannedData, setScannedData] = useState<GuestData | null>(null);
     const [scanError, setScanError] = useState(false);
     const [isScanning, setIsScanning] = useState(true);
-    const scannerRef = useRef<any>(null);
+    const scannerRef = useRef<import('html5-qrcode').Html5Qrcode | null>(null);
     const scannerDivRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin, Sparkles, Heart } from 'lucide-react';
+import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin } from 'lucide-react';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard, GoldDust, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase';
 const DEFAULT_WEDDING_DATE = new Date('2026-09-06T18:00:00+02:00');
 
 /* ─── Cinematic backdrop: video > image > aurora, with parallax ───────── */
-function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: any }) {
+function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: MotionValue<string> }) {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden" data-print-hide>
       <motion.div style={{ y: parallaxY }} className="absolute inset-[-12%]">
@@ -380,6 +380,9 @@ export default function InvitationPage() {
                 animate={isOpening ? { x: -35, y: 15, rotate: -15, opacity: 0 } : {}}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               >
+                {/* Tiny local SVG rendered inside an animated clip mask —
+                    next/image optimization does not apply to SVGs. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/RA-logo.svg"
                   alt="Seal Left"
@@ -394,6 +397,7 @@ export default function InvitationPage() {
                 animate={isOpening ? { x: 35, y: 15, rotate: 15, opacity: 0 } : {}}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/RA-logo.svg"
                   alt="Seal Right"
@@ -473,7 +477,7 @@ export default function InvitationPage() {
             className="text-luxe-gradient text-5xl italic md:text-7xl"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
-            You'll Be Missed
+            You&apos;ll Be Missed
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}

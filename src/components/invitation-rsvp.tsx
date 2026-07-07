@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,12 @@ export function InvitationRSVP({ household }: { household: Household }) {
   const [submitted, setSubmitted] = useState(false);
   const [expandedGuest, setExpandedGuest] = useState<number | null>(0);
   const [rsvpStatus, setRsvpStatus] = useState<Record<number, 'accepted' | 'declined' | null>>({});
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({ resolver: zodResolver(rsvpSchema) });
+  const { handleSubmit } = useForm({ resolver: zodResolver(rsvpSchema) });
 
   const weddingDate = new Date('2026-09-06');
   const daysUntil = Math.ceil((weddingDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-  const onSubmit = async (data: RSVPData) => {
+  const onSubmit = async (_data: RSVPData) => {
     // Simulate saving RSVP
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
@@ -150,7 +150,7 @@ export function InvitationRSVP({ household }: { household: Household }) {
                 Your RSVP
               </CardTitle>
               <CardDescription>
-                We can't wait to celebrate with {household.name}!
+                We can&apos;t wait to celebrate with {household.name}!
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-8">
@@ -345,7 +345,7 @@ export function InvitationRSVP({ household }: { household: Household }) {
                 Get in touch with us
               </a>
             </p>
-            <p className="text-gray-500 text-sm mt-2">We can't wait to celebrate with you! 💍</p>
+            <p className="text-gray-500 text-sm mt-2">We can&apos;t wait to celebrate with you! 💍</p>
           </motion.div>
         </motion.div>
       </div>

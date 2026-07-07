@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Download, RefreshCw, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Download, RefreshCw, CheckCircle, XCircle, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface RSVPResponse {
@@ -55,7 +55,7 @@ export function RSVPAnalytics() {
         withDietary,
         responses,
       });
-    } catch (err) {
+    } catch (_err) {
       toast({ title: 'Failed to load analytics', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -64,6 +64,8 @@ export function RSVPAnalytics() {
 
   useEffect(() => {
     fetchAnalytics();
+    // Intentionally mount-only: analytics load once, refresh happens via the UI.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleExport = () => {

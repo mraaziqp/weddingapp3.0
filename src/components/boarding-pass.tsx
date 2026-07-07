@@ -3,7 +3,6 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gem, Users, X } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface BoardingPassProps {
   guest: {

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import QRCode from 'react-qr-code';
-import { Download, Copy, Share2, Eye, X } from 'lucide-react';
+import type { Household } from '@/lib/types';
+import { Download, Copy, Share2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface QRModalProps {
@@ -44,7 +45,7 @@ export function QRCodeModal({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const url = new URL('data:image/svg+xml', window.location.origin);
+    const _url = new URL('data:image/svg+xml', window.location.origin);
     const svgData = new XMLSerializer().serializeToString(svg);
     const img = new Image();
     img.onload = () => {
@@ -75,7 +76,7 @@ export function QRCodeModal({
           text: 'Please RSVP to our wedding invitation',
           url: invitationUrl,
         });
-      } catch (err) {
+      } catch (_err) {
         // Sharing was cancelled or failed
       }
     } else {
@@ -163,11 +164,11 @@ export function QRCodeModal({
 }
 
 interface QRCodeManagerProps {
-  households: any[];
+  households: Household[];
 }
 
 export function QRCodeManager({ households }: QRCodeManagerProps) {
-  const [selectedHousehold, setSelectedHousehold] = useState<any | null>(null);
+  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null);
 
   return (
     <>

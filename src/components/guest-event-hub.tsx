@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Gamepad2, GalleryHorizontal } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { GalleryFeed } from './guest-hub/gallery-feed';
 import { CaptureView } from './guest-hub/capture-view';
 import { Skeleton } from './ui/skeleton';
@@ -27,7 +26,7 @@ const GamesView = dynamic(
   }
 );
 
-const TAB_ORDER_ALL = ['gallery', 'capture', 'games'];
+const _TAB_ORDER_ALL = ['gallery', 'capture', 'games'];
 const ALL_TABS = [
   { id: 'gallery', icon: GalleryHorizontal, label: 'Gallery' },
   { id: 'capture', icon: Camera, label: 'Capture' },

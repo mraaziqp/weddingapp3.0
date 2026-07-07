@@ -165,10 +165,10 @@ export default function RegistryPage() {
                 </CardHeader>
                 <CardContent className="space-y-4 text-white/70">
                   <p>
-                    We've curated a selection of items we need to start our life together. Every gift, no matter the size, is deeply appreciated and will help us create a beautiful home filled with love.
+                    We&apos;ve curated a selection of items we need to start our life together. Every gift, no matter the size, is deeply appreciated and will help us create a beautiful home filled with love.
                   </p>
                   <p>
-                    If you'd prefer to contribute to our honeymoon adventure instead, we have a separate fund where you can help us explore the world together!
+                    If you&apos;d prefer to contribute to our honeymoon adventure instead, we have a separate fund where you can help us explore the world together!
                   </p>
                 </CardContent>
               </Card>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
-import { Camera, Heart, UserCheck, Clock } from 'lucide-react';
+import { Camera, UserCheck, Clock } from 'lucide-react';
 
 export interface ActivityItem {
   id: string;

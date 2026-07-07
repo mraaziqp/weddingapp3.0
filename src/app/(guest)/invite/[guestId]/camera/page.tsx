@@ -3,7 +3,7 @@
 import { DisposableCameraUI } from '@/components/disposable-camera-ui';
 import { lookupHouseholdByQr } from '@/lib/supabase';
 import type { Household } from '@/lib/types';
-import { useRouter, useParams, notFound } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
