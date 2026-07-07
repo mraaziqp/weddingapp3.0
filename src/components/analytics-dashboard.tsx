@@ -153,20 +153,11 @@ const QuickActions = () => {
                     </Link>
                 </Button>
                 
-                <div className="grid grid-cols-2 gap-3">
-                    <Button asChild variant="outline" className="h-16 flex-col border-white/10 bg-white/5 hover:bg-white/10 hover:border-amber-400/50 text-white transition-all">
-                        <Link href="/planner/table-planner">
-                            <LayoutTemplate className="h-5 w-5 mb-1 text-amber-400"/> 
-                            <span className="text-[10px] uppercase tracking-wider">Planner</span>
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="h-16 flex-col border-white/10 bg-white/5 hover:bg-white/10 hover:border-emerald-400/50 text-white transition-all">
-                        <Link href="/guest-tester">
-                            <SmartphoneNfc className="h-5 w-5 mb-1 text-emerald-400"/> 
-                            <span className="text-[10px] uppercase tracking-wider">Simulate</span>
-                        </Link>
-                    </Button>
-                </div>
+                <Button asChild variant="outline" className="w-full border-white/10 bg-white/5 hover:bg-white/10 text-white">
+                    <Link href="/planner/table-planner">
+                        <LayoutTemplate className="mr-2 h-4 w-4 text-amber-400"/> Seating Planner
+                    </Link>
+                </Button>
 
                 <Button asChild variant="outline" className="w-full border-white/10 bg-white/5 hover:bg-white/10 text-white">
                     <Link href="/guests">

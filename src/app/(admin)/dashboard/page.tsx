@@ -213,79 +213,7 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
 
-        {/* GUEST TESTING SECTION */}
-        <motion.div variants={itemVariants}>
-          <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
-            <CardHeader className="border-b border-white/5 pb-4">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Users className="text-emerald-400" size={20} />
-                Guest Experience Testing
-              </CardTitle>
-              <CardDescription>See exactly what your guests will experience</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Test as Guest Button */}
-                <Button
-                  asChild
-                  className="h-24 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
-                >
-                  <Link href="/guest-tester">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users size={20} />
-                      <span>Test as Guest</span>
-                    </div>
-                  </Link>
-                </Button>
 
-                {/* Test Save the Date */}
-                <Button
-                  asChild
-                  className="h-24 bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
-                >
-                  <Link href="/std">
-                    <div className="flex flex-col items-center gap-2">
-                      <CalendarHeart size={20} />
-                      <span>View Envelope</span>
-                    </div>
-                  </Link>
-                </Button>
-
-                {/* Test Wedding Day */}
-                <Button
-                  onClick={() => handleSwitchChange('weddingDayMode', !weddingDayMode)}
-                  className="h-24 bg-gradient-to-br from-red-600 to-pink-700 hover:from-red-500 hover:to-pink-600 text-white font-semibold text-base rounded-xl shadow-lg transition-all"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Sparkles size={20} />
-                    <span>Toggle Day Mode</span>
-                  </div>
-                </Button>
-              </div>
-
-              {/* Wedding Day Beta Testers */}
-              <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
-                <h4 className="font-medium text-white flex items-center gap-2">
-                  <Clock size={18} className="text-red-400" />
-                  Beta Testing for Wedding Day
-                </h4>
-                <p className="text-sm text-white/60">
-                  When Wedding Day Mode is activated, guests will see celebration animations on their first visit. Use this to test with beta testers before the big day.
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10"
-                  onClick={() => {
-                    toast({ title: '✓ Beta Testing Ready', description: 'Share the app link with your beta testers to test the wedding day experience!' });
-                    setShowGuestView(true);
-                  }}
-                >
-                  Invite Beta Testers
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {/* ANALYTICS DASHBOARD */}
         <motion.div variants={itemVariants}>

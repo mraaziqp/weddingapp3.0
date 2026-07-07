@@ -297,7 +297,7 @@ export function SeatingChart() {
   }, []);
   const usingVenuePreset = realGuests !== null && realGuests.length === 0;
   const guestPool = useMemo(
-    () => (realGuests && realGuests.length > 0 ? realGuests : VENUE_SAMPLE_GUESTS),
+    () => (realGuests ?? []),
     [realGuests]
   );
   const tablePreset = VENUE_LAYOUT_TABLES;
