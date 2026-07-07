@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy } from 'lucide-react';
-import { fetchHouseholds, addHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
+import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy } from 'lucide-react';
+import { fetchHouseholds, addHousehold, addGuestToHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import type { Household } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -35,6 +36,82 @@ const householdSchema = z.object({
 });
 
 type HouseholdFormValues = z.infer<typeof householdSchema>;
+
+/** Quick-add one person: either as their own invite or into an existing household. */
+function AddGuestForm({
+    households,
+    onDone,
+}: {
+    households: Household[];
+    onDone: () => void;
+}) {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [target, setTarget] = useState<string>('own');
+    const [saving, setSaving] = useState(false);
+    const { toast } = useToast();
+
+    const submit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firstName.trim() || !lastName.trim()) {
+            toast({ variant: 'destructive', title: 'Please fill in both names' });
+            return;
+        }
+        setSaving(true);
+        const person = { firstName: firstName.trim(), lastName: lastName.trim() };
+        try {
+            if (target === 'own') {
+                await addHousehold(`${person.firstName} ${person.lastName}`, [person]);
+            } else {
+                await addGuestToHousehold(target, person);
+            }
+            toast({ title: 'Guest added', description: `${person.firstName} ${person.lastName} is on the list.` });
+            onDone();
+        } catch {
+            toast({ variant: 'destructive', title: 'Failed to add guest' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <form onSubmit={submit} className="space-y-4">
+            <div className="flex gap-2">
+                <div className="flex-1">
+                    <Label htmlFor="ag-first">First Name</Label>
+                    <Input id="ag-first" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" className="mt-1" autoFocus />
+                </div>
+                <div className="flex-1">
+                    <Label htmlFor="ag-last">Last Name</Label>
+                    <Input id="ag-last" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="mt-1" />
+                </div>
+            </div>
+            <div>
+                <Label>Invite</Label>
+                <Select value={target} onValueChange={setTarget}>
+                    <SelectTrigger className="mt-1">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="glass-card border-white/10 max-h-64">
+                        <SelectItem value="own">✨ Their own invite (single guest)</SelectItem>
+                        {households.map(h => (
+                            <SelectItem key={h.id} value={h.id}>
+                                Join: {h.name} ({h.guests.length} {h.guests.length === 1 ? 'guest' : 'guests'})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                    &ldquo;Their own invite&rdquo; gives this person a personal invite link &amp; QR code.
+                    Joining a household adds them to that family&rsquo;s existing invite.
+                </p>
+            </div>
+            <Button type="submit" disabled={saving} className="w-full">
+                {saving ? 'Adding…' : 'Add Guest'}
+            </Button>
+        </form>
+    );
+}
 
 function HouseholdForm({
     defaultValues,
@@ -83,6 +160,7 @@ export function GuestLedger() {
     const [households, setHouseholds] = useState<Household[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
     const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
     const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
     const { toast } = useToast();
@@ -185,6 +263,27 @@ export function GuestLedger() {
                             defaultValues={{ name: '', guests: [{ firstName: '', lastName: '' }] }}
                             onSubmit={handleAddHousehold}
                             submitLabel="Add Household"
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isAddGuestOpen} onOpenChange={setIsAddGuestOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                            <UserPlus size={16} /> Add Guest
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="glass-card border-white/10 text-foreground">
+                        <DialogHeader>
+                            <DialogTitle className="font-headline text-2xl italic">Add a Guest</DialogTitle>
+                        </DialogHeader>
+                        <AddGuestForm
+                            households={households}
+                            onDone={async () => {
+                                setIsAddGuestOpen(false);
+                                const fresh = await fetchHouseholds();
+                                setHouseholds(fresh);
+                            }}
                         />
                     </DialogContent>
                 </Dialog>

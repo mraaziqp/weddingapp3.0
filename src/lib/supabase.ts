@@ -193,6 +193,24 @@ export async function deleteHousehold(householdId: string): Promise<void> {
     if (error) throw error;
 }
 
+/** Add a single person to an existing household (writes one row to `guests`). */
+export async function addGuestToHousehold(
+    householdId: string,
+    guest: { firstName: string; lastName: string; tags?: GuestTag[] }
+): Promise<Guest> {
+    const row = {
+        id: `guest-${Date.now()}-solo`,
+        household_id: householdId,
+        first_name: guest.firstName,
+        last_name: guest.lastName,
+        rsvp_status: 'Pending',
+        tags: guest.tags && guest.tags.length > 0 ? guest.tags.join(',') : null,
+    };
+    const { data, error } = await supabase.from('guests').insert(row).select().single();
+    if (error) throw error;
+    return dbToGuest(data);
+}
+
 export async function updateGuestRsvp(
     guestId: string,
     rsvpStatus: 'Confirmed' | 'Pending' | 'Regret'
