@@ -91,7 +91,7 @@ const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: ()
   const primaryTag = guest.tags?.[0];
   const tagColor   = primaryTag ? TAG_COLORS[primaryTag] : undefined;
   return (
-    <motion.div ref={ref} style={{ ...style, cursor: isOverlay ? 'grabbing' : 'grab' }} {...props} layout className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-900/60 border border-white/10 text-sm text-white backdrop-blur-md touch-none", isOverlay && "shadow-2xl", isDragging && "opacity-30")}>
+    <div ref={ref} style={{ ...style, cursor: isOverlay ? 'grabbing' : 'grab' }} {...props} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-900/60 border border-white/10 text-sm text-white backdrop-blur-md touch-none", isOverlay && "shadow-2xl", isDragging && "opacity-30")}>
       <GripVertical className="h-5 w-5 text-muted-foreground" />
       <span className="font-medium flex-1">{guest.firstName} {guest.lastName}</span>
       {tagColor && (
@@ -105,7 +105,7 @@ const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: ()
           <X className="h-3 w-3" />
         </button>
       )}
-    </motion.div>
+    </div>
   );
 });
 GuestPill.displayName = "GuestPill";

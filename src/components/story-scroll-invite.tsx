@@ -64,7 +64,7 @@ function FloatingPetals({ count = 18 }: { count?: number }) {
 // ── Shimmering gold ornamental divider ────────────────────────────────────
 function GoldDivider() {
   return (
-    <div className="flex items-center justify-center gap-3 my-6">
+    <div className="flex items-center justify-center gap-3 my-3">
       <motion.div
         className="h-px flex-1 max-w-[80px]"
         style={{ background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.6))' }}
@@ -282,7 +282,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
     <div ref={scrollRef} className="min-h-[100dvh] w-full overflow-x-hidden">
 
       {/* ── SECTION 1: Hero ── */}
-      <div className="h-[160vh] relative flex items-center justify-center text-center p-6 flex-col overflow-hidden">
+      <div className="min-h-[120vh] relative flex items-center justify-center text-center p-6 flex-col overflow-hidden">
         {/* Cream/blush gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#fdfbf5] via-[#fef9f0] to-[#faf5e8]" />
         {/* Gold shimmer vignette */}
@@ -290,7 +290,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
         {/* Floating petals */}
         <FloatingPetals count={20} />
 
-        <motion.div style={{ opacity: heroOpacity, scale: heroScale, y: heroY }} className="relative z-10 space-y-6 max-w-3xl mx-auto">
+        <motion.div style={{ opacity: heroOpacity, scale: heroScale, y: heroY }} className="relative z-10 space-y-3 max-w-3xl mx-auto">
           {/* Pre-title */}
           <motion.p
             className="text-[#d4af37]/60 text-xs uppercase tracking-[0.45em] font-light"
@@ -304,15 +304,15 @@ export function StoryScrollInvite({ household }: { household: Household }) {
           <StaggeredText
             text="The Wedding of"
             el="h2"
-            className="font-headline text-2xl md:text-3xl italic text-[#1C1C1C]/50 justify-center"
+            className="font-headline text-xl md:text-2xl italic text-[#1C1C1C]/50 justify-center"
           />
 
           {/* Main names with gold shimmer */}
-          <div className="relative">
+          <div className="relative py-2">
             <StaggeredText
               text="Razia & Abduraziq"
               el="h1"
-              className="font-headline text-5xl md:text-7xl lg:text-8xl italic text-[#1C1C1C] justify-center"
+              className="font-headline text-4xl md:text-6xl lg:text-7xl italic text-[#1C1C1C] justify-center leading-tight"
             />
             {/* horizontal shimmer line */}
             <motion.div
@@ -329,9 +329,9 @@ export function StoryScrollInvite({ household }: { household: Household }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.6, duration: 1 }}
-            className="text-base md:text-xl text-[#1C1C1C]/60 max-w-xl mx-auto leading-relaxed"
+            className="text-lg md:text-2xl text-[#1C1C1C]/70 max-w-2xl mx-auto leading-relaxed font-light"
           >
-            We joyfully invite <span className="font-semibold text-[#1C1C1C]/80">{household.name}</span> to witness and celebrate our union.
+            We joyfully invite <span className="font-semibold text-[#1C1C1C] text-xl md:text-3xl block mt-2 mb-1">{household.name}</span> to witness and celebrate our union.
           </motion.p>
 
           {/* Animated scroll hint */}
@@ -352,11 +352,11 @@ export function StoryScrollInvite({ household }: { household: Household }) {
       </div>
 
       {/* ── SECTION 2: Date & Venue ── */}
-      <div className="min-h-[100dvh] relative flex items-center justify-center p-6 overflow-hidden">
+      <div className="min-h-[90vh] relative flex items-center justify-center p-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#faf5e8] via-[#fef9f0] to-[#fdfbf5]" />
         <FloatingPetals count={10} />
 
-        <motion.div style={{ opacity: detailsOpacity }} className="relative z-10 text-center space-y-8 max-w-lg mx-auto px-4">
+        <motion.div style={{ opacity: detailsOpacity }} className="relative z-10 text-center space-y-4 max-w-lg mx-auto px-4">
           <motion.p
             className="text-[#d4af37]/50 text-xs uppercase tracking-[0.45em] font-light"
             initial={{ opacity: 0 }}
@@ -414,7 +414,7 @@ export function StoryScrollInvite({ household }: { household: Household }) {
       </div>
 
       {/* ── SECTION 3: RSVP ── */}
-      <div className="min-h-[100dvh] relative flex items-center justify-center p-4 pb-24 overflow-hidden">
+      <div className="min-h-[85vh] relative flex items-center justify-center p-4 pb-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#fdfbf5] to-[#faf5e8]" />
         <FloatingPetals count={8} />
         <motion.div style={{ opacity: rsvpOpacity, y: rsvpY }} className="relative z-10 w-full max-w-2xl">
