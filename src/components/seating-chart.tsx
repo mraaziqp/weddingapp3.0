@@ -6,7 +6,7 @@ import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw, Trash2, Settings2, Copy, Eraser, Rows3 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { fetchHouseholds } from '@/lib/supabase';
@@ -267,6 +267,14 @@ const TableDropzone = ({
 };
 
 const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRef }: { table: Table; onPositionChange: (id: string, pos: { x: number; y: number }) => void; children: React.ReactNode; dragBoundsRef: React.RefObject<HTMLDivElement | null> }) => {
+  const x = useMotionValue(table.x);
+  const y = useMotionValue(table.y);
+
+  useEffect(() => {
+    x.set(table.x);
+    y.set(table.y);
+  }, [table.x, table.y, x, y]);
+
   return (
     <motion.div
       drag
@@ -278,7 +286,7 @@ const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRe
           y: table.y + info.offset.y,
         })
       }
-      style={{ x: table.x, y: table.y, position: 'absolute' }}
+      style={{ x, y, position: 'absolute' }}
       className="z-10 touch-none"
     >
       {children}

@@ -47,6 +47,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Cinzel:wght@400..900&family=Great+Vibes&display=swap" rel="stylesheet" />
 
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__SUPABASE_CONFIG__ = {
+              supabaseUrl: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '')},
+              supabaseAnonKey: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '')}
+            };`,
+          }}
+        />
       </head>
       <body className={cn("font-body antialiased")}>
         <ExperienceSettingsSync />

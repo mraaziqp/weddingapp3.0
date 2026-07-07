@@ -4,18 +4,26 @@ import type { Guest, GuestTag, Household, MenuItem, TimelineEvent, TrackItem, Gi
 // Fall back to a dummy URL/key during static-generation (build) so that the
 // module can be loaded without throwing. Real env vars must be set on Vercel
 // for runtime calls to work.
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder.placeholder';
+function getInitialConfig() {
+  if (typeof window !== 'undefined' && (window as any).__SUPABASE_CONFIG__) {
+    const cfg = (window as any).__SUPABASE_CONFIG__;
+    if (cfg.supabaseUrl && !cfg.supabaseUrl.includes('placeholder')) {
+      return { url: cfg.supabaseUrl, key: cfg.supabaseAnonKey };
+    }
+  }
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder.placeholder'
+  };
+}
+
+const { url: supabaseUrl, key: supabaseAnonKey } = getInitialConfig();
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder.placeholder';
+  supabaseAnonKey;
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
