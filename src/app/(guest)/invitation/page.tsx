@@ -5,10 +5,12 @@ import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from 'f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin } from 'lucide-react';
+import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin, Download, Loader2 } from 'lucide-react';
+import { toSvg } from 'html-to-image';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard, GoldDust, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
+import { useToast } from '@/hooks/use-toast';
 import { supabase, dbToHousehold } from '@/lib/supabase';
 import type { Household } from '@/lib/types';
 
@@ -155,6 +157,7 @@ export default function InvitationPage() {
   const [dietaryRestrictions, setDietaryRestrictions] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [downloadingCard, setDownloadingCard] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
   const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
   // The real Supabase guests.id for whoever is responding, when known — lets
@@ -172,6 +175,7 @@ export default function InvitationPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { scrollYProgress } = useScroll();
   const parallaxY = useTransform(scrollYProgress, [0, 1], ['0%', '9%']);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -260,6 +264,63 @@ export default function InvitationPage() {
       audio.muted = false;
       audio.play().catch(() => {});
       setIsAudioPlaying(true);
+    }
+  };
+
+  const downloadCard = async () => {
+    const node = document.getElementById('invitation-print-card');
+    if (!node || downloadingCard) return;
+    setDownloadingCard(true);
+    try {
+      const rect = node.getBoundingClientRect();
+      const pixelRatio = 3; // ≈300dpi at the card's on-screen size — sharp
+      // enough to print, small enough to share over WhatsApp/email.
+
+      // html-to-image's toPng()/toCanvas() hang indefinitely on this card:
+      // their createImage() helper calls HTMLImageElement.decode() on the
+      // generated SVG, and decode() never resolves for SVGs built from
+      // foreignObject-embedded HTML (a known Chromium quirk) — verified by
+      // isolating each internal step. toSvg() itself works fine and fast,
+      // so we take the SVG it produces and do the image-load + canvas-draw
+      // ourselves with a plain onload handler instead of decode().
+      const rasterize = async () => {
+        const svgDataUrl = await toSvg(node, { pixelRatio, skipFonts: true, cacheBust: true });
+        return new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = rect.width * pixelRatio;
+            canvas.height = rect.height * pixelRatio;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('no canvas context')); return; }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => reject(new Error('SVG failed to rasterize'));
+          img.src = svgDataUrl;
+        });
+      };
+
+      // Belt-and-braces timeout — every step above has tested fast and
+      // reliable, but this guarantees the button can never hang forever.
+      const dataUrl = await Promise.race([
+        rasterize(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 12000)),
+      ]);
+
+      const a = document.createElement('a');
+      a.download = `${(config?.subtitle ?? 'wedding-invitation').replace(/\s+/g, '-').toLowerCase()}.png`;
+      a.href = dataUrl;
+      a.click();
+    } catch (err) {
+      console.error('[Invitation] Download card failed:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Download failed',
+        description: 'Please try Print instead (Ctrl/Cmd+P) — it works even when the download doesn’t.',
+      });
+    } finally {
+      setDownloadingCard(false);
     }
   };
 
@@ -611,7 +672,18 @@ export default function InvitationPage() {
             >
               <MapPin size={13} /> Directions
             </a>
+            <button
+              onClick={downloadCard}
+              disabled={downloadingCard}
+              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10 disabled:opacity-60"
+            >
+              {downloadingCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+              {downloadingCard ? 'Preparing…' : 'Download Card'}
+            </button>
           </div>
+          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-white/25">
+            Save it, print it, or share it straight to WhatsApp
+          </p>
         </motion.div>
 
         <motion.div

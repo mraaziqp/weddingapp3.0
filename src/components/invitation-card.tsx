@@ -117,8 +117,10 @@ export function InvitationCard({
         style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(246,231,183,0.09) 50%, transparent 58%)' }}
       />
 
-      {/* Card content */}
-      <div className="relative flex h-full flex-col items-center justify-between px-[9cqw] py-[8.5cqw] text-center">
+      {/* Card content — deliberately centered as one composed group (gap
+          rhythm, not justify-between) so spacing stays tight and even
+          regardless of how much extra height the card has. */}
+      <div className="relative flex h-full flex-col items-center justify-center gap-[4.6cqw] px-[9cqw] py-[7cqw] text-center">
         {/* Monogram seal or Arched Photo/Video Viewport */}
         <motion.div variants={riseIn} className="flex flex-col items-center gap-[1.8cqw]">
           {config.imageUrl || config.videoUrl ? (
