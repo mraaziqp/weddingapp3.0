@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useRef, useTransition } from 'react';
-import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay, Active } from '@dnd-kit/core';
+import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay, Active, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -461,88 +461,106 @@ export function SeatingChart() {
   const findContainer = (id: string) => {
     if (id === 'unseated' || tables.some(t => t.id === id)) return id;
     const table = tables.find(t => t.guests.some(g => g.id === id));
-    return table?.id;
+    if (table) return table.id;
+    if (unseatedGuests.some(g => g.id === id)) return 'unseated';
+    if (guestPool.some(g => g.id === id)) return 'unseated';
+    return undefined;
   };
   
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDrag(event.active);
   };
 
-  const handleDragOver = (event: any) => {
-    const { over } = event;
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
     setOverContainer(over?.id as string || null);
-  };
+    if (!over) return;
 
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (!activeContainer || !overContainer || activeContainer === overContainer) {
+      return;
+    }
+
+    const guestToMove = guestPool.find(g => g.id === activeId);
+    if (!guestToMove) return;
+
+    const overTable = tables.find(t => t.id === overContainer);
+    if (overTable && overTable.guests.length >= overTable.capacity) {
+      return;
+    }
+
+    setUnseatedGuests(prev => {
+      if (activeContainer === 'unseated') {
+        return prev.filter(g => g.id !== activeId);
+      } else if (overContainer === 'unseated') {
+        const overIndex = prev.findIndex(g => g.id === overId);
+        const newIndex = overIndex >= 0 ? overIndex : prev.length;
+        const copy = [...prev];
+        if (!copy.some(g => g.id === activeId)) {
+          copy.splice(newIndex, 0, guestToMove);
+        }
+        return copy;
+      }
+      return prev;
+    });
+
+    setTables(current => current.map(t => {
+      if (t.id === activeContainer) {
+        return { ...t, guests: t.guests.filter(g => g.id !== activeId) };
+      }
+      if (t.id === overContainer) {
+        if (!t.guests.some(g => g.id === activeId)) {
+          const overIndex = t.guests.findIndex(g => g.id === overId);
+          const newIndex = overIndex >= 0 ? overIndex : t.guests.length;
+          const copy = [...t.guests];
+          copy.splice(newIndex, 0, guestToMove);
+          return { ...t, guests: copy };
+        }
+      }
+      return t;
+    }));
+  };
+  
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setOverContainer(null);
-
+    
     if (!over) {
       setActiveDrag(null);
       return;
     }
-
-    const originalContainerId = findContainer(active.id as string);
-    const overContainerId = over.id as string || findContainer(over.id as string);
     
-    if (!originalContainerId || !overContainerId || active.id === over.id) {
-        setActiveDrag(null);
-        return;
-    }
-
-    const isMovingToNewContainer = originalContainerId !== overContainerId;
+    const activeContainer = findContainer(active.id as string);
+    const overContainerId = findContainer(over.id as string);
     
-    if (isMovingToNewContainer) {
-        const guestToMove = guestPool.find(g => g.id === active.id);
-        if (!guestToMove) return;
+    if (activeContainer && overContainerId && activeContainer === overContainerId) {
+      if (activeContainer === 'unseated') {
+        setUnseatedGuests(guests => {
+          const oldIndex = guests.findIndex(g => g.id === active.id);
+          const newIndex = guests.findIndex(g => g.id === over.id);
+          return arrayMove(guests, oldIndex, newIndex);
+        });
+      } else {
+        setTables(current => current.map(t => {
+          if (t.id === activeContainer) {
+            const oldIndex = t.guests.findIndex(g => g.id === active.id);
+            const newIndex = t.guests.findIndex(g => g.id === over.id);
+            return { ...t, guests: arrayMove(t.guests, oldIndex, newIndex) };
+          }
+          return t;
+        }));
+      }
 
-        const overTable = tables.find(t => t.id === overContainerId);
-        if (overTable && overTable.guests.length >= overTable.capacity) {
-            toast({ variant: 'destructive', title: 'Table Full', description: `${overTable.name} cannot seat more guests.`});
-            setActiveDrag(null);
-            return;
-        }
-
-        // Remove from old container
-        setUnseatedGuests(g => g.filter(guest => guest.id !== active.id));
-        setTables(current => current.map(t => ({
-            ...t,
-            guests: t.guests.filter(g => g.id !== active.id)
-        })));
-        
-        // Add to new container
-        if (overContainerId === 'unseated') {
-            setUnseatedGuests(g => [...g, guestToMove]);
-        } else {
-            setTables(current => current.map(t => {
-                if (t.id === overContainerId) {
-                   return { ...t, guests: [...t.guests, guestToMove] };
-                }
-                return t;
-            }));
-            const finalTable = tables.find(t => t.id === overContainerId);
-            if (finalTable && finalTable.guests.length + 1 === finalTable.capacity) {
-                setJustFilledTable(overContainerId);
-                setTimeout(() => setJustFilledTable(null), 2000);
-            }
-        }
-    } else { // Sort within same container
-         if (originalContainerId === 'unseated') {
-            setUnseatedGuests(guests => {
-                const oldIndex = guests.findIndex(g => g.id === active.id);
-                const newIndex = guests.findIndex(g => g.id === over.id);
-                return arrayMove(guests, oldIndex, newIndex);
-            });
-        } else {
-             setTables(current => current.map(t => {
-                if (t.id === originalContainerId) {
-                    const oldIndex = t.guests.findIndex(g => g.id === active.id);
-                    const newIndex = t.guests.findIndex(g => g.id === over.id);
-                    return { ...t, guests: arrayMove(t.guests, oldIndex, newIndex) };
-                }
-                return t;
-            }));
-        }
+      const finalTable = tables.find(t => t.id === activeContainer);
+      if (finalTable && finalTable.guests.length === finalTable.capacity) {
+        setJustFilledTable(activeContainer);
+        setTimeout(() => setJustFilledTable(null), 2000);
+      }
     }
 
     setActiveDrag(null);

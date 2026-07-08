@@ -62,6 +62,8 @@ function AddGuestForm({
         try {
             if (target === 'own') {
                 await addHousehold(`${person.firstName} ${person.lastName}`, [person]);
+            } else if (target === 'new-multi') {
+                await addHousehold(`The ${person.lastName} Family`, [person]);
             } else {
                 await addGuestToHousehold(target, person);
             }
@@ -94,6 +96,7 @@ function AddGuestForm({
                     </SelectTrigger>
                     <SelectContent className="glass-card border-white/10 max-h-64">
                         <SelectItem value="own">✨ Their own invite (single guest)</SelectItem>
+                        <SelectItem value="new-multi">✨ Create a new household (multi-guest invite)</SelectItem>
                         {households.map(h => (
                             <SelectItem key={h.id} value={h.id}>
                                 Join: {h.name} ({h.guests.length} {h.guests.length === 1 ? 'guest' : 'guests'})
@@ -102,8 +105,7 @@ function AddGuestForm({
                     </SelectContent>
                 </Select>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                    &ldquo;Their own invite&rdquo; gives this person a personal invite link &amp; QR code.
-                    Joining a household adds them to that family&rsquo;s existing invite.
+                    &ldquo;Their own invite&rdquo; creates a solo guest invite. &ldquo;Create a new household&rdquo; creates a multi-guest family invite. Joining a household adds them to an existing invite.
                 </p>
             </div>
             <Button type="submit" disabled={saving} className="w-full">
@@ -250,19 +252,33 @@ export function GuestLedger() {
             {/* Action bar */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                            <PlusCircle size={16} /> Add Household
-                        </Button>
-                    </DialogTrigger>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="gap-2 text-[#d4af37] border-[#d4af37]/35 bg-[#d4af37]/5 hover:bg-[#d4af37]/10">
+                                <PlusCircle size={16} /> Add Guest
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="glass-card border-white/10">
+                            <DropdownMenuItem onClick={() => { setAddMode('single'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
+                                Single Invite
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setAddMode('multi'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
+                                Multi Invite (Household)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <DialogContent className="glass-card border-white/10 text-foreground">
                         <DialogHeader>
-                            <DialogTitle className="font-headline text-2xl italic">New Household</DialogTitle>
+                            <DialogTitle className="font-headline text-2xl italic">
+                                {addMode === 'single' ? 'New Single Invite' : 'New Multi Invite (Household)'}
+                            </DialogTitle>
                         </DialogHeader>
                         <HouseholdForm
+                            key={addMode}
                             defaultValues={{ name: '', guests: [{ firstName: '', lastName: '' }] }}
                             onSubmit={handleAddHousehold}
-                            submitLabel="Add Household"
+                            submitLabel={addMode === 'single' ? 'Add Single Guest' : 'Add Household'}
+                            mode={addMode}
                         />
                     </DialogContent>
                 </Dialog>
