@@ -19,10 +19,15 @@ async function ensureTable() {
   `;
 }
 
+// Every guest page hits this on load — cache it at the edge for 15s so
+// repeat visits (and pages like the digital pass) don't all hit Neon.
+export const revalidate = 15;
+
 export async function GET() {
   try {
     const sql = getDb();
-    await ensureTable();
+    // No ensureTable() here: this is the hot path (every guest page load),
+    // and the table is guaranteed to exist once POST has run it once.
     const rows = await sql`SELECT config FROM invitation_config WHERE id = 'main'`;
 
     if (!rows.length) {
@@ -32,10 +37,9 @@ export async function GET() {
     return NextResponse.json(rows[0].config);
   } catch (err) {
     console.error('[Invitation Config] GET error:', err);
-    return NextResponse.json(
-      { title: 'Error loading config' },
-      { status: 500 }
-    );
+    // Never break the guest-facing page over this — fall back to sensible
+    // defaults (e.g. the table not existing yet on a fresh database).
+    return NextResponse.json(DEFAULT_INVITATION_CONFIG);
   }
 }
 

@@ -9,7 +9,8 @@ import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin } from 'lucide-reac
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard, GoldDust, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
-import { supabase } from '@/lib/supabase';
+import { supabase, dbToHousehold } from '@/lib/supabase';
+import type { Household } from '@/lib/types';
 
 /* Default fallback ceremony start: Saturday 6 September 2026, 18:00 SAST (UTC+2). */
 const DEFAULT_WEDDING_DATE = new Date('2026-09-06T18:00:00+02:00');
@@ -156,6 +157,12 @@ export default function InvitationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
   const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
+  // The real Supabase guests.id for whoever is responding, when known — lets
+  // the RSVP write land on that exact row instead of just a name string.
+  const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
+  // The real household row (with its actual qr_code) — the digital pass's QR
+  // code and "Memories" link must use this, not the raw household DB id.
+  const [resolvedHousehold, setResolvedHousehold] = useState<Household | null>(null);
 
   /* Interactive Envelope Reveal states */
   const [isOpening, setIsOpening] = useState(false);
@@ -182,13 +189,23 @@ export default function InvitationPage() {
     if (!params) return;
 
     const nameParam = params.get('name');
-    if (nameParam) {
-      setGuestName(nameParam);
-      return;
-    }
+    if (nameParam) setGuestName(nameParam);
 
     const householdId = params.get('household') || params.get('id');
     if (!householdId) return;
+
+    // Fetch the REAL household row — its actual qr_code (not the raw DB id
+    // in the URL) is what the digital pass and Memories link must use.
+    supabase
+      .from('households')
+      .select('*, guests(*)')
+      .eq('id', householdId)
+      .single()
+      .then(({ data }) => {
+        if (data) setResolvedHousehold(dbToHousehold(data));
+      });
+
+    if (nameParam) return;
 
     supabase
       .from('guests')
@@ -204,6 +221,7 @@ export default function InvitationPage() {
         // A single-guest household gets their name filled in for them.
         if (guests.length === 1) {
           setGuestName(current => current || guests[0].name);
+          setSelectedGuestId(current => current ?? guests[0].id);
         }
       });
   }, [params]);
@@ -258,6 +276,9 @@ export default function InvitationPage() {
         body: JSON.stringify({
           guestId: params?.get('id') || 'guest-' + Date.now(),
           householdId: params?.get('household'),
+          // The real guests.id, when we know exactly who's responding — lets
+          // the server sync this RSVP straight onto that guest's own row.
+          resolvedGuestId: selectedGuestId,
           guestName,
           status: rsvpStatus,
           dietaryRestrictions: rsvpStatus === 'Accepted' ? dietaryRestrictions || undefined : undefined,
@@ -437,25 +458,36 @@ export default function InvitationPage() {
   if (status) {
     const accepted = status === 'accepted';
     if (accepted) {
-      // Build personalized Digital Pass
-      const householdObj = {
-        id: params?.get('household') || 'hh-' + Date.now(),
-        name: guestName,
-        address: '',
-        guests: [
-          {
-            id: params?.get('id') || 'guest-' + Date.now(),
-            householdId: params?.get('household') || 'hh-' + Date.now(),
-            firstName: guestName,
-            lastName: '',
-            isAttending: true,
-            rsvpStatus: 'Confirmed' as const,
-            dietaryRestrictions: dietaryRestrictions || undefined
+      // Use the real household record when we have one — its actual qr_code
+      // is what makes the QR image and "Memories" deep link resolve to
+      // something real, instead of the raw household id from the URL.
+      const householdObj: Household = resolvedHousehold
+        ? {
+            ...resolvedHousehold,
+            guests: resolvedHousehold.guests.map(g =>
+              g.id === selectedGuestId
+                ? { ...g, rsvpStatus: 'Confirmed', dietaryRestrictions: dietaryRestrictions || g.dietaryRestrictions }
+                : g
+            ),
           }
-        ],
-        qrCode: params?.get('id') || 'GUEST-' + Date.now()
-      };
-      return <DigitalPass household={householdObj} />;
+        : {
+            id: params?.get('household') || 'hh-' + Date.now(),
+            name: guestName,
+            address: '',
+            guests: [
+              {
+                id: params?.get('id') || 'guest-' + Date.now(),
+                householdId: params?.get('household') || 'hh-' + Date.now(),
+                firstName: guestName,
+                lastName: '',
+                isAttending: true,
+                rsvpStatus: 'Confirmed' as const,
+                dietaryRestrictions: dietaryRestrictions || undefined
+              }
+            ],
+            qrCode: params?.get('id') || 'GUEST-' + Date.now()
+          };
+      return <DigitalPass household={householdObj} config={config ?? undefined} />;
     }
 
     return (
@@ -680,7 +712,7 @@ export default function InvitationPage() {
                           <button
                             key={g.id}
                             type="button"
-                            onClick={() => setGuestName(g.name)}
+                            onClick={() => { setGuestName(g.name); setSelectedGuestId(g.id); }}
                             className={`rounded-full border px-4 py-1.5 font-body text-xs transition-colors ${
                               guestName === g.name
                                 ? 'border-[#d4af37]/80 bg-[#d4af37]/20 text-[#f6e7b7]'
@@ -694,7 +726,12 @@ export default function InvitationPage() {
                     )}
                     <Input
                       value={guestName}
-                      onChange={e => setGuestName(e.target.value)}
+                      onChange={e => {
+                        setGuestName(e.target.value);
+                        // Typing something that no longer matches the selected chip
+                        // means we can't be sure which guest row this is anymore.
+                        if (!householdGuests.some(g => g.name === e.target.value)) setSelectedGuestId(null);
+                      }}
                       placeholder={householdGuests.length ? 'Tap your name above, or type it' : 'How should we address you?'}
                       className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
                     />

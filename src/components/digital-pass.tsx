@@ -1,13 +1,22 @@
 'use client';
 import QRCode from 'react-qr-code';
 import { Button } from './ui/button';
-import { Heart, Share2, MapPin, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Heart, Share2, MapPin, Calendar, Clock } from 'lucide-react';
 import type { Household } from '@/lib/types';
 import { motion, useAnimationControls } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { fetchTimelineEvents } from '@/lib/supabase';
+import { DEFAULT_INVITATION_CONFIG, InvitationConfig } from '@/lib/invitation-config';
+import { useToast } from '@/hooks/use-toast';
+import type { TimelineEvent } from '@/lib/types';
 
 interface GoldDustParticle { id: number; left: number; top: number; dur: number; dly: number }
+
+function directionsUrl(location: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+}
 
 // Shimmer bar that sweeps across the card (holographic effect)
 function HoloSweep() {
@@ -29,10 +38,14 @@ function HoloSweep() {
   );
 }
 
-export function DigitalPass({ household }: { household: Household }) {
+export function DigitalPass({ household, config: configProp }: { household: Household; config?: InvitationConfig }) {
   const controls = useAnimationControls();
   const cardRef = useRef<HTMLDivElement>(null);
   const [goldDust, setGoldDust] = useState<GoldDustParticle[]>([]);
+  const [config, setConfig] = useState<InvitationConfig>(configProp ?? DEFAULT_INVITATION_CONFIG);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[] | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setGoldDust(
@@ -45,6 +58,17 @@ export function DigitalPass({ household }: { household: Household }) {
       }))
     );
   }, []);
+
+  // Real event date/time/venue, so the pass never contradicts what the
+  // couple actually set in the invitation editor. Skipped when the caller
+  // already has it (the invitation page fetches it once, on mount).
+  useEffect(() => {
+    if (configProp) return;
+    fetch('/api/invitation/config')
+      .then(r => r.json())
+      .then(data => setConfig(current => ({ ...current, ...data })))
+      .catch(() => {});
+  }, [configProp]);
 
   // Card entrance sequence
   useEffect(() => {
@@ -74,6 +98,39 @@ export function DigitalPass({ household }: { household: Household }) {
       card.removeEventListener('pointerleave', handleLeave);
     };
   }, []);
+
+  const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/invite/${household.qrCode}` : '';
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${household.name}'s Wedding Pass`,
+      text: `We're celebrating ${config.subtitle}'s wedding — here's my digital pass!`,
+      url: inviteUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // Cancelled — no toast needed.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast({ title: 'Link copied!', description: 'Your pass link is ready to paste anywhere.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Could not copy the link', description: inviteUrl });
+    }
+  };
+
+  const openTimeline = () => {
+    setShowTimeline(true);
+    if (timelineEvents === null) {
+      fetchTimelineEvents()
+        .then(events => setTimelineEvents(events.filter(e => e.isPublic)))
+        .catch(() => setTimelineEvents([]));
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex flex-col p-4" style={{ background: 'linear-gradient(135deg, #fdfbf5 0%, #fef9f0 50%, #faf5e8 100%)' }}>
@@ -120,11 +177,11 @@ export function DigitalPass({ household }: { household: Household }) {
           <motion.div className="space-y-4 text-[#f6e7b7]/80" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
             <div className="flex items-center justify-center gap-3">
               <Calendar size={18} className="text-[#d4af37]" />
-              <span>Saturday, September 6, 2026 at 3:00 PM</span>
+              <span>{config.dateTime}</span>
             </div>
             <div className="flex items-center justify-center gap-3">
               <MapPin size={18} className="text-[#d4af37]" />
-              <span>Tuscany in Rylands, 2 Jane Avenue, Cape Town</span>
+              <span>{config.location}</span>
             </div>
           </motion.div>
 
@@ -143,7 +200,11 @@ export function DigitalPass({ household }: { household: Household }) {
                 <Heart size={16} className="mr-2" /> Memories
               </Link>
             </Button>
-            <Button variant="outline" className="rounded-2xl bg-transparent border border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10 h-12 font-semibold">
+            <Button
+              variant="outline"
+              onClick={handleShare}
+              className="rounded-2xl bg-transparent border border-[#d4af37]/40 text-[#f6e7b7] hover:bg-[#d4af37]/10 h-12 font-semibold"
+            >
               <Share2 size={16} className="mr-2" /> Share
             </Button>
           </motion.div>
@@ -162,7 +223,7 @@ export function DigitalPass({ household }: { household: Household }) {
             </div>
             <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Timeline</h3>
             <p className="text-sm text-[#1C1C1C]/60 mb-4">View the wedding day schedule and events</p>
-            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">View Timeline</Button>
+            <Button variant="outline" size="sm" onClick={openTimeline} className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">View Timeline</Button>
           </motion.div>
 
           {/* Venue Card */}
@@ -171,8 +232,10 @@ export function DigitalPass({ household }: { household: Household }) {
               <MapPin className="text-[#d4af37]" size={20} />
             </div>
             <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Venue Details</h3>
-            <p className="text-sm text-[#1C1C1C]/60 mb-4">2 Jane Avenue, Rylands, Cape Town</p>
-            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">Get Directions</Button>
+            <p className="text-sm text-[#1C1C1C]/60 mb-4">{config.location}</p>
+            <Button asChild variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">
+              <a href={directionsUrl(config.location)} target="_blank" rel="noopener noreferrer">Get Directions</a>
+            </Button>
           </motion.div>
 
           {/* Connect Card */}
@@ -182,11 +245,40 @@ export function DigitalPass({ household }: { household: Household }) {
             </div>
             <h3 className="font-headline text-lg italic text-[#1C1C1C] mb-2">Share Memories</h3>
             <p className="text-sm text-[#1C1C1C]/60 mb-4">Leave photos and messages for us</p>
-            <Button variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">Contribute</Button>
+            <Button asChild variant="outline" size="sm" className="w-full border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/5">
+              <Link href={`/invite/${household.qrCode}/camera`}>Add Memories</Link>
+            </Button>
           </motion.div>
         </div>
       </motion.div>
+
+      {/* ── Timeline Modal ── */}
+      <Dialog open={showTimeline} onOpenChange={setShowTimeline}>
+        <DialogContent className="max-w-md bg-white text-[#1C1C1C] border-[#d4af37]/20">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl italic flex items-center gap-2">
+              <Clock className="text-[#d4af37]" size={20} /> Wedding Day Timeline
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            {timelineEvents === null ? (
+              <p className="text-sm text-[#1C1C1C]/50 text-center py-6">Loading…</p>
+            ) : timelineEvents.length === 0 ? (
+              <p className="text-sm text-[#1C1C1C]/50 text-center py-6">The schedule isn&apos;t published yet — check back closer to the day!</p>
+            ) : (
+              timelineEvents.map(event => (
+                <div key={event.id} className="flex gap-3 rounded-xl border border-[#d4af37]/15 p-3">
+                  <div className="shrink-0 w-16 text-sm font-semibold text-[#d4af37]">{event.time}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{event.title}</p>
+                    {event.description && <p className="text-xs text-[#1C1C1C]/60 mt-0.5">{event.description}</p>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
