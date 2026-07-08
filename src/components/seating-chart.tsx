@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useRef, useTransition } from 'react';
-import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay, Active, DragOverEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverEvent, DragOverlay, Active } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw, Trash2, Settings2, Copy, Eraser, Rows3 } from 'lucide-react';
+import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, RotateCcw, Trash2, Settings2, Copy, Eraser, Rows3, ArrowRightLeft, Search } from 'lucide-react';
 import { motion, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -13,6 +13,8 @@ import { fetchHouseholds } from '@/lib/supabase';
 import type { Guest, Table, GuestTag } from '@/lib/types';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
+import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -86,22 +88,102 @@ const TAG_LABELS: Record<string, string> = {
   'Do Not Sit Together': 'Conflict',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: () => void, isOverlay?: boolean, isDragging?: boolean, style?: React.CSSProperties, [key: string]: any }>(({ guest, onRemove, isOverlay, isDragging, style, ...props }, ref) => {
+// Compact dropdown for reassigning a guest without needing to drag — the
+// reliable path on touch devices and when tables are packed close together.
+const MoveToDropdown = ({
+  guest,
+  tables,
+  currentContainerId,
+  onMoveToTable,
+  compact,
+}: {
+  guest: Guest;
+  tables: Table[];
+  currentContainerId: string;
+  onMoveToTable: (targetId: string) => void;
+  compact?: boolean;
+}) => {
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  return (
+    <div onPointerDown={stop} onClick={stop} onMouseDown={stop}>
+      <Select value={currentContainerId} onValueChange={onMoveToTable}>
+        <SelectTrigger
+          className={cn(
+            "h-6 w-auto shrink-0 gap-0.5 rounded-full border-white/15 bg-white/10 px-1.5 py-0 text-white/70 hover:bg-white/20 hover:text-white [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-70",
+            compact && "h-5 px-1"
+          )}
+          aria-label={`Move ${guest.firstName} ${guest.lastName} to a different table`}
+        >
+          <ArrowRightLeft className="h-3 w-3" />
+        </SelectTrigger>
+        <SelectContent className="glass-card min-w-[13rem] border-white/10 text-white" align="end">
+          <SelectItem value="unseated">↩ Unseated Guests</SelectItem>
+          {tables.map(t => {
+            const isFull = t.id !== currentContainerId && t.guests.length >= t.capacity;
+            return (
+              <SelectItem key={t.id} value={t.id} disabled={isFull}>
+                {t.name} · {t.guests.length}/{t.capacity}{isFull ? ' · Full' : ''}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+const GuestPill = React.forwardRef<HTMLDivElement, {
+  guest: Guest;
+  onRemove?: () => void;
+  isOverlay?: boolean;
+  isDragging?: boolean;
+  style?: React.CSSProperties;
+  tables?: Table[];
+  currentContainerId?: string;
+  onMoveToTable?: (targetId: string) => void;
+  compact?: boolean;
+  // Catches dnd-kit's spread {...attributes} {...listeners} (drag handlers).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}>(({ guest, onRemove, isOverlay, isDragging, style, tables, currentContainerId, onMoveToTable, compact, ...props }, ref) => {
   const primaryTag = guest.tags?.[0];
   const tagColor   = primaryTag ? TAG_COLORS[primaryTag] : undefined;
+  const canMove = Boolean(onMoveToTable && tables && currentContainerId);
   return (
-    <div ref={ref} style={{ ...style, cursor: isOverlay ? 'grabbing' : 'grab' }} {...props} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-900/60 border border-white/10 text-sm text-white backdrop-blur-md touch-none", isOverlay && "shadow-2xl", isDragging && "opacity-30")}>
-      <GripVertical className="h-5 w-5 text-muted-foreground" />
-      <span className="font-medium flex-1">{guest.firstName} {guest.lastName}</span>
+    <div
+      ref={ref}
+      style={{ ...style, cursor: isOverlay ? 'grabbing' : 'grab' }}
+      {...props}
+      className={cn(
+        "flex items-center gap-1.5 rounded-full bg-emerald-900/60 border border-white/10 text-white backdrop-blur-md touch-none",
+        compact ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
+        isOverlay && "shadow-2xl",
+        isDragging && "opacity-30"
+      )}
+    >
+      <GripVertical className={cn("text-muted-foreground shrink-0", compact ? "h-3.5 w-3.5" : "h-5 w-5")} />
+      <span className="font-medium flex-1 truncate">{guest.firstName} {guest.lastName}</span>
       {tagColor && (
-        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide border border-white/20 bg-black/30" title={primaryTag}>
-          <span className="w-2 h-2 rounded-full" style={{ background: tagColor }} />
-          <span>{primaryTag ? (TAG_LABELS[primaryTag] ?? primaryTag) : 'General'}</span>
-        </span>
+        compact ? (
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tagColor }} title={primaryTag} />
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide border border-white/20 bg-black/30" title={primaryTag}>
+            <span className="w-2 h-2 rounded-full" style={{ background: tagColor }} />
+            <span>{primaryTag ? (TAG_LABELS[primaryTag] ?? primaryTag) : 'General'}</span>
+          </span>
+        )
+      )}
+      {canMove && (
+        <MoveToDropdown
+          guest={guest}
+          tables={tables!}
+          currentContainerId={currentContainerId!}
+          onMoveToTable={onMoveToTable!}
+          compact={compact}
+        />
       )}
       {onRemove && (
-        <button onClick={onRemove} className="p-1 rounded-full hover:bg-white/20">
+        <button onClick={onRemove} className="p-1 rounded-full hover:bg-white/20 shrink-0">
           <X className="h-3 w-3" />
         </button>
       )}
@@ -110,10 +192,38 @@ const GuestPill = React.forwardRef<HTMLDivElement, { guest: Guest; onRemove?: ()
 });
 GuestPill.displayName = "GuestPill";
 
-const SortableGuestPill = ({ guest, onRemove }: { guest: Guest, onRemove?: () => void }) => {
+const SortableGuestPill = ({
+  guest,
+  onRemove,
+  tables,
+  currentContainerId,
+  onMoveToTable,
+  compact,
+}: {
+  guest: Guest;
+  onRemove?: () => void;
+  tables?: Table[];
+  currentContainerId?: string;
+  onMoveToTable?: (targetId: string) => void;
+  compact?: boolean;
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: guest.id, data: { type: 'guest', guest } });
   const style = { transform: CSS.Transform.toString(transform), transition };
-  return <GuestPill guest={guest} onRemove={onRemove} ref={setNodeRef} style={style} isDragging={isDragging} {...attributes} {...listeners} />;
+  return (
+    <GuestPill
+      guest={guest}
+      onRemove={onRemove}
+      ref={setNodeRef}
+      style={style}
+      isDragging={isDragging}
+      tables={tables}
+      currentContainerId={currentContainerId}
+      onMoveToTable={onMoveToTable}
+      compact={compact}
+      {...attributes}
+      {...listeners}
+    />
+  );
 };
 
 const TableDropzone = ({
@@ -148,6 +258,7 @@ const TableDropzone = ({
   onSetShape?: (shape: 'round-8' | 'round-10' | 'rectangle') => void,
 }) => {
     const { setNodeRef } = useSortable({ id });
+    const isFull = guests.length >= table.capacity;
     const tableShapeStyles = {
         'round-8': 'w-36 h-36',
         'round-10': 'w-40 h-40',
@@ -237,6 +348,15 @@ const TableDropzone = ({
                             ) : null}
                             <p className="font-bold text-lg tracking-tight">{table.name}</p>
                             <p className="text-sm text-muted-foreground">{guests.length} / {table.capacity}</p>
+                            <div className="mt-1 h-1 w-14 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-300",
+                                  isFull || hasConflict ? "bg-red-400" : "bg-[#d4af37]"
+                                )}
+                                style={{ width: `${Math.min(100, (guests.length / table.capacity) * 100)}%` }}
+                              />
+                            </div>
                             {hasConflict && (
                               <motion.div
                                 className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center"
@@ -248,8 +368,24 @@ const TableDropzone = ({
                               </motion.div>
                             )}
                         </motion.div>
-                        <div className={cn("min-h-[40px] w-56 space-y-1 p-2 rounded-lg", table.shape.startsWith('round') ? 'w-56' : 'w-64')}>
-                            {children}
+                        <div
+                          className={cn(
+                            "min-h-[40px] max-h-48 w-56 space-y-1 overflow-y-auto rounded-lg p-2 pr-1.5",
+                            "[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent]",
+                            "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15",
+                            table.shape.startsWith('round') ? 'w-56' : 'w-64'
+                          )}
+                        >
+                            {guests.length === 0 ? (
+                              <p className="py-3 text-center text-[11px] text-white/25">Drop guests here, or use the move icon</p>
+                            ) : (
+                              children
+                            )}
+                            {guests.length >= 5 && (
+                              <p className="pointer-events-none sticky bottom-0 -mb-2 bg-gradient-to-t from-black/40 to-transparent pt-3 text-center text-[9px] uppercase tracking-wider text-white/30">
+                                scroll for more
+                              </p>
+                            )}
                         </div>
                     </div>
                 </TooltipTrigger>
@@ -324,6 +460,7 @@ export function SeatingChart() {
   const [overContainer, setOverContainer] = useState<string | null>(null);
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
   const [showUnseatedPanel, setShowUnseatedPanel] = useState(true);
+  const [unseatedSearch, setUnseatedSearch] = useState('');
   const [hasHydratedLayout, setHasHydratedLayout] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -405,6 +542,12 @@ export function SeatingChart() {
     }
     return Array.from(counts.entries());
   }, [guestPool]);
+
+  const filteredUnseatedGuests = useMemo(() => {
+    const q = unseatedSearch.trim().toLowerCase();
+    if (!q) return unseatedGuests;
+    return unseatedGuests.filter(g => `${g.firstName} ${g.lastName}`.toLowerCase().includes(q));
+  }, [unseatedGuests, unseatedSearch]);
 
   // ── Conflict Radar ─────────────────────────────────────────────────────
   const tableConflicts = useMemo(() => {
@@ -581,17 +724,66 @@ export function SeatingChart() {
     setUnseatedGuests(current => [guestToMove, ...current]);
   };
 
+  // Dropdown-based reassignment — a reliable alternative to drag & drop,
+  // especially once tables are packed close together or on touch devices.
+  // Locates the guest itself rather than reusing findContainer(), so it
+  // can't be affected by that helper's drag-specific edge cases.
+  const moveGuestToTable = (guestId: string, targetId: string) => {
+    const guestToMove = guestPool.find(g => g.id === guestId);
+    if (!guestToMove) return;
+
+    const originId = unseatedGuests.some(g => g.id === guestId)
+      ? 'unseated'
+      : tables.find(t => t.guests.some(g => g.id === guestId))?.id ?? 'unseated';
+    if (originId === targetId) return;
+
+    if (targetId !== 'unseated') {
+      const targetTable = tables.find(t => t.id === targetId);
+      if (targetTable && targetTable.guests.length >= targetTable.capacity) {
+        toast({ variant: 'destructive', title: 'Table full', description: `${targetTable.name} is already at capacity.` });
+        return;
+      }
+    }
+
+    setUnseatedGuests(current => current.filter(g => g.id !== guestId));
+    setTables(current => current.map(t => ({ ...t, guests: t.guests.filter(g => g.id !== guestId) })));
+
+    if (targetId === 'unseated') {
+      setUnseatedGuests(current => [guestToMove, ...current]);
+      toast({ title: 'Moved to Unseated', description: `${guestToMove.firstName} ${guestToMove.lastName} is now unseated.` });
+    } else {
+      setTables(current => {
+        const next = current.map(t => t.id === targetId ? { ...t, guests: [...t.guests, guestToMove] } : t);
+        const updated = next.find(t => t.id === targetId);
+        if (updated && updated.guests.length === updated.capacity) {
+          setJustFilledTable(targetId);
+          setTimeout(() => setJustFilledTable(null), 2000);
+        }
+        return next;
+      });
+      const targetTable = tables.find(t => t.id === targetId);
+      toast({ title: 'Seated!', description: `${guestToMove.firstName} ${guestToMove.lastName} moved to ${targetTable?.name ?? 'table'}.` });
+    }
+  };
+
   const addTable = (shape: 'round-8' | 'round-10' | 'rectangle') => {
+      // Auto-place in a grid below the preset row so new tables never spawn
+      // stacked on top of an existing one — each add just claims the next slot.
+      const seatingTables = tables.filter(t => t.id !== 'head-table');
+      const columns = 3;
+      const col = seatingTables.length % columns;
+      const row = Math.floor(seatingTables.length / columns);
       const newTable: Table = {
           id: `table-${Date.now()}`,
           name: `Table ${tables.length + 1}`,
           capacity: shape === 'round-10' ? 10 : 8,
           shape: shape,
-          x: 200,
-          y: 200,
+          x: 70 + col * 260,
+          y: 345 + row * 260,
           guests: [],
       };
       setTables(current => [...current, newTable]);
+      toast({ title: 'Table added', description: `${newTable.name} is ready — drag or use the move icon to seat guests.` });
   };
 
   const deleteTable = (tableId: string) => {
@@ -764,11 +956,42 @@ export function SeatingChart() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         {(showUnseatedPanel || !isMobile) && (
           <Card className="glass-card lg:col-span-3" data-print-hide>
-            <CardHeader><CardTitle>Unseated Guests</CardTitle></CardHeader>
+            <CardHeader className="space-y-2">
+              <CardTitle className="flex items-center justify-between">
+                <span>Unseated Guests</span>
+                <span className="text-xs font-normal text-white/40">{unseatedGuests.length}</span>
+              </CardTitle>
+              {unseatedGuests.length > 6 && (
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+                  <Input
+                    value={unseatedSearch}
+                    onChange={(e) => setUnseatedSearch(e.target.value)}
+                    placeholder="Search guests…"
+                    className="h-8 border-white/15 bg-white/5 pl-8 text-xs"
+                  />
+                </div>
+              )}
+              <p className="text-[11px] text-white/35">Drag a guest onto a table, or tap <ArrowRightLeft className="inline h-2.5 w-2.5 -translate-y-px" /> to assign instantly.</p>
+            </CardHeader>
             <CardContent className="space-y-2 overflow-y-auto pr-2 max-h-[34dvh] lg:max-h-[calc(100%-6rem)]">
-              <SortableContext items={unseatedGuests.map(g => g.id)}>
-                {unseatedGuests.map(guest => <SortableGuestPill key={guest.id} guest={guest} />)}
-              </SortableContext>
+              {filteredUnseatedGuests.length === 0 ? (
+                <p className="py-6 text-center text-sm text-white/30">
+                  {unseatedGuests.length === 0 ? 'Everyone is seated 🎉' : 'No guests match your search.'}
+                </p>
+              ) : (
+                <SortableContext items={filteredUnseatedGuests.map(g => g.id)}>
+                  {filteredUnseatedGuests.map(guest => (
+                    <SortableGuestPill
+                      key={guest.id}
+                      guest={guest}
+                      tables={tables}
+                      currentContainerId="unseated"
+                      onMoveToTable={(targetId) => moveGuestToTable(guest.id, targetId)}
+                    />
+                  ))}
+                </SortableContext>
+              )}
             </CardContent>
           </Card>
         )}
@@ -833,7 +1056,15 @@ export function SeatingChart() {
                     <SortableContext items={table.guests.map(g => g.id)}>
                         <div className="space-y-1">
                         {table.guests.map(guest => (
-                            <SortableGuestPill key={guest.id} guest={guest} onRemove={() => removeGuestFromTable(guest.id)} />
+                            <SortableGuestPill
+                              key={guest.id}
+                              guest={guest}
+                              onRemove={() => removeGuestFromTable(guest.id)}
+                              tables={tables}
+                              currentContainerId={table.id}
+                              onMoveToTable={(targetId) => moveGuestToTable(guest.id, targetId)}
+                              compact
+                            />
                         ))}
                         </div>
                     </SortableContext>

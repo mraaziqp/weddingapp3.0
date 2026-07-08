@@ -1,12 +1,10 @@
 'use client';
 import QRCode from 'react-qr-code';
-import Image from 'next/image';
 import { Button } from './ui/button';
-import { Download, Camera, Heart, Share2, MapPin, Calendar } from 'lucide-react';
+import { Heart, Share2, MapPin, Calendar } from 'lucide-react';
 import type { Household } from '@/lib/types';
 import { motion, useAnimationControls } from 'framer-motion';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef, useState } from 'react';
 
 interface GoldDustParticle { id: number; left: number; top: number; dur: number; dly: number }
@@ -32,7 +30,6 @@ function HoloSweep() {
 }
 
 export function DigitalPass({ household }: { household: Household }) {
-  const { toast } = useToast();
   const controls = useAnimationControls();
   const cardRef = useRef<HTMLDivElement>(null);
   const [goldDust, setGoldDust] = useState<GoldDustParticle[]>([]);
@@ -48,13 +45,6 @@ export function DigitalPass({ household }: { household: Household }) {
       }))
     );
   }, []);
-
-  const downloadPass = () => {
-    toast({
-      title: 'Save your pass',
-      description: 'Take a screenshot of this screen to keep your boarding pass handy at the door.',
-    });
-  };
 
   // Card entrance sequence
   useEffect(() => {
@@ -118,7 +108,7 @@ export function DigitalPass({ household }: { household: Household }) {
 
         <div className="relative z-10 px-8 py-12 text-center space-y-6">
           <motion.h1 className="font-headline text-5xl italic text-[#f6e7b7]" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            We Can't Wait
+            We Can&apos;t Wait
           </motion.h1>
 
           <motion.p className="text-xl text-[#d4af37]/80 font-light" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>

@@ -119,39 +119,60 @@ function HouseholdForm({
     defaultValues,
     onSubmit,
     submitLabel,
+    mode = 'multi',
 }: {
     defaultValues: HouseholdFormValues;
     onSubmit: (data: HouseholdFormValues) => void;
     submitLabel: string;
+    /** 'single' hides the household name field and locks the form to one guest. */
+    mode?: 'single' | 'multi';
 }) {
-    const { register, control, handleSubmit, formState: { errors } } = useForm<HouseholdFormValues>({
+    const { register, control, handleSubmit, watch, formState: { errors } } = useForm<HouseholdFormValues>({
         resolver: zodResolver(householdSchema),
         defaultValues,
     });
     const { fields, append, remove } = useFieldArray({ control, name: 'guests' });
+    const isSingle = mode === 'single';
+    const firstGuest = watch('guests.0');
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-                <Label htmlFor="name">Household Name</Label>
-                <Input id="name" {...register('name')} placeholder="e.g., The Smith Family" className="mt-1" />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-            </div>
+        <form
+            onSubmit={handleSubmit((data) =>
+                onSubmit(isSingle ? { ...data, name: `${data.guests[0].firstName} ${data.guests[0].lastName}` } : data)
+            )}
+            className="space-y-4"
+        >
+            {!isSingle && (
+                <div>
+                    <Label htmlFor="name">Household Name</Label>
+                    <Input id="name" {...register('name')} placeholder="e.g., The Smith Family" className="mt-1" />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                </div>
+            )}
             <div className="space-y-2">
-                <Label>Guests</Label>
-                {fields.map((field, index) => (
+                <Label>{isSingle ? 'Guest' : 'Guests'}</Label>
+                {fields.slice(0, isSingle ? 1 : undefined).map((field, index) => (
                     <div key={field.id} className="flex gap-2 items-center">
                         <Input {...register(`guests.${index}.firstName`)} placeholder="First Name" />
                         <Input {...register(`guests.${index}.lastName`)} placeholder="Last Name" />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length === 1}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        {!isSingle && (
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length === 1}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        )}
                     </div>
                 ))}
                 {errors.guests && <p className="text-red-500 text-xs mt-1">{errors.guests.message as string}</p>}
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '' })}>
-                    + Add Guest
-                </Button>
+                {!isSingle && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '' })}>
+                        + Add Guest
+                    </Button>
+                )}
+                {isSingle && firstGuest?.firstName && firstGuest?.lastName && (
+                    <p className="text-xs text-muted-foreground">
+                        Gets their own invite as &ldquo;{firstGuest.firstName} {firstGuest.lastName}&rdquo;.
+                    </p>
+                )}
             </div>
             <Button type="submit" className="w-full">{submitLabel}</Button>
         </form>
@@ -162,6 +183,7 @@ export function GuestLedger() {
     const [households, setHouseholds] = useState<Household[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [addMode, setAddMode] = useState<'single' | 'multi'>('multi');
     const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
     const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
     const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
@@ -255,7 +277,7 @@ export function GuestLedger() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="gap-2 text-[#d4af37] border-[#d4af37]/35 bg-[#d4af37]/5 hover:bg-[#d4af37]/10">
-                                <PlusCircle size={16} /> Add Guest
+                                <PlusCircle size={16} /> Add Household
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="glass-card border-white/10">
