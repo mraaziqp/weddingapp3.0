@@ -105,6 +105,26 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   const [polaroidVisible, setPolaroidVisible] = useState(false);
   const [isWinding, setIsWinding] = useState(false);
 
+  // Every captured shot creates a blob: URL for its preview/filmstrip
+  // thumbnail; none of them were ever released. A guest taking a dozen
+  // photos in one session would retain that many MB in memory for as long
+  // as the tab stayed open. Revoke them all when the camera unmounts.
+  const blobUrlsRef = useRef<string[]>([]);
+  useEffect(() => {
+    return () => {
+      // Intentionally read at cleanup time (unmount), not mount time — we
+      // want every URL accumulated over the whole session, not just what
+      // existed when this effect first ran.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      blobUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+  const createTrackedObjectURL = (file: File) => {
+    const url = URL.createObjectURL(file);
+    blobUrlsRef.current.push(url);
+    return url;
+  };
+
   // Filters & Custom sliders states
   const [selectedFilterId, setSelectedFilterId] = useState<string>('normal');
   const [showSliderStudio, setShowSliderStudio] = useState<boolean>(false);
@@ -234,7 +254,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
         description: 'Your memory has been captured.',
       });
 
-      const src = previewSrc ?? URL.createObjectURL(file);
+      const src = previewSrc ?? createTrackedObjectURL(file);
       setRecentShots(prev => [...prev, src]);
       setPolaroidSrc(src);
       setPolaroidVisible(true);
@@ -299,7 +319,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     if (hasCamera) {
       const file = await captureFrame();
       if (file) {
-        const preview = URL.createObjectURL(file);
+        const preview = createTrackedObjectURL(file);
         await processUpload(file, preview);
       }
     } else {
@@ -311,7 +331,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    const previewSrc = URL.createObjectURL(file);
+    const previewSrc = createTrackedObjectURL(file);
     await processUpload(file, previewSrc);
   };
 

@@ -5,7 +5,7 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarHeart, MailOpen, Sparkles, Trophy } from "lucide-react";
+import { CalendarHeart, Sparkles, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 
 const containerVariants = {
@@ -23,7 +23,6 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const [redirectToStd, setRedirectToStd] = useState(true);
-  const [invitationMode, setInvitationMode] = useState(false);
   const [weddingDayMode, setWeddingDayMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [_showGuestView, _setShowGuestView] = useState(false);
@@ -39,7 +38,6 @@ export default function DashboardPage() {
       .then((data) => {
         if (data.config) {
           setRedirectToStd(data.config.redirectToStd !== false);
-          setInvitationMode(data.config.invitationMode === true);
           setWeddingDayMode(data.config.weddingDayMode === true);
         }
       })
@@ -65,12 +63,10 @@ export default function DashboardPage() {
       if (data.ok) {
         // Update local state based on key
         if (key === 'redirectToStd') setRedirectToStd(checked);
-        if (key === 'invitationMode') setInvitationMode(checked);
         if (key === 'weddingDayMode') setWeddingDayMode(checked);
 
         const messages: Record<string, string> = {
           redirectToStd: checked ? 'Save the Date mode ACTIVE ✨' : 'RSVP mode ACTIVE 📧',
-          invitationMode: checked ? 'Invitation link is LIVE 🎫' : 'Save the Date link is LIVE 💌',
           weddingDayMode: checked ? '🎉 WEDDING DAY MODE ACTIVATED! 🎉' : 'Back to planning mode',
         };
 
@@ -90,7 +86,6 @@ export default function DashboardPage() {
 
   const getActiveMode = () => {
     if (weddingDayMode) return { label: '🎊 WEDDING DAY MODE', color: 'text-red-400', bgColor: 'bg-red-500/10' };
-    if (invitationMode) return { label: '🎫 INVITATION MODE', color: 'text-blue-400', bgColor: 'bg-blue-500/10' };
     return { label: '💌 SAVE THE DATE MODE', color: 'text-amber-400', bgColor: 'bg-amber-500/10' };
   };
 
@@ -170,26 +165,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Switch 2: Invitation Mode */}
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="font-medium text-white flex items-center gap-2">
-                      <MailOpen className="text-blue-400" size={18} />
-                      Invitation Mode
-                    </h3>
-                    <p className="text-xs text-white/50">Switch to invitation & RSVP experience</p>
-                  </div>
-                  <Switch
-                    checked={invitationMode}
-                    onCheckedChange={(checked) => handleSwitchChange('invitationMode', checked)}
-                    disabled={isUpdating}
-                    className="data-[state=checked]:bg-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Switch 3: Wedding Day Mode */}
+              {/* Switch 2: Wedding Day Mode */}
               <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:border-red-500/50 transition-all space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">

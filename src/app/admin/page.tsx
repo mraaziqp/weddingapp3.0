@@ -39,8 +39,12 @@ function AdminLoginForm() {
       });
       const data = await res.json();
       if (data.ok) {
-        router.replace('/dashboard');
-        router.refresh();
+        if (data.redirect) {
+          router.replace(data.redirect);
+        } else {
+          router.replace('/dashboard');
+          router.refresh();
+        }
       } else {
         setError(data.error ?? 'That key is incorrect. Please try again.');
         setIsSubmitting(false);

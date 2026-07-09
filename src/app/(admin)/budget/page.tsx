@@ -75,6 +75,7 @@ export default function BudgetPage() {
     a.href = url;
     a.download = 'budget.csv';
     a.click();
+    URL.revokeObjectURL(url);
     toast({ title: 'Budget exported as CSV' });
   };
 

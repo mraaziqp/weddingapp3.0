@@ -11,7 +11,7 @@ import { ExperienceSettingsSync } from '@/components/experience-settings-sync';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Wedu 3.0 — The Union of Razia & Abduraziq',
+  title: "R&A's Wedding — The Union of Razia & Abduraziq",
   description: 'Your exclusive digital invitation and event companion.',
   metadataBase: new URL('https://www.raziaraaziq.co.za'),
   manifest: '/manifest.json',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Wedu 3.0',
+    title: "R&A's Wedding",
   },
   other: {
     'mobile-web-app-capable': 'yes',

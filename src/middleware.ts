@@ -45,6 +45,20 @@ export function middleware(request: NextRequest) {
   const allowedAdminKeys = getAllowedAdminKeys();
   const cookieKey = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
   const queryKey = searchParams.get(ADMIN_KEY_QUERY_PARAM);
+
+  const brideKey = process.env.FAMILY_ACCESS_KEY_BRIDE;
+  const groomKey = process.env.FAMILY_ACCESS_KEY_GROOM;
+
+  if (queryKey) {
+    const trimmed = queryKey.trim();
+    if (brideKey && trimmed === brideKey) {
+      return NextResponse.redirect(new URL(`/family/${brideKey}`, request.url));
+    }
+    if (groomKey && trimmed === groomKey) {
+      return NextResponse.redirect(new URL(`/family/${groomKey}`, request.url));
+    }
+  }
+
   const validCookie = Boolean(cookieKey) && allowedAdminKeys.includes(cookieKey!);
   const validQuery = Boolean(queryKey) && allowedAdminKeys.includes(queryKey!);
 

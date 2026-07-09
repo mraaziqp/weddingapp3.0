@@ -72,11 +72,13 @@ export function InvitationCard({
   config,
   printId = false,
   widthClass = 'w-[min(92vw,520px)]',
+  guestName,
 }: {
   config: InvitationConfig;
   /** Only the guest page sets this — the print CSS targets the id. */
   printId?: boolean;
   widthClass?: string;
+  guestName?: string;
 }) {
   // "Abduraziq & Razia" → two names joined by a script ampersand.
   const [nameA, nameB] = config.subtitle.includes('&')
@@ -180,12 +182,13 @@ export function InvitationCard({
             {config.title}
           </p>
           <h1
-            className="mt-[3.4cqw] text-[10.5cqw] italic leading-[1.18] text-transparent"
+            className="mt-[3.4cqw] text-[11cqw] italic leading-[1.16] tracking-[0.01em] text-transparent"
             style={{
               fontFamily: "'Playfair Display', serif",
               backgroundImage: 'linear-gradient(115deg, #fdf6dd 0%, #e9cf8a 38%, #d4af37 62%, #f6e7b7 100%)',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
+              filter: 'drop-shadow(0 2px 18px rgba(212,175,55,0.4))',
             }}
           >
             {nameA}
@@ -203,6 +206,26 @@ export function InvitationCard({
             )}
           </h1>
         </motion.div>
+
+        {guestName && (
+          <motion.div
+            variants={riseIn}
+            className="flex flex-col items-center gap-[0.5cqw]"
+          >
+            <p
+              className="text-[2.6cqw] leading-none text-[#e8c96b]/80 italic"
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+            >
+              Exclusively invited
+            </p>
+            <p
+              className="mt-[0.5cqw] text-[4cqw] font-semibold text-[#fdf6dd] tracking-wider uppercase"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              {guestName}
+            </p>
+          </motion.div>
+        )}
 
         {/* Divider */}
         <motion.div variants={drawLine} className="luxe-divider w-[62cqw]" />

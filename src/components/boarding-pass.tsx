@@ -20,7 +20,7 @@ export function BoardingPass({ guest, onReset }: BoardingPassProps) {
       <CardHeader className="flex-row items-center justify-between p-4 border-b border-white/10">
         <div className="flex items-center gap-2 font-headline text-lg" style={{ color: 'var(--aurora-soft-gold)'}}>
           <Gem className="h-6 w-6 text-accent" />
-          Wedu 3.0 Fast Pass
+          R&amp;A&apos;s Wedding Fast Pass
         </div>
          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/10" onClick={onReset}>
             <X />

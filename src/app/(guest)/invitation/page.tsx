@@ -154,7 +154,6 @@ export default function InvitationPage() {
   const [status, setStatus] = useState<'accepted' | 'declined' | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [guestName, setGuestName] = useState('');
-  const [dietaryRestrictions, setDietaryRestrictions] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [downloadingCard, setDownloadingCard] = useState(false);
@@ -222,10 +221,12 @@ export default function InvitationPage() {
           name: [g.first_name, g.last_name].filter(Boolean).join(' ').trim(),
         })).filter(g => g.name);
         setHouseholdGuests(guests);
-        // A single-guest household gets their name filled in for them.
+        // A single-guest household gets their name filled in; multi-guest joins them with '&'.
         if (guests.length === 1) {
           setGuestName(current => current || guests[0].name);
           setSelectedGuestId(current => current ?? guests[0].id);
+        } else if (guests.length > 1) {
+          setGuestName(current => current || guests.map(g => g.name).join(' & '));
         }
       });
   }, [params]);
@@ -342,7 +343,6 @@ export default function InvitationPage() {
           resolvedGuestId: selectedGuestId,
           guestName,
           status: rsvpStatus,
-          dietaryRestrictions: rsvpStatus === 'Accepted' ? dietaryRestrictions || undefined : undefined,
           message: message || undefined,
         }),
       });
@@ -374,7 +374,6 @@ export default function InvitationPage() {
     setStatus(null);
     setShowForm(false);
     setGuestName('');
-    setDietaryRestrictions('');
     setMessage('');
   };
 
@@ -527,7 +526,7 @@ export default function InvitationPage() {
             ...resolvedHousehold,
             guests: resolvedHousehold.guests.map(g =>
               g.id === selectedGuestId
-                ? { ...g, rsvpStatus: 'Confirmed', dietaryRestrictions: dietaryRestrictions || g.dietaryRestrictions }
+                ? { ...g, rsvpStatus: 'Confirmed' }
                 : g
             ),
           }
@@ -542,8 +541,7 @@ export default function InvitationPage() {
                 firstName: guestName,
                 lastName: '',
                 isAttending: true,
-                rsvpStatus: 'Confirmed' as const,
-                dietaryRestrictions: dietaryRestrictions || undefined
+                rsvpStatus: 'Confirmed' as const
               }
             ],
             qrCode: params?.get('id') || 'GUEST-' + Date.now()
@@ -645,7 +643,7 @@ export default function InvitationPage() {
 
       {/* Hero: the card, centered in the first viewport */}
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-14">
-        <InvitationCard config={config} printId />
+        <InvitationCard config={config} guestName={guestName || undefined} printId />
 
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -808,15 +806,7 @@ export default function InvitationPage() {
                       className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
                     />
                   </div>
-                  <div>
-                    <Label className="font-body text-xs uppercase tracking-[0.18em] text-white/55">Dietary requirements</Label>
-                    <Input
-                      value={dietaryRestrictions}
-                      onChange={e => setDietaryRestrictions(e.target.value)}
-                      placeholder="Halal is served — tell us about allergies etc."
-                      className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
-                    />
-                  </div>
+
                   <div>
                     <Label className="font-body text-xs uppercase tracking-[0.18em] text-white/55">A message for the couple</Label>
                     <Input

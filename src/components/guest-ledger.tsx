@@ -94,7 +94,7 @@ function AddGuestForm({
                     <SelectTrigger className="mt-1">
                         <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="glass-card border-white/10 max-h-64">
+                    <SelectContent className="glass-card-static border-white/10 max-h-64">
                         <SelectItem value="own">✨ Their own invite (single guest)</SelectItem>
                         <SelectItem value="new-multi">✨ Create a new household (multi-guest invite)</SelectItem>
                         {households.map(h => (
@@ -241,7 +241,9 @@ export function GuestLedger() {
     };
 
     const handleCopyInviteLink = (household: Household) => {
-        const link = `${window.location.origin}/invite/${household.qrCode}`;
+        // Straight to the invitation — one less redirect hop than the
+        // QR-code path (/invite/<qrCode>), which still works for scanning.
+        const link = `${window.location.origin}/invitation?household=${household.id}&id=${household.id}`;
         navigator.clipboard.writeText(link).then(() => {
             toast({ title: 'Invite Link Copied!', description: link });
         });
@@ -280,7 +282,7 @@ export function GuestLedger() {
                                 <PlusCircle size={16} /> Add Household
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="glass-card border-white/10">
+                        <DropdownMenuContent className="glass-card-static border-white/10">
                             <DropdownMenuItem onClick={() => { setAddMode('single'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
                                 Single Invite
                             </DropdownMenuItem>
@@ -289,7 +291,7 @@ export function GuestLedger() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <DialogContent className="glass-card border-white/10 text-foreground">
+                    <DialogContent className="glass-card-static border-white/10 text-foreground">
                         <DialogHeader>
                             <DialogTitle className="font-headline text-2xl italic">
                                 {addMode === 'single' ? 'New Single Invite' : 'New Multi Invite (Household)'}
@@ -311,7 +313,7 @@ export function GuestLedger() {
                             <UserPlus size={16} /> Add Guest
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="glass-card border-white/10 text-foreground">
+                    <DialogContent className="glass-card-static border-white/10 text-foreground">
                         <DialogHeader>
                             <DialogTitle className="font-headline text-2xl italic">Add a Guest</DialogTitle>
                         </DialogHeader>
@@ -336,7 +338,7 @@ export function GuestLedger() {
                 </a>
             </div>
 
-            <Card className="glass-card flex-1">
+            <Card className="glass-card-static flex-1">
                 <CardContent className="p-0 h-full">
                     <div className="overflow-y-auto h-full">
                         <Table>
@@ -375,19 +377,15 @@ export function GuestLedger() {
                                         <TableCell>{household.guests.length}</TableCell>
                                         <TableCell>
                                             <div className="flex gap-2 items-center flex-wrap">
-                                                {household.guests.map((guest, guestIdx) => (
+                                                {household.guests.map((guest) => (
                                                     <Popover key={guest.id}>
                                                         <PopoverTrigger asChild>
                                                             <button className="flex items-center gap-1 group">
-                                                                <motion.div
-                                                                    className={cn("h-3 w-3 rounded-full cursor-pointer", statusColors[guest.rsvpStatus])}
-                                                                    animate={{ scale: [1, 1.2, 1] }}
-                                                                    transition={{ duration: 1.5, repeat: Infinity, delay: (guestIdx * 0.37) % 2 }}
-                                                                />
+                                                                <div className={cn("h-3 w-3 rounded-full cursor-pointer transition-transform group-hover:scale-110", statusColors[guest.rsvpStatus])} />
                                                                 <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{guest.firstName}</span>
                                                             </button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-2 glass-card">
+                                                        <PopoverContent className="w-auto p-2 glass-card-static">
                                                             <div className="flex flex-col gap-1">
                                                                 <p className="text-xs font-bold px-2">{guest.firstName} {guest.lastName}</p>
                                                                 <Button variant="ghost" size="sm" onClick={() => handleRsvpChange(guest.id, 'Confirmed')}>✓ Confirmed</Button>
@@ -417,7 +415,7 @@ export function GuestLedger() {
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="glass-card border-white/10">
+                                                <DropdownMenuContent align="end" className="glass-card-static border-white/10">
                                                     <DropdownMenuItem onClick={() => setEditingHousehold(household)} className="gap-2 cursor-pointer">
                                                         <Pencil size={14} /> Edit Household
                                                     </DropdownMenuItem>
@@ -444,7 +442,7 @@ export function GuestLedger() {
 
             {/* Edit Household Dialog */}
             <Dialog open={!!editingHousehold} onOpenChange={open => { if (!open) setEditingHousehold(null); }}>
-                <DialogContent className="glass-card border-white/10 text-foreground">
+                <DialogContent className="glass-card-static border-white/10 text-foreground">
                     <DialogHeader>
                         <DialogTitle className="font-headline text-2xl italic">Edit Household</DialogTitle>
                     </DialogHeader>
@@ -464,7 +462,7 @@ export function GuestLedger() {
 
             {/* Delete Confirmation */}
             <AlertDialog open={!!deletingHousehold} onOpenChange={open => { if (!open) setDeletingHousehold(null); }}>
-                <AlertDialogContent className="glass-card border-white/10 text-foreground">
+                <AlertDialogContent className="glass-card-static border-white/10 text-foreground">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Remove {deletingHousehold?.name}?</AlertDialogTitle>
                         <AlertDialogDescription>

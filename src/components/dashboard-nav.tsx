@@ -112,7 +112,7 @@ export function DashboardNav() {
             return (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
-                  <Link href={item.href} passHref>
+                  <Link href={item.href} passHref prefetch={false}>
                     <motion.div
                       data-active={isActive}
                       whileHover={{ scale: 1.15 }}

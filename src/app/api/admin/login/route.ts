@@ -8,8 +8,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Please enter your access key.' }, { status: 400 });
   }
 
+  const trimmed = key.trim();
+  const brideKey = process.env.FAMILY_ACCESS_KEY_BRIDE;
+  const groomKey = process.env.FAMILY_ACCESS_KEY_GROOM;
+
+  if (brideKey && trimmed === brideKey) {
+    return NextResponse.json({ ok: true, redirect: `/family/${brideKey}` });
+  }
+  if (groomKey && trimmed === groomKey) {
+    return NextResponse.json({ ok: true, redirect: `/family/${groomKey}` });
+  }
+
   const allowedKeys = getAllowedAdminKeys();
-  if (!allowedKeys.includes(key.trim())) {
+  if (!allowedKeys.includes(trimmed)) {
     return NextResponse.json({ ok: false, error: 'That key is incorrect. Please try again.' }, { status: 401 });
   }
 

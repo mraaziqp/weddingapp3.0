@@ -55,10 +55,12 @@ export default function VaultPage() {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = objectUrl;
       a.download = name || 'photo.jpg';
       a.click();
+      URL.revokeObjectURL(objectUrl);
       toast({ title: 'Photo downloaded' });
     } catch {
       toast({ variant: 'destructive', title: 'Failed to download' });
