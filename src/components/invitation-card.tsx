@@ -69,7 +69,7 @@ export function GoldDust({ count = 26 }: { count?: number }) {
    at any size — on a phone, a desktop, or exported at high-res for print. */
 
 export function InvitationCard({
-  config,
+  config: _config,
   printId = false,
   widthClass = 'w-[min(92vw,520px)]',
   guestName,
@@ -80,146 +80,209 @@ export function InvitationCard({
   widthClass?: string;
   guestName?: string;
 }) {
-  // "Abduraziq & Razia" → two names joined by a script ampersand.
-  const [nameA, nameB] = config.subtitle.includes('&')
-    ? config.subtitle.split('&').map(s => s.trim())
-    : [config.subtitle, ''];
-
   return (
     <motion.div
       variants={stagger}
       initial="hidden"
       animate="show"
       id={printId ? 'invitation-print-card' : undefined}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_40px_120px_rgba(0,0,0,0.65),0_0_60px_rgba(212,175,55,0.10)]`}
+      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
-        background:
-          'radial-gradient(circle at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 46%),' +
-          'radial-gradient(circle at 85% 100%, rgba(15,118,110,0.16) 0%, transparent 52%),' +
-          'radial-gradient(circle at 12% 88%, rgba(107,63,143,0.10) 0%, transparent 46%),' +
-          'linear-gradient(160deg, #0c1210 0%, #060a09 55%, #04070a 100%)',
+        backgroundImage: 'linear-gradient(to bottom, rgba(253, 251, 245, 0.78), rgba(253, 251, 245, 0.78)), url("/villa-courtyard.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
-      {/* Foil frame: outer hairline + inner double border with corner flourishes */}
-      <div className="pointer-events-none absolute inset-[3cqw] rounded-[1.6cqw] border border-[#d4af37]/45" />
-      <div className="pointer-events-none absolute inset-[4.4cqw] rounded-[1.2cqw] border border-[#d4af37]/20" />
-      {(['top-0 left-0 border-t-2 border-l-2 rounded-tl-[1.6cqw]', 'top-0 right-0 border-t-2 border-r-2 rounded-tr-[1.6cqw]', 'bottom-0 left-0 border-b-2 border-l-2 rounded-bl-[1.6cqw]', 'bottom-0 right-0 border-b-2 border-r-2 rounded-br-[1.6cqw]'] as const).map(pos => (
-        <div
-          key={pos}
-          className={`pointer-events-none absolute m-[3cqw] h-[7cqw] w-[7cqw] border-[#d4af37]/80 ${pos}`}
-        />
-      ))}
-
       {/* Soft sheen sweeping across the card once on entrance */}
       <motion.div
         className="pointer-events-none absolute inset-0"
         initial={{ x: '-130%' }}
         animate={{ x: '130%' }}
         transition={{ delay: 1.6, duration: 2.4, ease: 'easeInOut' }}
-        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(246,231,183,0.09) 50%, transparent 58%)' }}
+        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.15) 50%, transparent 58%)' }}
       />
 
-      {/* Card content — deliberately centered as one composed group (gap
-          rhythm, not justify-between) so spacing stays tight and even
-          regardless of how much extra height the card has. */}
-      <div className="relative flex h-full flex-col items-center justify-center gap-[4.6cqw] px-[9cqw] py-[7cqw] text-center">
-        {/* Monogram seal or Arched Photo/Video Viewport */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[1.8cqw]">
-          {config.imageUrl || config.videoUrl ? (
-            <div className="relative w-[30cqw] aspect-[4/5] rounded-t-full border border-[#d4af37]/50 p-[0.8cqw] shadow-[0_8px_24px_rgba(0,0,0,0.5)] bg-black/45 overflow-hidden group">
-              <div className="relative w-full h-full rounded-t-full overflow-hidden border border-[#d4af37]/20">
-                {config.videoUrl ? (
-                  <video
-                    src={config.videoUrl}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={config.imageUrl}
-                    alt=""
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                )}
-              </div>
-              {/* Floating gold seal overlayed near the bottom-right corner of the arch */}
-              <div className="absolute bottom-[1.2cqw] right-[1.2cqw] flex h-[6.5cqw] w-[6.5cqw] items-center justify-center rounded-full bg-[#0c1210]/95 border border-[#d4af37]/70 shadow-lg backdrop-blur-md">
-                <span className="text-[2cqw] font-headline text-[#f6e7b7] tracking-[0.05em]">A·R</span>
-              </div>
-            </div>
-          ) : (
-            <div className="relative flex h-[13cqw] w-[13cqw] items-center justify-center rounded-full border border-[#d4af37]/60">
-              <div className="absolute inset-[1.1cqw] rounded-full border border-[#d4af37]/25" />
-              <span
-                className="text-[4.6cqw] text-[#f6e7b7]"
-                style={{ fontFamily: "'Cinzel', serif", letterSpacing: '0.08em' }}
-              >
-                A·R
-              </span>
-            </div>
-          )}
-          <motion.p
-            initial={{ opacity: 0, letterSpacing: '0.55em' }}
-            animate={{ opacity: 1, letterSpacing: '0.34em' }}
-            transition={{ delay: 0.5, duration: 1.6, ease: easeLuxe }}
-            className="text-[2.3cqw] uppercase text-[#d4af37]/85"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Together with their families
-          </motion.p>
-        </motion.div>
-
-        {/* Script flourish + names */}
+      {/* Card content — vertically composed and centered with compact spacing */}
+      <div className="relative flex h-full flex-col items-center justify-center gap-[2.5cqw] px-[8.5cqw] py-[5.5cqw] text-center">
+        
+        {/* Arabic Calligraphy and Translation */}
         <motion.div variants={riseIn} className="flex flex-col items-center">
           <p
-            className="text-[7.5cqw] leading-none text-[#e8c96b]"
-            style={{ fontFamily: "'Great Vibes', cursive", textShadow: '0 0 24px rgba(212,175,55,0.35)' }}
+            className="text-[6.8cqw] font-medium leading-none text-[#2b3a30] select-none"
+            style={{ fontFamily: "'Amiri', serif" }}
           >
-            {config.title}
+            بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
           </p>
-          <h1
-            className="mt-[3.4cqw] text-[11cqw] italic leading-[1.16] tracking-[0.01em] text-transparent"
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              backgroundImage: 'linear-gradient(115deg, #fdf6dd 0%, #e9cf8a 38%, #d4af37 62%, #f6e7b7 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              filter: 'drop-shadow(0 2px 18px rgba(212,175,55,0.4))',
-            }}
+          <p
+            className="mt-[1cqw] text-[2.2cqw] font-semibold uppercase tracking-[0.14em] text-[#555555]"
+            style={{ fontFamily: "'Playfair Display', serif" }}
           >
-            {nameA}
-            {nameB && (
-              <>
-                <span
-                  className="mx-[2.2cqw] not-italic text-[9cqw] text-[#e8c96b]"
-                  style={{ fontFamily: "'Great Vibes', cursive", WebkitTextFillColor: '#e8c96b' }}
-                >
-                  &amp;
-                </span>
-                <br />
-                {nameB}
-              </>
-            )}
-          </h1>
+            In The Name of Allah, The Most Gracious, The Most Merciful
+          </p>
         </motion.div>
 
+        {/* Divider */}
+        <motion.div variants={drawLine} className="h-px bg-gradient-to-r from-transparent via-[#2b3a30]/20 to-transparent w-[80cqw]" />
+
+        {/* Families Invitation Header */}
+        <motion.p
+          variants={riseIn}
+          className="text-[2.3cqw] leading-[1.6] text-[#2b3a30] max-w-[80cqw] font-medium"
+          style={{ fontFamily: "'Playfair Display', serif" }}
+        >
+          The Shade and Parker Families Request The Honour Of Your Presence At <br />
+          <span className="font-bold">The Nikaah Ceremony and Reception</span> of:
+        </motion.p>
+
+        {/* Groom & Bride Section */}
+        <motion.div variants={riseIn} className="flex flex-col items-center w-full">
+          {/* Groom: Abduraziq Parker */}
+          <div className="flex flex-col items-center">
+            <h1
+              className="text-[7.2cqw] leading-none text-[#4a604f] font-medium italic"
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+            >
+              Abduraziq Parker
+            </h1>
+            <p
+              className="mt-[0.6cqw] text-[2.3cqw] text-[#555555]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              S/o: Abdussataar and Shanaaz Parker
+            </p>
+          </div>
+
+          {/* Script Ampersand */}
+          <span
+            className="my-[0.3cqw] text-[4.8cqw] text-[#4a604f]"
+            style={{ fontFamily: "'Great Vibes', cursive" }}
+          >
+            &amp;
+          </span>
+
+          {/* Bride: Razia Shade */}
+          <div className="flex flex-col items-center">
+            <h1
+              className="text-[7.2cqw] leading-none text-[#4a604f] font-medium italic"
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+            >
+              Razia Shade
+            </h1>
+            <p
+              className="mt-[0.6cqw] text-[2.3cqw] text-[#555555]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              D/o: Sabri and Samalika Shade
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Dual Details Grid (Nikaah & Reception) */}
+        <motion.div
+          variants={riseIn}
+          className="w-full grid grid-cols-2 gap-[3.5cqw] border-t border-b border-[#2b3a30]/15 py-[1.8cqw]"
+        >
+          {/* Nikaah Column */}
+          <div className="flex flex-col items-center text-center space-y-[1cqw] border-r border-[#2b3a30]/15 pr-[1.5cqw]">
+            <h3
+              className="text-[2.6cqw] font-bold tracking-[0.15em] text-[#2b3a30]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              NIKAAH
+            </h3>
+            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <p
+              className="text-[2.2cqw] text-[#333333]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              6 September 2026
+            </p>
+            <p
+              className="text-[2.2cqw] font-semibold text-[#333333]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              10h00
+            </p>
+            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <p
+              className="text-[2cqw] text-[#555555] italic leading-snug"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Masjidul Quds Mosque<br />
+              Rylands
+            </p>
+          </div>
+
+          {/* Reception Column */}
+          <div className="flex flex-col items-center text-center space-y-[1cqw] pl-[1.5cqw]">
+            <h3
+              className="text-[2.6cqw] font-bold tracking-[0.15em] text-[#2b3a30]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              RECEPTION
+            </h3>
+            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <p
+              className="text-[2.2cqw] text-[#333333]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              6 September 2026
+            </p>
+            <p
+              className="text-[2.2cqw] font-semibold text-[#333333]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              5:00 PM
+            </p>
+            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <p
+              className="text-[2cqw] text-[#555555] italic leading-snug"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Tuscany Hall, Rylands<br />
+              2 Jane Avenue, Gatesville
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Islamic Date & Quranic Verse */}
+        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.8cqw]">
+          <p
+            className="text-[2.4cqw] font-bold tracking-[0.08em] text-[#2b3a30]"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            24 RABĪ&apos; AL-AWWAL 1448
+          </p>
+          <div className="flex flex-col items-center">
+            <p
+              className="text-[2.4cqw] italic text-[#4a604f] font-medium"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              &ldquo;And We created you in pairs&rdquo;
+            </p>
+            <p
+              className="text-[2cqw] text-[#777777] mt-[0.2cqw]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              (Surah 78, verse 8)
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Personalized Guest Name */}
         {guestName && (
           <motion.div
             variants={riseIn}
-            className="flex flex-col items-center gap-[0.5cqw]"
+            className="flex flex-col items-center"
           >
             <p
-              className="text-[2.6cqw] leading-none text-[#e8c96b]/80 italic"
+              className="text-[2.4cqw] leading-none text-[#4a604f] italic"
               style={{ fontFamily: "'Great Vibes', cursive" }}
             >
               Exclusively invited
             </p>
             <p
-              className="mt-[0.5cqw] text-[4cqw] font-semibold text-[#fdf6dd] tracking-wider uppercase"
+              className="mt-[0.3cqw] text-[3.6cqw] font-bold text-[#2b3a30] tracking-wide uppercase"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               {guestName}
@@ -227,35 +290,20 @@ export function InvitationCard({
           </motion.div>
         )}
 
-        {/* Divider */}
-        <motion.div variants={drawLine} className="luxe-divider w-[62cqw]" />
-
-        {/* Event particulars */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[2.6cqw]">
+        {/* RSVP Section */}
+        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full">
           <p
-            className="text-[3.4cqw] uppercase tracking-[0.28em] text-white/90"
+            className="text-[2.4cqw] font-bold tracking-[0.08em] text-[#2b3a30]"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
-            {config.dateTime}
+            Kindly RSVP by 14 August 2026
           </p>
-          <p className="font-body text-[3cqw] tracking-[0.14em] text-white/60 uppercase">
-            {config.location}
-          </p>
-          <p className="font-body text-[2.6cqw] tracking-[0.2em] text-[#d4af37]/75 uppercase">
-            {config.dressCode}
-          </p>
+          <div className="flex justify-center gap-[3.5cqw] text-[2.1cqw] text-[#444444]" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <span>Shanaaz Parker: 0718665122</span>
+            <span>Ayaaz Parker: 0718665123</span>
+          </div>
         </motion.div>
 
-        {/* RSVP line */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[1.6cqw]">
-          <div className="luxe-divider w-[30cqw] opacity-70" />
-          <p
-            className="text-[2.6cqw] uppercase tracking-[0.3em] text-white/55"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Kindly respond by {config.rsvpDeadline}
-          </p>
-        </motion.div>
       </div>
     </motion.div>
   );

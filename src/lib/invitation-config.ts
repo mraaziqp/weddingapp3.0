@@ -25,14 +25,14 @@ export interface InvitationConfig {
 }
 
 export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
-  title: 'Together in Love',
-  subtitle: 'Abduraziq & Razia',
-  dateTime: 'Saturday, 6th September 2026 at 6:00 PM',
-  location: 'Tuscany in Rylands, Cape Town',
-  dressCode: 'Formal Attire',
-  rsvpDeadline: 'August 20, 2026',
-  extraInfo: 'Reception to follow. Hotel accommodations arranged.',
-  weddingDate: '2026-09-06T18:00:00+02:00',
+  title: 'In The Name of Allah, The Most Gracious, The Most Merciful',
+  subtitle: 'Abduraziq Parker & Razia Shade',
+  dateTime: 'Sunday, 6 September 2026 at 10:00 AM',
+  location: 'Masjidul Quds Mosque, Rylands',
+  dressCode: 'Formal & Modest Attire',
+  rsvpDeadline: '14 August 2026',
+  extraInfo: 'Tuscany Hall, Rylands - 2 Jane Avenue, Gatesville at 5:00 PM',
+  weddingDate: '2026-09-06T10:00:00+02:00',
   giftingPoem:
     "With all that we have, we've been truly blessed,\n" +
     'your presence and prayers are all that we request,\n' +

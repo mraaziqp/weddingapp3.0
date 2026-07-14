@@ -34,7 +34,20 @@ export async function GET() {
       return NextResponse.json(DEFAULT_INVITATION_CONFIG);
     }
 
-    return NextResponse.json(rows[0].config);
+    const dbConfig = rows[0].config;
+    // Auto-migrate if it has the old default title
+    if (dbConfig && typeof dbConfig === 'object' && dbConfig.title === 'Together in Love') {
+      console.log('[Invitation Config] Auto-migrating old config to new botanical defaults...');
+      await ensureTable();
+      await sql`
+        INSERT INTO invitation_config (id, config)
+        VALUES ('main', ${JSON.stringify(DEFAULT_INVITATION_CONFIG)})
+        ON CONFLICT (id) DO UPDATE SET config = EXCLUDED.config
+      `;
+      return NextResponse.json(DEFAULT_INVITATION_CONFIG);
+    }
+
+    return NextResponse.json(dbConfig);
   } catch (err) {
     console.error('[Invitation Config] GET error:', err);
     // Never break the guest-facing page over this — fall back to sensible
