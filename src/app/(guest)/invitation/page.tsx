@@ -389,127 +389,129 @@ export default function InvitationPage() {
     );
   }
 
-  /* ─── Envelope Screen ─── */
+  /* ─── Envelope Screen (Stunning Animated Cover with Splitting Transition) ─── */
   if (!isOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030605] overflow-hidden select-none">
-        {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop muted />}
-        {/* Soft vignette + light rays */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#060e0b]/40 via-transparent to-[#020403]/80" />
-        <div className="pointer-events-none absolute inset-0 opacity-40 bg-[url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20700%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.7%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E')]" />
+      <div 
+        onClick={handleOpenEnvelope}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
+      >
+        {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop />}
 
-        {/* Ambient floating dust */}
-        <div className="absolute inset-0 pointer-events-none">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <motion.span
-              key={i}
-              className="absolute w-[2px] h-[2px] rounded-full bg-[#d4af37]"
-              style={{
-                left: `${(i * 31 + 7) % 100}%`,
-                top: `${(i * 47 + 13) % 100}%`,
-                boxShadow: '0 0 6px 1px rgba(212,175,55,0.4)',
-              }}
-              animate={{
-                y: [0, -60, 0],
-                opacity: [0, 0.7, 0],
-              }}
-              transition={{
-                duration: 6 + (i % 4) * 2,
-                delay: (i % 6) * 0.8,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Envelope Outer Body */}
+        {/* Ken Burns Animated Background Image */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: easeLuxe }}
-          className="relative flex flex-col items-center text-center px-6 z-10"
-        >
-          <p className="font-body text-[10px] uppercase tracking-[0.45em] text-[#d4af37]/60 mb-2">
-            You are cordially invited
-          </p>
-          <h2 className="font-headline text-2xl md:text-3xl italic text-white/50 mb-12">
-            The Wedding of
-          </h2>
+          initial={{ scale: 1 }}
+          animate={{ scale: 1.06 }}
+          transition={{ duration: 18, ease: 'easeOut', repeat: Infinity, repeatType: 'reverse' }}
+          className="absolute inset-0 w-full h-full"
+          style={{
+            backgroundImage: 'url("/intro-bg.jpg")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 40%',
+          }}
+        />
 
-          {/* The Seal Container */}
-          <div className="relative w-44 h-44 cursor-pointer" onClick={handleOpenEnvelope}>
-            {/* Pulsing rings */}
-            <motion.div
-              className="absolute inset-[-15px] rounded-full border border-[#d4af37]/20"
-              animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute inset-[-4px] rounded-full border border-[#d4af37]/15"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-            />
+        {/* Cinematic Vignette Overlay to darken the background image */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-black/85 z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_100%)] z-10 pointer-events-none" />
 
-            {/* Breaking Seal (split into two halves) */}
-            <div className="relative w-full h-full flex">
-              {/* Left Half */}
-              <motion.div
-                className="absolute inset-0 overflow-hidden"
-                style={{ clipPath: 'inset(0 50% 0 0)' }}
-                animate={isOpening ? { x: -35, y: 15, rotate: -15, opacity: 0 } : {}}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* Tiny local SVG rendered inside an animated clip mask —
-                    next/image optimization does not apply to SVGs. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/RA-logo.svg"
-                  alt="Seal Left"
-                  className="w-full h-full filter-gold object-contain"
-                />
-              </motion.div>
+        {/* Foreground Content */}
+        <div className="relative z-20 flex flex-col items-center justify-between h-full w-full py-16 px-6 text-center text-white">
+          
+          {/* Top: Arabic Bismillah Calligraphy */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            className="flex flex-col items-center"
+          >
+            <p
+              className="text-[9.5vw] xs:text-[7.5vw] md:text-5xl font-medium leading-none text-[#f6e7b7] select-none"
+              style={{ fontFamily: "'Amiri', serif" }}
+            >
+              بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
+            </p>
+          </motion.div>
 
-              {/* Right Half */}
-              <motion.div
-                className="absolute inset-0 overflow-hidden"
-                style={{ clipPath: 'inset(0 0 0 50%)' }}
-                animate={isOpening ? { x: 35, y: 15, rotate: 15, opacity: 0 } : {}}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/RA-logo.svg"
-                  alt="Seal Right"
-                  className="w-full h-full filter-gold object-contain"
-                />
-              </motion.div>
-            </div>
+          {/* Center: Couple Names and Date */}
+          <div className="flex flex-col items-center">
+            <motion.p
+              initial={{ opacity: 0, letterSpacing: '0.5em' }}
+              animate={{ opacity: 1, letterSpacing: '0.3em' }}
+              transition={{ delay: 0.3, duration: 1.2 }}
+              className="text-[2.6vw] xs:text-[2vw] md:text-xs font-light uppercase text-[#f6e7b7]/80 tracking-[0.3em] mb-4"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              The Wedding of
+            </motion.p>
+
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[12vw] xs:text-[10vw] md:text-7xl font-medium italic leading-none tracking-normal text-transparent bg-clip-text bg-gradient-to-br from-[#fdf6dd] via-[#e9cf8a] to-[#d4af37]"
+              style={{
+                fontFamily: "'Great Vibes', cursive",
+                filter: 'drop-shadow(0 2px 15px rgba(212,175,55,0.25))',
+              }}
+            >
+              Abduraziq &amp; Razia
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 1 }}
+              className="mt-6 text-[3.2vw] xs:text-[2.6vw] md:text-sm font-semibold tracking-[0.2em] text-white/60 uppercase"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              06.09.2026
+            </motion.p>
           </div>
 
-          <h1 className="font-headline mt-12 text-4xl md:text-5xl italic text-transparent bg-clip-text bg-gradient-to-br from-[#fdf6dd] via-[#e9cf8a] to-[#d4af37]">
-            {config.subtitle}
-          </h1>
-          <p className="font-body mt-2 text-[10px] uppercase tracking-[0.3em] text-[#d4af37]/75">
-            September 6, 2026 · Cape Town
-          </p>
-
-          <motion.button
-            onClick={handleOpenEnvelope}
-            className="mt-14 px-8 py-3 rounded-full border border-[#d4af37]/45 bg-[#d4af37]/10 text-[#f6e7b7] font-body text-xs uppercase tracking-[0.25em] shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all hover:bg-[#d4af37]/20 hover:shadow-[0_0_25px_rgba(212,175,55,0.3)]"
-            animate={{
-              boxShadow: [
-                '0 0 10px rgba(212,175,55,0.05)',
-                '0 0 25px rgba(212,175,55,0.25)',
-                '0 0 10px rgba(212,175,55,0.05)',
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
+          {/* Bottom: Pulse Unveil instruction */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 1.2 }}
+            className="flex flex-col items-center gap-3"
           >
-            Open Invitation
-          </motion.button>
-        </motion.div>
+            {/* Glowing Golden Pulse Ring */}
+            <div className="relative w-10 h-10 flex items-center justify-center">
+              <motion.div
+                className="absolute inset-0 rounded-full border border-[#d4af37]/50"
+                animate={{ scale: [1, 2, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#d4af37] shadow-[0_0_10px_#d4af37]" />
+            </div>
+
+            <p
+              className="text-[3vw] xs:text-[2.4vw] md:text-xs font-semibold uppercase tracking-[0.3em] text-[#f6e7b7]/90 mt-2"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Tap anywhere to unveil
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Split Screens Overlay (animating out when isOpening is triggered) */}
+        <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
+          {/* Top Half */}
+          <motion.div
+            className="flex-1 bg-black border-b border-[#d4af37]/25"
+            initial={{ y: '0%' }}
+            animate={isOpening ? { y: '-100%' } : { y: '0%' }}
+            transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+          />
+          {/* Bottom Half */}
+          <motion.div
+            className="flex-1 bg-black border-t border-[#d4af37]/25"
+            initial={{ y: '0%' }}
+            animate={isOpening ? { y: '100%' } : { y: '0%' }}
+            transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+          />
+        </div>
       </div>
     );
   }
