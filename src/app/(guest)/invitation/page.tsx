@@ -410,111 +410,27 @@ export default function InvitationPage() {
     );
   }
 
-  /* ─── Envelope Screen (Stunning Animated Cover with Splitting Transition) ─── */
+  /* ─── Envelope Screen (Intro Video + Wax Seal Splitting Transition) ─── */
   if (!isOpen) {
     return (
       <div 
         onClick={handleOpenEnvelope}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
       >
         {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop />}
 
-        {/* Ken Burns Animated Background Image */}
-        <motion.div
-          initial={{ scale: 1 }}
-          animate={{ scale: 1.06 }}
-          transition={{ duration: 18, ease: 'easeOut', repeat: Infinity, repeatType: 'reverse' }}
-          className="absolute inset-0 w-full h-full"
-          style={{
-            backgroundImage: 'url("/intro-bg.jpg")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 40%',
-          }}
+        {/* Intro Video Element */}
+        <video
+          src="/intro-video.mp4"
+          autoPlay
+          muted
+          playsInline
+          onEnded={handleOpenEnvelope}
+          className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ${isOpening ? 'opacity-0' : 'opacity-100'}`}
         />
 
-        {/* Cinematic Vignette Overlay to darken the background image */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-black/85 z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_100%)] z-10 pointer-events-none" />
-
-        {/* Foreground Content */}
-        <div className="relative z-20 flex flex-col items-center justify-between h-full w-full py-16 px-6 text-center text-white">
-          
-          {/* Top: Arabic Bismillah Calligraphy */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-            className="flex flex-col items-center"
-          >
-            <p
-              className="text-[9.5vw] xs:text-[7.5vw] md:text-5xl font-medium leading-none text-[#f6e7b7] select-none"
-              style={{ fontFamily: "'Amiri', serif" }}
-            >
-              بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
-            </p>
-          </motion.div>
-
-          {/* Center: Couple Names and Date */}
-          <div className="flex flex-col items-center">
-            <motion.p
-              initial={{ opacity: 0, letterSpacing: '0.5em' }}
-              animate={{ opacity: 1, letterSpacing: '0.3em' }}
-              transition={{ delay: 0.3, duration: 1.2 }}
-              className="text-[2.6vw] xs:text-[2vw] md:text-xs font-light uppercase text-[#f6e7b7]/80 tracking-[0.3em] mb-4"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              The Wedding of
-            </motion.p>
-
-            <motion.h1
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[12vw] xs:text-[10vw] md:text-7xl font-medium italic leading-none tracking-normal text-transparent bg-clip-text bg-gradient-to-br from-[#fdf6dd] via-[#e9cf8a] to-[#d4af37]"
-              style={{
-                fontFamily: "'Great Vibes', cursive",
-                filter: 'drop-shadow(0 2px 15px rgba(212,175,55,0.25))',
-              }}
-            >
-              Abduraziq &amp; Razia
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9, duration: 1 }}
-              className="mt-6 text-[3.2vw] xs:text-[2.6vw] md:text-sm font-semibold tracking-[0.2em] text-white/60 uppercase"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              06.09.2026
-            </motion.p>
-          </div>
-
-          {/* Bottom: Pulse Unveil instruction */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 1.2 }}
-            className="flex flex-col items-center gap-3"
-          >
-            {/* Glowing Golden Pulse Ring */}
-            <div className="relative w-10 h-10 flex items-center justify-center">
-              <motion.div
-                className="absolute inset-0 rounded-full border border-[#d4af37]/50"
-                animate={{ scale: [1, 2, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#d4af37] shadow-[0_0_10px_#d4af37]" />
-            </div>
-
-            <p
-              className="text-[3vw] xs:text-[2.4vw] md:text-xs font-semibold uppercase tracking-[0.3em] text-[#f6e7b7]/90 mt-2"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              Tap anywhere to unveil
-            </p>
-          </motion.div>
-        </div>
+        {/* Cinematic Vignette Overlay to darken the video slightly */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/45 z-20 pointer-events-none" />
 
         {/* Falling wedding bells & flowers particles */}
         {particles.map(p => (
@@ -540,23 +456,66 @@ export default function InvitationPage() {
           </motion.span>
         ))}
 
-        {/* Split Screens Overlay (animating out when isOpening is triggered) */}
-        <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
-          {/* Top Half */}
-          <motion.div
-            className="flex-1 bg-black border-b border-[#d4af37]/25"
-            initial={{ y: '0%' }}
-            animate={isOpening ? { y: '-100%' } : { y: '0%' }}
-            transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
-          />
-          {/* Bottom Half */}
-          <motion.div
-            className="flex-1 bg-black border-t border-[#d4af37]/25"
-            initial={{ y: '0%' }}
-            animate={isOpening ? { y: '100%' } : { y: '0%' }}
-            transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
-          />
-        </div>
+        {/* Split Screens Overlay (Indigo Envelope + Golden Wax Seal splitting apart) */}
+        {isOpening && (
+          <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
+            {/* Top Half of Envelope */}
+            <motion.div
+              className="flex-1 bg-[#101732] border-b border-[#d4af37]/35 relative flex items-end justify-center"
+              initial={{ y: '0%' }}
+              animate={{ y: '-100%' }}
+              transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+            >
+              {/* Top Half of Wax Seal */}
+              <div 
+                className="absolute bottom-[-48px] w-24 h-24 overflow-hidden z-40"
+                style={{ clipPath: 'inset(0 0 50% 0)' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/RA-logo.svg"
+                  alt=""
+                  className="w-full h-full filter-gold object-contain"
+                />
+              </div>
+              {/* Fine border lines inside the envelope */}
+              <div className="absolute inset-[3vw] border border-[#d4af37]/15 rounded-t-[1.5vw] pointer-events-none" />
+            </motion.div>
+
+            {/* Bottom Half of Envelope */}
+            <motion.div
+              className="flex-1 bg-[#101732] border-t border-[#d4af37]/35 relative flex items-start justify-center"
+              initial={{ y: '0%' }}
+              animate={{ y: '100%' }}
+              transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+            >
+              {/* Bottom Half of Wax Seal */}
+              <div 
+                className="absolute top-[-48px] w-24 h-24 overflow-hidden z-40"
+                style={{ clipPath: 'inset(50% 0 0 0)' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/RA-logo.svg"
+                  alt=""
+                  className="w-full h-full filter-gold object-contain"
+                />
+              </div>
+              
+              {/* TAP THE SEAL TO OPEN label inside envelope */}
+              <div className="mt-16 text-center">
+                <p
+                  className="text-[2.2vw] xs:text-[1.8vw] md:text-xs font-semibold uppercase tracking-[0.25em] text-[#f6e7b7]/80 animate-pulse"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  Unveiling...
+                </p>
+              </div>
+              {/* Fine border lines inside the envelope */}
+              <div className="absolute inset-[3vw] border border-[#d4af37]/15 rounded-b-[1.5vw] pointer-events-none" />
+            </motion.div>
+          </div>
+        )}
       </div>
     );
   }
@@ -766,8 +725,8 @@ export default function InvitationPage() {
         {/* Gifting enclosure card — a paper insert tucked with the invitation */}
         {config.giftingPoem?.trim() && (
           <motion.div
-            initial={{ opacity: 0, y: 34, rotate: -3, scale: 0.97 }}
-            whileInView={{ opacity: 1, y: 0, rotate: -1.2, scale: 1 }}
+            initial={{ opacity: 0, y: 34, rotate: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 1.3, ease: easeLuxe }}
           >

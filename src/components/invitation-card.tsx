@@ -160,7 +160,7 @@ export function InvitationCard({
           className="text-[2.3cqw] leading-[1.6] text-[#122217] max-w-[80cqw] font-bold"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
-          The Shade and Parker Families Request The Honour Of Your Presence At <br />
+          The Parker and Shade Families Request The Honour Of Your Presence At <br />
           <span className="font-extrabold text-[#113a1c]">The Nikaah Ceremony and Reception</span> of:
         </motion.p>
 
@@ -262,7 +262,7 @@ export function InvitationCard({
               className="text-[2.2cqw] font-extrabold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              5:00 PM
+              5:30 PM
             </p>
             <div className="h-px bg-[#122217]/28 w-[10cqw]" />
             <p
@@ -306,13 +306,7 @@ export function InvitationCard({
             className="flex flex-col items-center"
           >
             <p
-              className="text-[2.4cqw] leading-none text-[#113a1c] font-bold italic"
-              style={{ fontFamily: "'Great Vibes', cursive" }}
-            >
-              Exclusively invited
-            </p>
-            <p
-              className="mt-[0.3cqw] text-[3.6cqw] font-extrabold text-[#122217] tracking-wide uppercase"
+              className="text-[3.6cqw] font-extrabold text-[#122217] tracking-wide uppercase"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               {guestName}
