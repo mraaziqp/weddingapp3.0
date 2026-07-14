@@ -88,22 +88,52 @@ export function InvitationCard({
       id={printId ? 'invitation-print-card' : undefined}
       className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
-        backgroundImage: 'linear-gradient(to bottom, rgba(253, 251, 245, 0.35), rgba(253, 251, 245, 0.35)), url("/villa-courtyard.jpg")',
+        backgroundImage: 'url("/villa-courtyard.jpg")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
     >
+      {/* Decorative Wedding Flowers in the corners (framing the card) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/wedding-flowers.png"
+        alt=""
+        className="absolute top-[-4cqw] left-[-4cqw] w-[34cqw] select-none pointer-events-none opacity-90 rotate-[-12deg] z-10"
+        style={{ mixBlendMode: 'multiply' }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/wedding-flowers.png"
+        alt=""
+        className="absolute top-[-4cqw] right-[-4cqw] w-[34cqw] select-none pointer-events-none opacity-90 scale-x-[-1] rotate-[12deg] z-10"
+        style={{ mixBlendMode: 'multiply' }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/wedding-flowers.png"
+        alt=""
+        className="absolute bottom-[-5cqw] left-[-5cqw] w-[36cqw] select-none pointer-events-none opacity-90 scale-y-[-1] rotate-[12deg] z-10"
+        style={{ mixBlendMode: 'multiply' }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/wedding-flowers.png"
+        alt=""
+        className="absolute bottom-[-5cqw] right-[-5cqw] w-[36cqw] select-none pointer-events-none opacity-90 scale-[-1] rotate-[-12deg] z-10"
+        style={{ mixBlendMode: 'multiply' }}
+      />
+
       {/* Soft sheen sweeping across the card once on entrance */}
       <motion.div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-0"
         initial={{ x: '-130%' }}
         animate={{ x: '130%' }}
         transition={{ delay: 1.6, duration: 2.4, ease: 'easeInOut' }}
-        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.18) 50%, transparent 58%)' }}
+        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.20) 50%, transparent 58%)' }}
       />
 
       {/* Card content — vertically composed and centered with compact spacing */}
-      <div className="relative flex h-full flex-col items-center justify-center gap-[2.5cqw] px-[8.5cqw] py-[5.5cqw] text-center">
+      <div className="relative flex h-full flex-col items-center justify-center gap-[2.5cqw] px-[8.5cqw] py-[5.5cqw] text-center z-20">
         
         {/* Arabic Calligraphy and Translation */}
         <motion.div variants={riseIn} className="flex flex-col items-center">

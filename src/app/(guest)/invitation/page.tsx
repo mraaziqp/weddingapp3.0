@@ -170,6 +170,16 @@ export default function InvitationPage() {
   const [isOpening, setIsOpening] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [particles, setParticles] = useState<{
+    id: number;
+    emoji: string;
+    scale: number;
+    rotate: number;
+    tx: number;
+    ty: number;
+    delay: number;
+    duration: number;
+  }[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { scrollYProgress } = useScroll();
@@ -240,16 +250,27 @@ export default function InvitationPage() {
       audioRef.current.play().catch(e => console.log('Audio play error:', e));
       setIsAudioPlaying(true);
     }
-    // Confetti burst
-    import('canvas-confetti').then(({ default: confetti }) => {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#d4af37', '#f6e7b7', '#ffffff'],
-      });
+    
+    // Spawn falling wedding bells and flowers particles exploding from the center
+    const emojis = ['🔔', '🌸', '🌹', '🌺', '🌼', '🌷', '🔔', '🌸', '🌹', '🌼'];
+    const newParticles = Array.from({ length: 48 }).map((_, i) => {
+      const emoji = emojis[i % emojis.length];
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 80 + Math.random() * 240; // travel distance
+      return {
+        id: i,
+        emoji,
+        scale: 0.6 + Math.random() * 1.2,
+        rotate: Math.random() * 360,
+        tx: Math.cos(angle) * distance, // travel x (px)
+        ty: Math.sin(angle) * distance + 250, // travel y (px) + gravity fall
+        delay: Math.random() * 0.15,
+        duration: 1.8 + Math.random() * 1.2,
+      };
     });
-    // Open envelope
+    setParticles(newParticles);
+
+    // Open envelope (transition splitting)
     setTimeout(() => {
       setIsOpen(true);
     }, 850);
@@ -494,6 +515,30 @@ export default function InvitationPage() {
             </p>
           </motion.div>
         </div>
+
+        {/* Falling wedding bells & flowers particles */}
+        {particles.map(p => (
+          <motion.span
+            key={p.id}
+            className="absolute z-40 text-4xl pointer-events-none select-none"
+            style={{ left: '50%', top: '50%' }}
+            initial={{ scale: 0, x: '-50%', y: '-50%', rotate: 0, opacity: 1 }}
+            animate={{
+              scale: p.scale,
+              x: `calc(-50% + ${p.tx}px)`,
+              y: `calc(-50% + ${p.ty}px)`,
+              rotate: p.rotate + 360,
+              opacity: [1, 1, 0],
+            }}
+            transition={{
+              duration: p.duration,
+              delay: p.delay,
+              ease: 'easeOut',
+            }}
+          >
+            {p.emoji}
+          </motion.span>
+        ))}
 
         {/* Split Screens Overlay (animating out when isOpening is triggered) */}
         <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
