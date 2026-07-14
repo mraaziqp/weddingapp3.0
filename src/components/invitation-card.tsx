@@ -88,7 +88,7 @@ export function InvitationCard({
       id={printId ? 'invitation-print-card' : undefined}
       className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
-        backgroundImage: 'linear-gradient(to bottom, rgba(253, 251, 245, 0.78), rgba(253, 251, 245, 0.78)), url("/villa-courtyard.jpg")',
+        backgroundImage: 'linear-gradient(to bottom, rgba(253, 251, 245, 0.35), rgba(253, 251, 245, 0.35)), url("/villa-courtyard.jpg")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -99,7 +99,7 @@ export function InvitationCard({
         initial={{ x: '-130%' }}
         animate={{ x: '130%' }}
         transition={{ delay: 1.6, duration: 2.4, ease: 'easeInOut' }}
-        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.15) 50%, transparent 58%)' }}
+        style={{ background: 'linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.18) 50%, transparent 58%)' }}
       />
 
       {/* Card content — vertically composed and centered with compact spacing */}
@@ -108,13 +108,13 @@ export function InvitationCard({
         {/* Arabic Calligraphy and Translation */}
         <motion.div variants={riseIn} className="flex flex-col items-center">
           <p
-            className="text-[6.8cqw] font-medium leading-none text-[#2b3a30] select-none"
+            className="text-[6.8cqw] font-bold leading-none text-[#122217] select-none"
             style={{ fontFamily: "'Amiri', serif" }}
           >
             بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
           </p>
           <p
-            className="mt-[1cqw] text-[2.2cqw] font-semibold uppercase tracking-[0.14em] text-[#555555]"
+            className="mt-[1cqw] text-[2.2cqw] font-bold uppercase tracking-[0.14em] text-[#2e3b32]"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             In The Name of Allah, The Most Gracious, The Most Merciful
@@ -122,16 +122,16 @@ export function InvitationCard({
         </motion.div>
 
         {/* Divider */}
-        <motion.div variants={drawLine} className="h-px bg-gradient-to-r from-transparent via-[#2b3a30]/20 to-transparent w-[80cqw]" />
+        <motion.div variants={drawLine} className="h-px bg-gradient-to-r from-transparent via-[#122217]/28 to-transparent w-[80cqw]" />
 
         {/* Families Invitation Header */}
         <motion.p
           variants={riseIn}
-          className="text-[2.3cqw] leading-[1.6] text-[#2b3a30] max-w-[80cqw] font-medium"
+          className="text-[2.3cqw] leading-[1.6] text-[#122217] max-w-[80cqw] font-bold"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
           The Shade and Parker Families Request The Honour Of Your Presence At <br />
-          <span className="font-bold">The Nikaah Ceremony and Reception</span> of:
+          <span className="font-extrabold text-[#113a1c]">The Nikaah Ceremony and Reception</span> of:
         </motion.p>
 
         {/* Groom & Bride Section */}
@@ -139,13 +139,13 @@ export function InvitationCard({
           {/* Groom: Abduraziq Parker */}
           <div className="flex flex-col items-center">
             <h1
-              className="text-[7.2cqw] leading-none text-[#4a604f] font-medium italic"
+              className="text-[7.2cqw] leading-none text-[#113a1c] font-bold italic"
               style={{ fontFamily: "'Great Vibes', cursive" }}
             >
               Abduraziq Parker
             </h1>
             <p
-              className="mt-[0.6cqw] text-[2.3cqw] text-[#555555]"
+              className="mt-[0.6cqw] text-[2.3cqw] font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               S/o: Abdussataar and Shanaaz Parker
@@ -154,7 +154,7 @@ export function InvitationCard({
 
           {/* Script Ampersand */}
           <span
-            className="my-[0.3cqw] text-[4.8cqw] text-[#4a604f]"
+            className="my-[0.3cqw] text-[4.8cqw] text-[#113a1c] font-bold"
             style={{ fontFamily: "'Great Vibes', cursive" }}
           >
             &amp;
@@ -163,13 +163,13 @@ export function InvitationCard({
           {/* Bride: Razia Shade */}
           <div className="flex flex-col items-center">
             <h1
-              className="text-[7.2cqw] leading-none text-[#4a604f] font-medium italic"
+              className="text-[7.2cqw] leading-none text-[#113a1c] font-bold italic"
               style={{ fontFamily: "'Great Vibes', cursive" }}
             >
               Razia Shade
             </h1>
             <p
-              className="mt-[0.6cqw] text-[2.3cqw] text-[#555555]"
+              className="mt-[0.6cqw] text-[2.3cqw] font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               D/o: Sabri and Samalika Shade
@@ -180,32 +180,32 @@ export function InvitationCard({
         {/* Dual Details Grid (Nikaah & Reception) */}
         <motion.div
           variants={riseIn}
-          className="w-full grid grid-cols-2 gap-[3.5cqw] border-t border-b border-[#2b3a30]/15 py-[1.8cqw]"
+          className="w-full grid grid-cols-2 gap-[3.5cqw] border-t border-b border-[#122217]/28 py-[1.8cqw]"
         >
           {/* Nikaah Column */}
-          <div className="flex flex-col items-center text-center space-y-[1cqw] border-r border-[#2b3a30]/15 pr-[1.5cqw]">
+          <div className="flex flex-col items-center text-center space-y-[1cqw] border-r border-[#122217]/28 pr-[1.5cqw]">
             <h3
-              className="text-[2.6cqw] font-bold tracking-[0.15em] text-[#2b3a30]"
+              className="text-[2.6cqw] font-extrabold tracking-[0.15em] text-[#122217]"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               NIKAAH
             </h3>
-            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
             <p
-              className="text-[2.2cqw] text-[#333333]"
+              className="text-[2.2cqw] font-bold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               6 September 2026
             </p>
             <p
-              className="text-[2.2cqw] font-semibold text-[#333333]"
+              className="text-[2.2cqw] font-extrabold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               10h00
             </p>
-            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
             <p
-              className="text-[2cqw] text-[#555555] italic leading-snug"
+              className="text-[2cqw] text-[#2e3b32] font-semibold italic leading-snug"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Masjidul Quds Mosque<br />
@@ -216,27 +216,27 @@ export function InvitationCard({
           {/* Reception Column */}
           <div className="flex flex-col items-center text-center space-y-[1cqw] pl-[1.5cqw]">
             <h3
-              className="text-[2.6cqw] font-bold tracking-[0.15em] text-[#2b3a30]"
+              className="text-[2.6cqw] font-extrabold tracking-[0.15em] text-[#122217]"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               RECEPTION
             </h3>
-            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
             <p
-              className="text-[2.2cqw] text-[#333333]"
+              className="text-[2.2cqw] font-bold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               6 September 2026
             </p>
             <p
-              className="text-[2.2cqw] font-semibold text-[#333333]"
+              className="text-[2.2cqw] font-extrabold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               5:00 PM
             </p>
-            <div className="h-px bg-[#2b3a30]/15 w-[10cqw]" />
+            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
             <p
-              className="text-[2cqw] text-[#555555] italic leading-snug"
+              className="text-[2cqw] text-[#2e3b32] font-semibold italic leading-snug"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Tuscany Hall, Rylands<br />
@@ -248,20 +248,20 @@ export function InvitationCard({
         {/* Islamic Date & Quranic Verse */}
         <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.8cqw]">
           <p
-            className="text-[2.4cqw] font-bold tracking-[0.08em] text-[#2b3a30]"
+            className="text-[2.4cqw] font-extrabold tracking-[0.08em] text-[#122217]"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             24 RABĪ&apos; AL-AWWAL 1448
           </p>
           <div className="flex flex-col items-center">
             <p
-              className="text-[2.4cqw] italic text-[#4a604f] font-medium"
+              className="text-[2.4cqw] italic text-[#113a1c] font-bold"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               &ldquo;And We created you in pairs&rdquo;
             </p>
             <p
-              className="text-[2cqw] text-[#777777] mt-[0.2cqw]"
+              className="text-[2cqw] text-[#455249] font-medium mt-[0.2cqw]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               (Surah 78, verse 8)
@@ -276,13 +276,13 @@ export function InvitationCard({
             className="flex flex-col items-center"
           >
             <p
-              className="text-[2.4cqw] leading-none text-[#4a604f] italic"
+              className="text-[2.4cqw] leading-none text-[#113a1c] font-bold italic"
               style={{ fontFamily: "'Great Vibes', cursive" }}
             >
               Exclusively invited
             </p>
             <p
-              className="mt-[0.3cqw] text-[3.6cqw] font-bold text-[#2b3a30] tracking-wide uppercase"
+              className="mt-[0.3cqw] text-[3.6cqw] font-extrabold text-[#122217] tracking-wide uppercase"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               {guestName}
@@ -293,12 +293,12 @@ export function InvitationCard({
         {/* RSVP Section */}
         <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full">
           <p
-            className="text-[2.4cqw] font-bold tracking-[0.08em] text-[#2b3a30]"
+            className="text-[2.4cqw] font-extrabold tracking-[0.08em] text-[#122217]"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             Kindly RSVP by 14 August 2026
           </p>
-          <div className="flex justify-center gap-[3.5cqw] text-[2.1cqw] text-[#444444]" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <div className="flex justify-center gap-[3.5cqw] text-[2.1cqw] text-[#2e3b32] font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
             <span>Shanaaz Parker: 0718665122</span>
             <span>Ayaaz Parker: 0718665123</span>
           </div>
