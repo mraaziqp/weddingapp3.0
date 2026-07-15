@@ -157,7 +157,6 @@ export default function InvitationPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [downloadingCard, setDownloadingCard] = useState(false);
-  const [downloadingNikkahCard, setDownloadingNikkahCard] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
   const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
   // The real Supabase guests.id for whoever is responding, when known — lets
@@ -342,22 +341,7 @@ export default function InvitationPage() {
     }
   };
 
-  const downloadNikkahOnlyCard = async () => {
-    if (downloadingNikkahCard) return;
-    setDownloadingNikkahCard(true);
-    try {
-      await downloadElementAsImage('nikkah-only-print-card', 'nikkah-invitation.png');
-    } catch (err) {
-      console.error('[Invitation] Download Nikkah card failed:', err);
-      toast({
-        variant: 'destructive',
-        title: 'Download failed',
-        description: 'Please try Print instead (Ctrl/Cmd+P) — it works even when the download doesn’t.',
-      });
-    } finally {
-      setDownloadingNikkahCard(false);
-    }
-  };
+
 
   const submitRsvp = async (rsvpStatus: 'Accepted' | 'Declined') => {
     if (!guestName.trim()) {
@@ -672,15 +656,6 @@ export default function InvitationPage() {
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-0 sm:px-4 py-14">
         <InvitationCard config={config} guestName={guestName || undefined} printId />
 
-        {/* Hidden Nikaah-Only card container for exporting general Nikaah card */}
-        <div className="hidden animate-none" data-print-hide>
-          <InvitationCard 
-            config={config} 
-            nikkahOnly 
-            id="nikkah-only-print-card" 
-          />
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -713,14 +688,6 @@ export default function InvitationPage() {
             >
               {downloadingCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
               {downloadingCard ? 'Preparing…' : 'Download Card'}
-            </button>
-            <button
-              onClick={downloadNikkahOnlyCard}
-              disabled={downloadingNikkahCard}
-              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10 disabled:opacity-60"
-            >
-              {downloadingNikkahCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-              {downloadingNikkahCard ? 'Preparing Nikaah…' : 'Download Nikaah Invite'}
             </button>
           </div>
           <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-white/25">

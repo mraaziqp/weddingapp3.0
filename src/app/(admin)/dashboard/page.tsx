@@ -5,8 +5,11 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarHeart, Sparkles, Trophy } from "lucide-react";
+import { CalendarHeart, Sparkles, Trophy, Download, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { InvitationCard } from "@/components/invitation-card";
+import { downloadElementAsImage } from "@/lib/download-card";
+import { InvitationConfig } from "@/lib/invitation-config";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,12 +29,43 @@ export default function DashboardPage() {
   const [weddingDayMode, setWeddingDayMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [_showGuestView, _setShowGuestView] = useState(false);
+  const [invitationConfig, setInvitationConfig] = useState<InvitationConfig | null>(null);
+  const [downloadingNikkahCard, setDownloadingNikkahCard] = useState(false);
   const { toast } = useToast();
 
   const weddingDate = new Date('2026-09-06');
   const daysUntilWedding = Math.ceil((weddingDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
+  const downloadNikkahOnlyCard = async () => {
+    if (downloadingNikkahCard) return;
+    setDownloadingNikkahCard(true);
+    try {
+      await downloadElementAsImage('nikkah-only-print-card', 'nikkah-invitation.png');
+      toast({
+        title: '✓ Download Complete',
+        description: 'General Nikaah invitation has been downloaded successfully.',
+      });
+    } catch (err) {
+      console.error('[Dashboard] Download Nikkah card failed:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Download failed',
+        description: 'Unable to capture invitation card as image. Please try again.',
+      });
+    } finally {
+      setDownloadingNikkahCard(false);
+    }
+  };
+
   // Load config
+  useEffect(() => {
+    fetch('/api/invitation/config')
+      .then(r => r.json())
+      .then(data => setInvitationConfig(data))
+      .catch(() => {});
+  }, []);
+
+  // Load config std
   useEffect(() => {
     fetch('/api/std/config')
       .then(r => r.json())
@@ -187,7 +221,42 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
 
+        {/* INVITATION EXPORTS CARD */}
+        {invitationConfig && (
+          <motion.div variants={itemVariants}>
+            <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
+              <CardHeader className="border-b border-white/5 pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl text-amber-300">
+                  <Sparkles size={20} />
+                  Invitation Assets Exporter
+                </CardTitle>
+                <CardDescription>Export and download invitation cards to share on WhatsApp or print</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 flex flex-col items-center justify-center gap-4 text-center">
+                <p className="text-sm text-white/70 max-w-md">
+                  Download the general, non-personalized Nikaah-Only invitation card. This card has no guest names and no reception details, making it safe to share with anyone.
+                </p>
+                <button
+                  onClick={downloadNikkahOnlyCard}
+                  disabled={downloadingNikkahCard}
+                  className="flex items-center gap-2 rounded-full border border-amber-500/35 bg-[#122217] px-6 py-3 font-body text-xs uppercase tracking-[0.24em] text-[#f6e7b7] shadow-lg transition-colors hover:bg-[#1a3220] disabled:opacity-60"
+                >
+                  {downloadingNikkahCard ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  {downloadingNikkahCard ? 'Generating Card...' : 'Download Nikaah Invite'}
+                </button>
 
+                {/* Hidden Nikaah-Only card container for exporting general Nikaah card */}
+                <div className="hidden pointer-events-none select-none opacity-0 h-0 overflow-hidden" data-print-hide>
+                  <InvitationCard 
+                    config={invitationConfig} 
+                    nikkahOnly 
+                    id="nikkah-only-print-card" 
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* ANALYTICS DASHBOARD */}
         <motion.div variants={itemVariants}>
