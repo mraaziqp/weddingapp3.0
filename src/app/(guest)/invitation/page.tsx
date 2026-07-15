@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin, Download, Loader2 } from 'lucide-react';
-import { toSvg } from 'html-to-image';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
-import { InvitationCard, GiftingCard, GoldDust, easeLuxe } from '@/components/invitation-card';
+import { InvitationCard, GiftingCard, GoldDust, PetalDrift, WeddingBells, FlowerSprig, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
 import { useToast } from '@/hooks/use-toast';
 import { supabase, dbToHousehold } from '@/lib/supabase';
+import { downloadElementAsImage } from '@/lib/download-card';
 import type { Household } from '@/lib/types';
 
 /* Default fallback ceremony start: Saturday 6 September 2026, 18:00 SAST (UTC+2). */
@@ -170,6 +170,11 @@ export default function InvitationPage() {
   const [isOpening, setIsOpening] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  // A slot for the couple's own soundtrack: drop a file named exactly
+  // `invitation-music.mp3` into /public and it plays automatically, no
+  // admin upload needed. An admin-uploaded config.musicUrl still wins.
+  // musicAvailable flips false silently if the fallback file was never added.
+  const [musicAvailable, setMusicAvailable] = useState(true);
   const [particles, setParticles] = useState<{
     id: number;
     emoji: string;
@@ -185,6 +190,27 @@ export default function InvitationPage() {
   const { scrollYProgress } = useScroll();
   const parallaxY = useTransform(scrollYProgress, [0, 1], ['0%', '9%']);
   const { toast } = useToast();
+
+  // Admin-uploaded music (config.musicUrl) always wins; otherwise fall back
+  // to a static file the couple can drop in themselves — see musicAvailable.
+  const musicSrc = config?.musicUrl || '/invitation-music.mp3';
+
+  // One persistent Audio object for the whole visit — created imperatively
+  // (not a JSX <audio> tag) so it survives the envelope→invitation screen
+  // swap without restarting from 0 or re-requesting autoplay permission.
+  useEffect(() => {
+    const audio = new Audio(musicSrc);
+    audio.loop = true;
+    const handleError = () => setMusicAvailable(false);
+    audio.addEventListener('error', handleError);
+    audioRef.current = audio;
+    return () => {
+      audio.removeEventListener('error', handleError);
+      audio.pause();
+      audio.src = '';
+      audioRef.current = null;
+    };
+  }, [musicSrc]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -242,9 +268,12 @@ export default function InvitationPage() {
   }, [params]);
 
   const handleOpenEnvelope = () => {
+    // Guards against the video's onEnded firing after a tap already started
+    // the split, or a second tap mid-transition re-triggering everything.
+    if (isOpening) return;
     setIsOpening(true);
     // Play audio unmuted (works as it's triggered directly by user click event)
-    if (audioRef.current && config?.musicUrl) {
+    if (audioRef.current && musicAvailable) {
       audioRef.current.muted = false;
       audioRef.current.volume = 0.35;
       audioRef.current.play().catch(e => console.log('Audio play error:', e));
@@ -265,15 +294,20 @@ export default function InvitationPage() {
         tx: Math.cos(angle) * distance, // travel x (px)
         ty: Math.sin(angle) * distance + 250, // travel y (px) + gravity fall
         delay: Math.random() * 0.15,
-        duration: 1.8 + Math.random() * 1.2,
+        // Tuned to resolve right around when the envelope finishes parting
+        // (~1.15s below), so the burst and the reveal land together.
+        duration: 1.1 + Math.random() * 0.5,
       };
     });
     setParticles(newParticles);
 
-    // Open envelope (transition splitting)
-    setTimeout(() => {
-      setIsOpen(true);
-    }, 850);
+    // The split panel's onAnimationComplete (below) is the primary trigger,
+    // synced exactly to when the parting animation actually finishes. This
+    // timeout is a safety net only — if the tab is backgrounded or a browser
+    // quirk ever stops that callback from firing, a guest must never be
+    // stuck looking at a half-open envelope forever. Total panel animation
+    // is 0.1s delay + 1.05s duration = 1.15s; this fires just after.
+    setTimeout(() => setIsOpen(true), 1300);
   };
 
   const toggleAudio = () => {
@@ -290,50 +324,11 @@ export default function InvitationPage() {
   };
 
   const downloadCard = async () => {
-    const node = document.getElementById('invitation-print-card');
-    if (!node || downloadingCard) return;
+    if (downloadingCard) return;
     setDownloadingCard(true);
     try {
-      const rect = node.getBoundingClientRect();
-      const pixelRatio = 3; // ≈300dpi at the card's on-screen size — sharp
-      // enough to print, small enough to share over WhatsApp/email.
-
-      // html-to-image's toPng()/toCanvas() hang indefinitely on this card:
-      // their createImage() helper calls HTMLImageElement.decode() on the
-      // generated SVG, and decode() never resolves for SVGs built from
-      // foreignObject-embedded HTML (a known Chromium quirk) — verified by
-      // isolating each internal step. toSvg() itself works fine and fast,
-      // so we take the SVG it produces and do the image-load + canvas-draw
-      // ourselves with a plain onload handler instead of decode().
-      const rasterize = async () => {
-        const svgDataUrl = await toSvg(node, { pixelRatio, skipFonts: true, cacheBust: true });
-        return new Promise<string>((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = rect.width * pixelRatio;
-            canvas.height = rect.height * pixelRatio;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) { reject(new Error('no canvas context')); return; }
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/png'));
-          };
-          img.onerror = () => reject(new Error('SVG failed to rasterize'));
-          img.src = svgDataUrl;
-        });
-      };
-
-      // Belt-and-braces timeout — every step above has tested fast and
-      // reliable, but this guarantees the button can never hang forever.
-      const dataUrl = await Promise.race([
-        rasterize(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 12000)),
-      ]);
-
-      const a = document.createElement('a');
-      a.download = `${(config?.subtitle ?? 'wedding-invitation').replace(/\s+/g, '-').toLowerCase()}.png`;
-      a.href = dataUrl;
-      a.click();
+      const filename = `${(config?.subtitle ?? 'wedding-invitation').replace(/\s+/g, '-').toLowerCase()}.png`;
+      await downloadElementAsImage('invitation-print-card', filename);
     } catch (err) {
       console.error('[Invitation] Download card failed:', err);
       toast({
@@ -417,20 +412,73 @@ export default function InvitationPage() {
         onClick={handleOpenEnvelope}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
       >
-        {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop />}
-
-        {/* Intro Video Element */}
+        {/* Intro Video Element — softens with a blur+zoom as it hands off to the split */}
         <video
           src="/intro-video.mp4"
           autoPlay
           muted
           playsInline
           onEnded={handleOpenEnvelope}
-          className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ${isOpening ? 'opacity-0' : 'opacity-100'}`}
+          className={`absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100 blur-0'}`}
         />
 
         {/* Cinematic Vignette Overlay to darken the video slightly */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/45 z-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/55 z-20 pointer-events-none" />
+
+        {/* Elegant identifying overlay — Bismillah, names, date, tap hint —
+            fades in over the video and steps aside the instant it opens. */}
+        <motion.div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-between py-[8vh] px-6 text-center pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isOpening ? 0 : 1 }}
+          transition={{ opacity: isOpening ? { duration: 0.3 } : { delay: 1, duration: 1.4 } }}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <p
+              className="text-2xl md:text-3xl text-[#f6e7b7] drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
+              style={{ fontFamily: "'Amiri', serif" }}
+            >
+              بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
+            </p>
+            <p className="font-body text-[9px] md:text-[10px] uppercase tracking-[0.35em] text-[#f6e7b7]/70">
+              In the name of Allah, the Most Gracious, the Most Merciful
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-3">
+            <p className="font-body text-[10px] uppercase tracking-[0.45em] text-[#d4af37]/85">
+              You are cordially invited to the Nikaah &amp; Reception of
+            </p>
+            <h1
+              className="text-4xl md:text-6xl italic text-transparent bg-clip-text bg-gradient-to-br from-[#fdf6dd] via-[#e9cf8a] to-[#d4af37] drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+            >
+              Abduraziq &amp; Razia
+            </h1>
+            <p className="font-body text-[10px] uppercase tracking-[0.35em] text-white/70">
+              06 · 09 · 2026
+            </p>
+
+            <motion.p
+              className="mt-6 font-body text-[10px] uppercase tracking-[0.3em] text-[#f6e7b7]/70"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Tap anywhere to unveil
+            </motion.p>
+          </div>
+        </motion.div>
+
+        {/* Warm golden flash at the instant the seal breaks open */}
+        {isOpening && (
+          <motion.div
+            className="absolute inset-0 z-25 pointer-events-none"
+            initial={{ opacity: 0.9 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(246,231,183,0.9) 0%, rgba(212,175,55,0.35) 35%, transparent 70%)' }}
+          />
+        )}
 
         {/* Falling wedding bells & flowers particles */}
         {particles.map(p => (
@@ -456,15 +504,22 @@ export default function InvitationPage() {
           </motion.span>
         ))}
 
-        {/* Split Screens Overlay (Indigo Envelope + Golden Wax Seal splitting apart) */}
+        {/* Split Screens Overlay (deep botanical-green envelope + golden wax
+            seal splitting apart) — fades in first so it blends with the
+            video's own blur-out instead of popping in as a hard cut. */}
         {isOpening && (
-          <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
+          <motion.div
+            className="absolute inset-0 flex flex-col z-30 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+          >
             {/* Top Half of Envelope */}
             <motion.div
-              className="flex-1 bg-[#101732] border-b border-[#d4af37]/35 relative flex items-end justify-center"
+              className="flex-1 bg-[#0d1710] border-b border-[#d4af37]/35 relative flex items-end justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '-100%' }}
-              transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+              transition={{ duration: 1.05, delay: 0.1, ease: [0.77, 0, 0.175, 1] }}
             >
               {/* Top Half of Wax Seal */}
               <div 
@@ -482,12 +537,15 @@ export default function InvitationPage() {
               <div className="absolute inset-[3vw] border border-[#d4af37]/15 rounded-t-[1.5vw] pointer-events-none" />
             </motion.div>
 
-            {/* Bottom Half of Envelope */}
+            {/* Bottom Half of Envelope — its completion is what reveals the
+                real invitation, so the swap lands exactly when the parting
+                animation actually finishes instead of an approximated timer. */}
             <motion.div
-              className="flex-1 bg-[#101732] border-t border-[#d4af37]/35 relative flex items-start justify-center"
+              className="flex-1 bg-[#0d1710] border-t border-[#d4af37]/35 relative flex items-start justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '100%' }}
-              transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+              transition={{ duration: 1.05, delay: 0.1, ease: [0.77, 0, 0.175, 1] }}
+              onAnimationComplete={() => setIsOpen(true)}
             >
               {/* Bottom Half of Wax Seal */}
               <div 
@@ -514,7 +572,7 @@ export default function InvitationPage() {
               {/* Fine border lines inside the envelope */}
               <div className="absolute inset-[3vw] border border-[#d4af37]/15 rounded-b-[1.5vw] pointer-events-none" />
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </div>
     );
@@ -602,12 +660,12 @@ export default function InvitationPage() {
   /* ─── Main Invitation Screen ─── */
   return (
     <div className="relative min-h-screen bg-[#04070a]">
-      {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop muted={!isAudioPlaying} autoPlay />}
       <Backdrop config={config} parallaxY={parallaxY} />
       <GoldDust />
+      <PetalDrift />
 
       {/* Floating Audio Button */}
-      {config.musicUrl && (
+      {musicAvailable && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -712,6 +770,7 @@ export default function InvitationPage() {
             transition={{ duration: 1.1, ease: easeLuxe }}
             className="rounded-2xl border border-white/12 bg-white/[0.05] p-6 text-center backdrop-blur-2xl shadow-[0_18px_55px_rgba(0,0,0,0.4)]"
           >
+            <WeddingBells className="mx-auto mb-3 h-6 w-9 text-[#d4af37]/60" />
             <p
               className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[#d4af37]/80"
               style={{ fontFamily: "'Cinzel', serif" }}
@@ -751,9 +810,13 @@ export default function InvitationPage() {
                 transition={{ duration: 0.35 }}
                 className="space-y-5 text-center"
               >
-                <p className="text-2xl italic text-white/90" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Will you be celebrating with us?
-                </p>
+                <span className="flex items-center justify-center gap-3">
+                  <FlowerSprig className="h-4 w-7 text-[#d4af37]/50 scale-x-[-1]" />
+                  <p className="text-2xl italic text-white/90" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Will you be celebrating with us?
+                  </p>
+                  <FlowerSprig className="h-4 w-7 text-[#d4af37]/50" />
+                </span>
                 <Button
                   onClick={() => setShowForm(true)}
                   className="h-14 w-full bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] font-body text-sm font-semibold uppercase tracking-[0.25em] text-black shadow-[0_8px_30px_rgba(212,175,55,0.3)] transition-shadow hover:shadow-[0_10px_40px_rgba(212,175,55,0.45)]"

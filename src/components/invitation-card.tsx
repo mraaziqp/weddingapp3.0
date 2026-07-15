@@ -63,6 +63,82 @@ export function GoldDust({ count = 26 }: { count?: number }) {
   );
 }
 
+/* ─── Ambient drifting petals: a soft, continuous botanical layer behind
+   the whole page (distinct from GoldDust's sparkle and any one-off burst
+   on open). Positions/durations derive from index only — same markup on
+   server and client, no hydration mismatch. ─────────────────────────── */
+export function PetalDrift({ count = 10 }: { count?: number }) {
+  const petals = ['🌸', '🌺', '🌼', '🌷'];
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[4] overflow-hidden" aria-hidden data-print-hide>
+      {Array.from({ length: count }).map((_, i) => {
+        const left = (i * 53 + 7) % 100;
+        const size = 14 + (i % 3) * 5;
+        const duration = 16 + (i % 5) * 4;
+        const delay = (i % 6) * 2.4;
+        const drift = ((i % 3) - 1) * 40;
+        return (
+          <motion.span
+            key={i}
+            className="absolute select-none opacity-0"
+            style={{ left: `${left}%`, top: '-8%', fontSize: size }}
+            animate={{
+              y: ['0vh', '112vh'],
+              x: [0, drift],
+              rotate: [0, i % 2 === 0 ? 200 : -200],
+              opacity: [0, 0.55, 0.55, 0],
+            }}
+            transition={{ duration, delay, repeat: Infinity, ease: 'linear' }}
+          >
+            {petals[i % petals.length]}
+          </motion.span>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Small botanical accents (bells + flourish) ──────────────────────── */
+
+export function WeddingBells({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 40" className={className} fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden>
+      {/* ribbon bow at center */}
+      <path d="M32 3c-3 0-5.5 2-5.5 2s2.5 2 5.5 2 5.5-2 5.5-2-2.5-2-5.5-2z" fill="currentColor" stroke="none" opacity="0.9" />
+      <circle cx="32" cy="5" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M32 7v4" />
+      {/* left bell */}
+      <path d="M14 13.5c0-5 4-9 9-9" strokeLinecap="round" />
+      <path d="M23 4.5c5 0 9 4 9 9v6.2c0 1.8 0.9 2.8 1.8 3.6H12.2c0.9-0.8 1.8-1.8 1.8-3.6v-6.2z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="23" cy="26.3" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M17.5 28.3c1.3 2.3 3.6 3.7 5.5 3.7s4.2-1.4 5.5-3.7" strokeLinecap="round" />
+      {/* right bell (mirrored) */}
+      <g transform="translate(64,0) scale(-1,1)">
+        <path d="M14 13.5c0-5 4-9 9-9" strokeLinecap="round" />
+        <path d="M23 4.5c5 0 9 4 9 9v6.2c0 1.8 0.9 2.8 1.8 3.6H12.2c0.9-0.8 1.8-1.8 1.8-3.6v-6.2z" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="23" cy="26.3" r="1.5" fill="currentColor" stroke="none" />
+        <path d="M17.5 28.3c1.3 2.3 3.6 3.7 5.5 3.7s4.2-1.4 5.5-3.7" strokeLinecap="round" />
+      </g>
+    </svg>
+  );
+}
+
+/* A tiny trailing sprig — three petals off a curved stem — used to flank
+   the ampersand and frame small details without competing with the photo. */
+export function FlowerSprig({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.1" aria-hidden>
+      <path d="M2 20c8-2 14-8 20-16" strokeLinecap="round" />
+      {[[10, 15], [16, 10], [22, 6]].map(([x, y], i) => (
+        <g key={i} transform={`translate(${x} ${y})`}>
+          <ellipse cx="0" cy="0" rx="3.2" ry="2" fill="currentColor" stroke="none" opacity="0.85" transform="rotate(-30)" />
+          <ellipse cx="1.6" cy="-1.6" rx="2.6" ry="1.7" fill="currentColor" stroke="none" opacity="0.7" transform="rotate(10)" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 /* ─── The 5×7 print-locked invitation card ────────────────────────────── */
 /* container-type: inline-size + cqw typography means every element scales
    in exact proportion to the card's width. The layout is pixel-identical
@@ -73,12 +149,16 @@ export function InvitationCard({
   printId = false,
   widthClass = 'w-[min(92vw,520px)]',
   guestName,
+  nikkahOnly = false,
 }: {
   config: InvitationConfig;
   /** Only the guest page sets this — the print CSS targets the id. */
   printId?: boolean;
   widthClass?: string;
   guestName?: string;
+  /** Drops the Reception column and any personalization — a single generic
+   * card for the Nikaah alone, safe to share with anyone. */
+  nikkahOnly?: boolean;
 }) {
   return (
     <motion.div
@@ -161,7 +241,9 @@ export function InvitationCard({
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
           The Parker and Shade Families Request The Honour Of Your Presence At <br />
-          <span className="font-extrabold text-[#113a1c]">The Nikaah Ceremony and Reception</span> of:
+          <span className="font-extrabold text-[#113a1c]">
+            The Nikaah Ceremony{nikkahOnly ? '' : ' and Reception'}
+          </span> of:
         </motion.p>
 
         {/* Groom & Bride Section */}
@@ -182,12 +264,16 @@ export function InvitationCard({
             </p>
           </div>
 
-          {/* Script Ampersand */}
-          <span
-            className="my-[0.3cqw] text-[4.8cqw] text-[#113a1c] font-bold"
-            style={{ fontFamily: "'Great Vibes', cursive" }}
-          >
-            &amp;
+          {/* Script Ampersand, flanked by tiny flower sprigs */}
+          <span className="flex items-center gap-[1.4cqw] my-[0.3cqw]">
+            <FlowerSprig className="h-[2.4cqw] w-[4cqw] text-[#7a8f6a]/70 scale-x-[-1]" />
+            <span
+              className="text-[4.8cqw] text-[#113a1c] font-bold"
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+            >
+              &amp;
+            </span>
+            <FlowerSprig className="h-[2.4cqw] w-[4cqw] text-[#7a8f6a]/70" />
           </span>
 
           {/* Bride: Razia Shade */}
@@ -207,13 +293,19 @@ export function InvitationCard({
           </div>
         </motion.div>
 
-        {/* Dual Details Grid (Nikaah & Reception) */}
+        {/* Wedding bells flourish, tying the couple to the ceremony details */}
+        <motion.div variants={riseIn}>
+          <WeddingBells className="h-[3.4cqw] w-[5.4cqw] text-[#8a6f1f]/75" />
+        </motion.div>
+
+        {/* Details Grid — both Nikaah & Reception normally, or just the
+            Nikaah alone (centered, full width) for the generic share card */}
         <motion.div
           variants={riseIn}
-          className="w-full grid grid-cols-2 gap-[3.5cqw] border-t border-b border-[#122217]/28 py-[1.8cqw]"
+          className={`w-full gap-[3.5cqw] border-t border-b border-[#122217]/28 py-[1.8cqw] ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
         >
           {/* Nikaah Column */}
-          <div className="flex flex-col items-center text-center space-y-[1cqw] border-r border-[#122217]/28 pr-[1.5cqw]">
+          <div className={`flex flex-col items-center text-center space-y-[1cqw] ${nikkahOnly ? '' : 'border-r border-[#122217]/28 pr-[1.5cqw]'}`}>
             <h3
               className="text-[2.6cqw] font-extrabold tracking-[0.15em] text-[#122217]"
               style={{ fontFamily: "'Cinzel', serif" }}
@@ -243,36 +335,38 @@ export function InvitationCard({
             </p>
           </div>
 
-          {/* Reception Column */}
-          <div className="flex flex-col items-center text-center space-y-[1cqw] pl-[1.5cqw]">
-            <h3
-              className="text-[2.6cqw] font-extrabold tracking-[0.15em] text-[#122217]"
-              style={{ fontFamily: "'Cinzel', serif" }}
-            >
-              RECEPTION
-            </h3>
-            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
-            <p
-              className="text-[2.2cqw] font-bold text-[#122217]"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              6 September 2026
-            </p>
-            <p
-              className="text-[2.2cqw] font-extrabold text-[#122217]"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              5:30 PM
-            </p>
-            <div className="h-px bg-[#122217]/28 w-[10cqw]" />
-            <p
-              className="text-[2cqw] text-[#2e3b32] font-semibold italic leading-snug"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              Tuscany Hall, Rylands<br />
-              2 Jane Avenue, Gatesville
-            </p>
-          </div>
+          {/* Reception Column — omitted entirely on the generic Nikaah-only card */}
+          {!nikkahOnly && (
+            <div className="flex flex-col items-center text-center space-y-[1cqw] pl-[1.5cqw]">
+              <h3
+                className="text-[2.6cqw] font-extrabold tracking-[0.15em] text-[#122217]"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                RECEPTION
+              </h3>
+              <div className="h-px bg-[#122217]/28 w-[10cqw]" />
+              <p
+                className="text-[2.2cqw] font-bold text-[#122217]"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                6 September 2026
+              </p>
+              <p
+                className="text-[2.2cqw] font-extrabold text-[#122217]"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                5:30 PM
+              </p>
+              <div className="h-px bg-[#122217]/28 w-[10cqw]" />
+              <p
+                className="text-[2cqw] text-[#2e3b32] font-semibold italic leading-snug"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                Tuscany Hall, Rylands<br />
+                2 Jane Avenue, Gatesville
+              </p>
+            </div>
+          )}
         </motion.div>
 
         {/* Islamic Date & Quranic Verse */}
@@ -299,8 +393,9 @@ export function InvitationCard({
           </div>
         </motion.div>
 
-        {/* Personalized Guest Name */}
-        {guestName && (
+        {/* Personalized Guest Name — never shown on the generic Nikaah-only
+            card, which is meant to be sent to anyone, not one household */}
+        {guestName && !nikkahOnly && (
           <motion.div
             variants={riseIn}
             className="flex flex-col items-center"
@@ -316,6 +411,10 @@ export function InvitationCard({
 
         {/* RSVP Section */}
         <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full">
+          <span className="flex items-center gap-[1.6cqw] mb-[0.3cqw]">
+            <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 scale-x-[-1] rotate-180" />
+            <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 rotate-180" />
+          </span>
           <p
             className="text-[2.4cqw] font-extrabold tracking-[0.08em] text-[#122217]"
             style={{ fontFamily: "'Cinzel', serif" }}
