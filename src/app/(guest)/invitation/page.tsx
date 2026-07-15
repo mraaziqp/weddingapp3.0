@@ -157,6 +157,7 @@ export default function InvitationPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [downloadingCard, setDownloadingCard] = useState(false);
+  const [downloadingNikkahCard, setDownloadingNikkahCard] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
   const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
   // The real Supabase guests.id for whoever is responding, when known — lets
@@ -341,6 +342,23 @@ export default function InvitationPage() {
     }
   };
 
+  const downloadNikkahOnlyCard = async () => {
+    if (downloadingNikkahCard) return;
+    setDownloadingNikkahCard(true);
+    try {
+      await downloadElementAsImage('nikkah-only-print-card', 'nikkah-invitation.png');
+    } catch (err) {
+      console.error('[Invitation] Download Nikkah card failed:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Download failed',
+        description: 'Please try Print instead (Ctrl/Cmd+P) — it works even when the download doesn’t.',
+      });
+    } finally {
+      setDownloadingNikkahCard(false);
+    }
+  };
+
   const submitRsvp = async (rsvpStatus: 'Accepted' | 'Declined') => {
     if (!guestName.trim()) {
       alert('Please enter your name');
@@ -425,61 +443,6 @@ export default function InvitationPage() {
         {/* Cinematic Vignette Overlay to darken the video slightly */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/55 z-20 pointer-events-none" />
 
-        {/* Elegant identifying overlay — Bismillah, names, date, tap hint —
-            fades in over the video and steps aside the instant it opens. */}
-        <motion.div
-          className="absolute inset-0 z-20 flex flex-col items-center justify-between py-[8vh] px-6 text-center pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isOpening ? 0 : 1 }}
-          transition={{ opacity: isOpening ? { duration: 0.3 } : { delay: 1, duration: 1.4 } }}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <p
-              className="text-2xl md:text-3xl text-[#f6e7b7] drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
-              style={{ fontFamily: "'Amiri', serif" }}
-            >
-              بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
-            </p>
-            <p className="font-body text-[9px] md:text-[10px] uppercase tracking-[0.35em] text-[#f6e7b7]/70">
-              In the name of Allah, the Most Gracious, the Most Merciful
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center gap-3">
-            <p className="font-body text-[10px] uppercase tracking-[0.45em] text-[#d4af37]/85">
-              You are cordially invited to the Nikaah &amp; Reception of
-            </p>
-            <h1
-              className="text-4xl md:text-6xl italic text-transparent bg-clip-text bg-gradient-to-br from-[#fdf6dd] via-[#e9cf8a] to-[#d4af37] drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
-              style={{ fontFamily: "'Great Vibes', cursive" }}
-            >
-              Abduraziq &amp; Razia
-            </h1>
-            <p className="font-body text-[10px] uppercase tracking-[0.35em] text-white/70">
-              06 · 09 · 2026
-            </p>
-
-            <motion.p
-              className="mt-6 font-body text-[10px] uppercase tracking-[0.3em] text-[#f6e7b7]/70"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              Tap anywhere to unveil
-            </motion.p>
-          </div>
-        </motion.div>
-
-        {/* Warm golden flash at the instant the seal breaks open */}
-        {isOpening && (
-          <motion.div
-            className="absolute inset-0 z-25 pointer-events-none"
-            initial={{ opacity: 0.9 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(246,231,183,0.9) 0%, rgba(212,175,55,0.35) 35%, transparent 70%)' }}
-          />
-        )}
-
         {/* Falling wedding bells & flowers particles */}
         {particles.map(p => (
           <motion.span
@@ -504,7 +467,7 @@ export default function InvitationPage() {
           </motion.span>
         ))}
 
-        {/* Split Screens Overlay (deep botanical-green envelope + golden wax
+        {/* Split Screens Overlay (beautiful white envelope + golden wax
             seal splitting apart) — fades in first so it blends with the
             video's own blur-out instead of popping in as a hard cut. */}
         {isOpening && (
@@ -516,7 +479,7 @@ export default function InvitationPage() {
           >
             {/* Top Half of Envelope */}
             <motion.div
-              className="flex-1 bg-[#0d1710] border-b border-[#d4af37]/35 relative flex items-end justify-center"
+              className="flex-1 bg-[#ffffff] border-b border-[#d4af37]/35 relative flex items-end justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '-100%' }}
               transition={{ duration: 1.05, delay: 0.1, ease: [0.77, 0, 0.175, 1] }}
@@ -541,7 +504,7 @@ export default function InvitationPage() {
                 real invitation, so the swap lands exactly when the parting
                 animation actually finishes instead of an approximated timer. */}
             <motion.div
-              className="flex-1 bg-[#0d1710] border-t border-[#d4af37]/35 relative flex items-start justify-center"
+              className="flex-1 bg-[#ffffff] border-t border-[#d4af37]/35 relative flex items-start justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '100%' }}
               transition={{ duration: 1.05, delay: 0.1, ease: [0.77, 0, 0.175, 1] }}
@@ -560,10 +523,10 @@ export default function InvitationPage() {
                 />
               </div>
               
-              {/* TAP THE SEAL TO OPEN label inside envelope */}
+              {/* Unveiling label inside envelope */}
               <div className="mt-16 text-center">
                 <p
-                  className="text-[2.2vw] xs:text-[1.8vw] md:text-xs font-semibold uppercase tracking-[0.25em] text-[#f6e7b7]/80 animate-pulse"
+                  className="text-[2.2vw] xs:text-[1.8vw] md:text-xs font-semibold uppercase tracking-[0.25em] text-[#8a6f1f] animate-pulse"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
                   Unveiling...
@@ -706,14 +669,23 @@ export default function InvitationPage() {
       )}
 
       {/* Hero: the card, centered in the first viewport */}
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-14">
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-0 sm:px-4 py-14">
         <InvitationCard config={config} guestName={guestName || undefined} printId />
+
+        {/* Hidden Nikaah-Only card container for exporting general Nikaah card */}
+        <div className="hidden animate-none" data-print-hide>
+          <InvitationCard 
+            config={config} 
+            nikkahOnly 
+            id="nikkah-only-print-card" 
+          />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 1.1, ease: easeLuxe }}
-          className="mt-12 space-y-6"
+          className="mt-12 space-y-6 w-full max-w-xl px-4 sm:px-0"
           data-print-hide
         >
           <Countdown targetDate={config.weddingDate} />
@@ -741,6 +713,14 @@ export default function InvitationPage() {
             >
               {downloadingCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
               {downloadingCard ? 'Preparing…' : 'Download Card'}
+            </button>
+            <button
+              onClick={downloadNikkahOnlyCard}
+              disabled={downloadingNikkahCard}
+              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10 disabled:opacity-60"
+            >
+              {downloadingNikkahCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+              {downloadingNikkahCard ? 'Preparing Nikaah…' : 'Download Nikaah Invite'}
             </button>
           </div>
           <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-white/25">

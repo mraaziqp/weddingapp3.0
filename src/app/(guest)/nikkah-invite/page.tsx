@@ -53,6 +53,7 @@ export default function NikkahInvitePage() {
   const [isOpening, setIsOpening] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [musicAvailable, setMusicAvailable] = useState(true);
   const [particles, setParticles] = useState<{
     id: number;
     emoji: string;
@@ -68,6 +69,22 @@ export default function NikkahInvitePage() {
   const { scrollYProgress } = useScroll();
   const parallaxY = useTransform(scrollYProgress, [0, 1], ['0%', '9%']);
 
+  const musicSrc = config?.musicUrl || '/invitation-music.mp3';
+
+  useEffect(() => {
+    const audio = new Audio(musicSrc);
+    audio.loop = true;
+    const handleError = () => setMusicAvailable(false);
+    audio.addEventListener('error', handleError);
+    audioRef.current = audio;
+    return () => {
+      audio.removeEventListener('error', handleError);
+      audio.pause();
+      audio.src = '';
+      audioRef.current = null;
+    };
+  }, [musicSrc]);
+
   useEffect(() => {
     fetch('/api/invitation/config')
       .then(r => r.json())
@@ -76,9 +93,10 @@ export default function NikkahInvitePage() {
   }, []);
 
   const handleOpenEnvelope = () => {
+    if (isOpening) return;
     setIsOpening(true);
     // Play audio unmuted
-    if (audioRef.current && config?.musicUrl) {
+    if (audioRef.current && musicAvailable) {
       audioRef.current.muted = false;
       audioRef.current.volume = 0.35;
       audioRef.current.play().catch(e => console.log('Audio play error:', e));
@@ -103,11 +121,6 @@ export default function NikkahInvitePage() {
       };
     });
     setParticles(newParticles);
-
-    // Open envelope (transition splitting)
-    setTimeout(() => {
-      setIsOpen(true);
-    }, 850);
   };
 
   const toggleAudio = () => {
@@ -159,8 +172,6 @@ export default function NikkahInvitePage() {
         onClick={handleOpenEnvelope}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
       >
-        {config.musicUrl && <audio ref={audioRef} src={config.musicUrl} loop />}
-
         {/* Intro Video Element */}
         <video
           src="/intro-video.mp4"
@@ -198,12 +209,12 @@ export default function NikkahInvitePage() {
           </motion.span>
         ))}
 
-        {/* Split Screens Overlay (Indigo Envelope + Golden Wax Seal splitting apart) */}
+        {/* Split Screens Overlay (White Envelope + Golden Wax Seal splitting apart) */}
         {isOpening && (
           <div className="absolute inset-0 flex flex-col z-30 pointer-events-none">
             {/* Top Half of Envelope */}
             <motion.div
-              className="flex-1 bg-[#101732] border-b border-[#d4af37]/35 relative flex items-end justify-center"
+              className="flex-1 bg-[#ffffff] border-b border-[#d4af37]/35 relative flex items-end justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '-100%' }}
               transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
@@ -226,10 +237,11 @@ export default function NikkahInvitePage() {
 
             {/* Bottom Half of Envelope */}
             <motion.div
-              className="flex-1 bg-[#101732] border-t border-[#d4af37]/35 relative flex items-start justify-center"
+              className="flex-1 bg-[#ffffff] border-t border-[#d4af37]/35 relative flex items-start justify-center"
               initial={{ y: '0%' }}
               animate={{ y: '100%' }}
               transition={{ duration: 1.05, ease: [0.77, 0, 0.175, 1] }}
+              onAnimationComplete={() => setIsOpen(true)}
             >
               {/* Bottom Half of Wax Seal */}
               <div 
@@ -244,10 +256,10 @@ export default function NikkahInvitePage() {
                 />
               </div>
               
-              {/* TAP THE SEAL TO OPEN label inside envelope */}
+              {/* Unveiling label inside envelope */}
               <div className="mt-16 text-center">
                 <p
-                  className="text-[2.2vw] xs:text-[1.8vw] md:text-xs font-semibold uppercase tracking-[0.25em] text-[#f6e7b7]/80 animate-pulse"
+                  className="text-[2.2vw] xs:text-[1.8vw] md:text-xs font-semibold uppercase tracking-[0.25em] text-[#8a6f1f] animate-pulse"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
                   Unveiling...
@@ -263,8 +275,6 @@ export default function NikkahInvitePage() {
   }
 
   /* ─── Main Nikaah Invitation Screen ─── */
-  const musicAvailable = !!config.musicUrl;
-
   return (
     <div className="relative min-h-screen bg-[#04070a]">
       <Backdrop config={config} parallaxY={parallaxY} />
@@ -313,7 +323,7 @@ export default function NikkahInvitePage() {
       )}
 
       {/* Hero: the Nikaah-only card, centered */}
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-14 gap-8">
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-0 sm:px-4 py-14 gap-8">
         <motion.div
           initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}

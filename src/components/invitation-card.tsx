@@ -147,9 +147,10 @@ export function FlowerSprig({ className }: { className?: string }) {
 export function InvitationCard({
   config: _config,
   printId = false,
-  widthClass = 'w-[min(92vw,520px)]',
+  widthClass = 'w-full sm:w-[500px] md:w-[540px]',
   guestName,
   nikkahOnly = false,
+  id,
 }: {
   config: InvitationConfig;
   /** Only the guest page sets this — the print CSS targets the id. */
@@ -159,13 +160,14 @@ export function InvitationCard({
   /** Drops the Reception column and any personalization — a single generic
    * card for the Nikaah alone, safe to share with anyone. */
   nikkahOnly?: boolean;
+  id?: string;
 }) {
   return (
     <motion.div
       variants={stagger}
       initial="hidden"
       animate="show"
-      id={printId ? 'invitation-print-card' : undefined}
+      id={id || (printId ? 'invitation-print-card' : undefined)}
       className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
         backgroundImage: 'url("/villa-courtyard.jpg")',
