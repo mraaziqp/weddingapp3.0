@@ -333,16 +333,16 @@
 
 /* ─── Robust Cross-Device CSS Variable Sizing Polyfill ─────────────────── */
 .invitation-container {
-  --cqw: 0.92vw;
+  --cqw: max(1.1vw, 5.0px);
 }
 @media (min-width: 640px) {
   .invitation-container {
-    --cqw: 5.4px;
+    --cqw: 5.6px;
   }
 }
 @supports (container-type: inline-size) {
   .invitation-container {
-    --cqw: 1cqw;
+    --cqw: max(1cqw, 5.0px);
   }
 }
 

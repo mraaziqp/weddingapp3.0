@@ -388,7 +388,7 @@ export default function NikkahInvitePage() {
           config={config} 
           nikkahOnly 
           printId 
-          widthClass="w-[calc(min(100vw-16px,(100dvh-50px)*5/7))] sm:w-[500px] md:w-[540px]"
+          widthClass="w-[calc(min(100vw-8px,(100dvh-30px)*5/7))] sm:w-[500px] md:w-[540px]"
         />
 
         {/* Download Action Button */}
