@@ -384,7 +384,12 @@ export default function NikkahInvitePage() {
         </motion.div>
 
         {/* Nikaah Only Card */}
-        <InvitationCard config={config} nikkahOnly printId />
+        <InvitationCard 
+          config={config} 
+          nikkahOnly 
+          printId 
+          widthClass="w-[calc(min(100vw-16px,(100dvh-50px)*5/7))] sm:w-[500px] md:w-[540px]"
+        />
 
         {/* Download Action Button */}
         <motion.div

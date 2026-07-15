@@ -705,13 +705,12 @@ export default function InvitationPage() {
         </motion.div>
       )}
 
-      {/* Hero: the card, centered in the first viewport */}
       <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-0 sm:px-4 py-8">
         <InvitationCard 
           config={config} 
           guestName={guestName || undefined} 
           printId 
-          widthClass="w-[calc(min(100vw-32px,(100dvh-120px)*5/7))] sm:w-[500px] md:w-[540px]"
+          widthClass="w-[calc(min(100vw-16px,(100dvh-50px)*5/7))] sm:w-[500px] md:w-[540px]"
         />
 
         <motion.div
