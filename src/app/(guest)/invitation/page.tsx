@@ -431,7 +431,7 @@ export default function InvitationPage() {
           muted
           playsInline
           onEnded={handleOpenEnvelope}
-          className={`absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100 blur-0'}`}
+          className={`absolute inset-0 w-full h-full object-contain z-10 transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100 blur-0'}`}
         />
 
         {/* Cinematic Vignette Overlay to darken the video slightly */}
@@ -663,15 +663,34 @@ export default function InvitationPage() {
       )}
 
       {/* Hero: the card, centered in the first viewport */}
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-0 sm:px-4 py-14">
-        <InvitationCard config={config} guestName={guestName || undefined} printId />
+      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-0 sm:px-4 py-8">
+        <InvitationCard 
+          config={config} 
+          guestName={guestName || undefined} 
+          printId 
+          widthClass="w-[calc(min(100vw-32px,(100dvh-120px)*5/7))] sm:w-[500px] md:w-[540px]"
+        />
 
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 1.1, ease: easeLuxe }}
-          className="mt-12 space-y-6 w-full max-w-xl px-4 sm:px-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ opacity: { delay: 2, duration: 1 }, y: { delay: 2, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
+          className="mt-8 flex flex-col items-center gap-1 text-[#031207]/55 animate-bounce"
           data-print-hide
+        >
+          <span className="font-body text-[10px] uppercase tracking-[0.3em]">Scroll for details</span>
+          <ChevronDown size={16} />
+        </motion.div>
+      </section>
+
+      {/* Info Options & Countdown (placed right below the card viewport) */}
+      <section className="relative z-10 flex flex-col items-center px-4 py-12" data-print-hide>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.1, ease: easeLuxe }}
+          className="space-y-6 w-full max-w-xl text-center"
         >
           <Countdown targetDate={config.weddingDate} />
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -700,20 +719,9 @@ export default function InvitationPage() {
               {downloadingCard ? 'Preparing…' : 'Download Card'}
             </button>
           </div>
-          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
+          <p className="font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
             Save it, print it, or share it straight to WhatsApp
           </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
-          transition={{ opacity: { delay: 2, duration: 1 }, y: { delay: 2, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
-          className="mt-10 flex flex-col items-center gap-1 text-[#031207]/55 animate-bounce"
-          data-print-hide
-        >
-          <span className="font-body text-[10px] uppercase tracking-[0.3em]">Respond below</span>
-          <ChevronDown size={16} />
         </motion.div>
       </section>
 

@@ -830,38 +830,63 @@ export function NavyRoyalCard({
 /* ─── Gold Outline Ranunculus Flower Component (Style 2 Background) ────── */
 function GoldLineArtFlower({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" fill="none" stroke="#d4af37" strokeWidth="0.45" className={className} aria-hidden>
-      {/* Center petals */}
-      <path d="M50,50 C48,47 52,47 50,50 Z" />
-      <path d="M49,49 C46,45 54,45 51,49" />
-      <path d="M47,51 C43,45 45,39 53,44" />
-      <path d="M53,49 C57,44 55,38 47,43" />
-      
-      {/* Middle Petals layer 1 */}
-      <path d="M46,47 C38,42 41,32 54,35" />
-      <path d="M54,47 C62,42 59,32 46,35" />
-      <path d="M45,52 C35,48 32,58 43,62" />
-      <path d="M55,52 C65,48 68,58 57,62" />
-      
-      {/* Outer Petals layer 2 */}
-      <path d="M42,45 C28,38 32,22 55,26" />
-      <path d="M58,45 C72,38 68,22 45,26" />
-      <path d="M40,55 C22,50 18,70 38,78" />
-      <path d="M60,55 C78,50 82,70 62,78" />
-      
-      {/* Base/Back Petals */}
-      <path d="M50,30 C30,12 70,12 50,30" />
-      <path d="M35,60 C15,75 45,90 35,60" />
-      <path d="M65,60 C85,75 55,90 65,60" />
-      
-      {/* Leaves and stems */}
-      <path d="M50,75 Q52,88 48,98" />
-      {/* Leaf 1 */}
-      <path d="M51,80 C58,78 65,82 60,89 C55,96 52,88 51,80 Z" fill="#d4af37" fillOpacity="0.03" />
-      <path d="M51,80 Q56,84 60,89" />
-      {/* Leaf 2 */}
-      <path d="M49,85 C40,84 34,89 38,96 C42,103 47,94 49,85 Z" fill="#d4af37" fillOpacity="0.03" />
-      <path d="M49,85 Q44,90 38,96" />
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <defs>
+        {/* Soft, rich gold gradient for lines */}
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#eed393" />
+          <stop offset="35%" stopColor="#d4af37" />
+          <stop offset="70%" stopColor="#b59650" />
+          <stop offset="100%" stopColor="#9a7e3d" />
+        </linearGradient>
+
+        {/* Soft rose/peach champagne radial gradient for petal depth */}
+        <radialGradient id="petalGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff8eb" stopOpacity="0.85" />
+          <stop offset="60%" stopColor="#faebd2" stopOpacity="0.65" />
+          <stop offset="100%" stopColor="#eedba9" stopOpacity="0.25" />
+        </radialGradient>
+
+        {/* Soft organic sage/gold gradient for leaf depth */}
+        <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e8ebd1" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#c5ceb3" stopOpacity="0.3" />
+        </linearGradient>
+      </defs>
+
+      <g stroke="url(#goldGrad)" strokeWidth="0.45" fill="none">
+        {/* Center petals (highest depth) */}
+        <path d="M50,50 C48,47 52,47 50,50 Z" fill="url(#petalGrad)" />
+        <path d="M49,49 C46,45 54,45 51,49" fill="url(#petalGrad)" />
+        <path d="M47,51 C43,45 45,39 53,44" fill="url(#petalGrad)" />
+        <path d="M53,49 C57,44 55,38 47,43" fill="url(#petalGrad)" />
+        
+        {/* Middle Petals layer 1 */}
+        <path d="M46,47 C38,42 41,32 54,35" fill="url(#petalGrad)" />
+        <path d="M54,47 C62,42 59,32 46,35" fill="url(#petalGrad)" />
+        <path d="M45,52 C35,48 32,58 43,62" fill="url(#petalGrad)" />
+        <path d="M55,52 C65,48 68,58 57,62" fill="url(#petalGrad)" />
+        
+        {/* Outer Petals layer 2 */}
+        <path d="M42,45 C28,38 32,22 55,26" fill="url(#petalGrad)" />
+        <path d="M58,45 C72,38 68,22 45,26" fill="url(#petalGrad)" />
+        <path d="M40,55 C22,50 18,70 38,78" fill="url(#petalGrad)" />
+        <path d="M60,55 C78,50 82,70 62,78" fill="url(#petalGrad)" />
+        
+        {/* Base/Back Petals */}
+        <path d="M50,30 C30,12 70,12 50,30" fill="url(#petalGrad)" opacity="0.8" />
+        <path d="M35,60 C15,75 45,90 35,60" fill="url(#petalGrad)" opacity="0.8" />
+        <path d="M65,60 C85,75 55,90 65,60" fill="url(#petalGrad)" opacity="0.8" />
+        
+        {/* Leaves and stems */}
+        <path d="M50,75 Q52,88 48,98" />
+        {/* Leaf 1 */}
+        <path d="M51,80 C58,78 65,82 60,89 C55,96 52,88 51,80 Z" fill="url(#leafGrad)" />
+        <path d="M51,80 Q56,84 60,89" />
+        {/* Leaf 2 */}
+        <path d="M49,85 C40,84 34,89 38,96 C42,103 47,94 49,85 Z" fill="url(#leafGrad)" />
+        <path d="M49,85 Q44,90 38,96" />
+      </g>
     </svg>
   );
 }
