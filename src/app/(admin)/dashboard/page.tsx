@@ -246,7 +246,11 @@ export default function DashboardPage() {
                 </button>
 
                 {/* Hidden Nikaah-Only card container for exporting general Nikaah card */}
-                <div className="hidden pointer-events-none select-none opacity-0 h-0 overflow-hidden" data-print-hide>
+                <div 
+                  className="absolute pointer-events-none select-none opacity-0"
+                  style={{ left: '-9999px', top: '-9999px', width: '540px' }}
+                  data-print-hide
+                >
                   <InvitationCard 
                     config={invitationConfig} 
                     nikkahOnly 

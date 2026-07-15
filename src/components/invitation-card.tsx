@@ -427,6 +427,12 @@ export function InvitationCard({
             <span>Shanaaz Parker: 0718665122</span>
             <span>Ayaaz Parker: 0718665123</span>
           </div>
+          <p
+            className="text-[1.8cqw] font-bold tracking-[0.12em] text-[#8a6f1f] uppercase mt-[0.8cqw]"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            Please accept this as a personal invitation
+          </p>
         </motion.div>
 
       </div>
