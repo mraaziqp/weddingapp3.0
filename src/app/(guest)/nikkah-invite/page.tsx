@@ -86,9 +86,22 @@ export default function NikkahInvitePage() {
   }, [musicSrc]);
 
   useEffect(() => {
+    let queryParams: URLSearchParams | null = null;
+    if (typeof window !== 'undefined') {
+      queryParams = new URLSearchParams(window.location.search);
+    }
     fetch('/api/invitation/config')
       .then(r => r.json())
-      .then(data => setConfig({ ...DEFAULT_INVITATION_CONFIG, ...data }))
+      .then(data => {
+        const merged = { ...DEFAULT_INVITATION_CONFIG, ...data };
+        if (queryParams) {
+          const tempTheme = queryParams.get('theme');
+          if (tempTheme === 'classic-botanical' || tempTheme === 'navy-royal') {
+            merged.theme = tempTheme;
+          }
+        }
+        setConfig(merged);
+      })
       .catch(() => setConfig(DEFAULT_INVITATION_CONFIG));
   }, []);
 

@@ -252,12 +252,20 @@ export default function DashboardPage() {
         {invitationConfig && (
           <motion.div variants={itemVariants}>
             <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl text-amber-300">
-                  <Sparkles size={20} />
-                  Invitation Theme Settings
-                </CardTitle>
-                <CardDescription>Select the active theme for your guests and preview both styles live</CardDescription>
+              <CardHeader className="border-b border-white/5 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl text-amber-300">
+                    <Sparkles size={20} />
+                    Invitation Theme Settings
+                  </CardTitle>
+                  <CardDescription>Select the active theme for your guests and preview both styles live</CardDescription>
+                </div>
+                <button
+                  onClick={() => window.open('/invitation', '_blank')}
+                  className="flex items-center justify-center gap-2 rounded-full border border-amber-500/35 bg-amber-500/10 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-amber-300 shadow-md transition-all hover:bg-amber-500/25 hover:border-amber-500/60"
+                >
+                  <Sparkles size={12} className="animate-pulse" /> Preview Live
+                </button>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 {/* Active Selector Toggle buttons */}
@@ -289,10 +297,10 @@ export default function DashboardPage() {
                 {/* Side-by-side previews */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                   {/* Style 1 preview */}
-                  <div className="flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 1 Preview (Botanical)</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 1: Botanical Garden</p>
                     </div>
                     <div className="w-[280px] aspect-[5/7] rounded-xl overflow-hidden shadow-2xl border border-white/5 hover:border-white/10 transition-colors">
                       <InvitationCard 
@@ -301,13 +309,19 @@ export default function DashboardPage() {
                         widthClass="w-full h-full"
                       />
                     </div>
+                    <button
+                      onClick={() => window.open('/invitation?theme=classic-botanical', '_blank')}
+                      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-body text-[9px] uppercase tracking-[0.2em] text-white/70 transition-all hover:bg-white/10 hover:text-white"
+                    >
+                      👁 Preview Style 1
+                    </button>
                   </div>
 
                   {/* Style 2 preview */}
-                  <div className="flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-blue-500" />
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 2 Preview (Navy &amp; Gold)</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 2: Navy Royal &amp; Gold</p>
                     </div>
                     <div className="w-[280px] aspect-[5/7] rounded-xl overflow-hidden shadow-2xl border border-white/5 hover:border-white/10 transition-colors">
                       <InvitationCard 
@@ -316,6 +330,12 @@ export default function DashboardPage() {
                         widthClass="w-full h-full"
                       />
                     </div>
+                    <button
+                      onClick={() => window.open('/invitation?theme=navy-royal', '_blank')}
+                      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-body text-[9px] uppercase tracking-[0.2em] text-white/70 transition-all hover:bg-white/10 hover:text-white"
+                    >
+                      👁 Preview Style 2
+                    </button>
                   </div>
                 </div>
               </CardContent>

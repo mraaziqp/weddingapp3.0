@@ -213,12 +213,23 @@ export default function InvitationPage() {
   }, [musicSrc]);
 
   useEffect(() => {
+    let queryParams: URLSearchParams | null = null;
     if (typeof window !== 'undefined') {
-      setParams(new URLSearchParams(window.location.search));
+      queryParams = new URLSearchParams(window.location.search);
+      setParams(queryParams);
     }
     fetch('/api/invitation/config')
       .then(r => r.json())
-      .then(data => setConfig({ ...DEFAULT_INVITATION_CONFIG, ...data }))
+      .then(data => {
+        const merged = { ...DEFAULT_INVITATION_CONFIG, ...data };
+        if (queryParams) {
+          const tempTheme = queryParams.get('theme');
+          if (tempTheme === 'classic-botanical' || tempTheme === 'navy-royal') {
+            merged.theme = tempTheme;
+          }
+        }
+        setConfig(merged);
+      })
       .catch(() => setConfig(DEFAULT_INVITATION_CONFIG));
   }, []);
 
