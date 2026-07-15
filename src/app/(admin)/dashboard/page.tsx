@@ -57,6 +57,33 @@ export default function DashboardPage() {
     }
   };
 
+  const handleThemeToggle = async (newTheme: 'classic-botanical' | 'navy-royal') => {
+    if (!invitationConfig) return;
+    setIsUpdating(true);
+    const updatedConfig = { ...invitationConfig, theme: newTheme };
+    try {
+      const res = await fetch('/api/invitation/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setInvitationConfig(updatedConfig);
+        toast({
+          title: '✓ Theme Saved',
+          description: `Active invitation theme is now ${newTheme === 'navy-royal' ? 'Navy Royal' : 'Classic Botanical'}.`,
+        });
+      } else {
+        toast({ title: 'Failed to update theme', description: data.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: String(err) });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Load config
   useEffect(() => {
     fetch('/api/invitation/config')
@@ -220,6 +247,81 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* INVITATION THEME SELECTOR & PREVIEW */}
+        {invitationConfig && (
+          <motion.div variants={itemVariants}>
+            <Card className="border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
+              <CardHeader className="border-b border-white/5 pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl text-amber-300">
+                  <Sparkles size={20} />
+                  Invitation Theme Settings
+                </CardTitle>
+                <CardDescription>Select the active theme for your guests and preview both styles live</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                {/* Active Selector Toggle buttons */}
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => handleThemeToggle('classic-botanical')}
+                    disabled={isUpdating}
+                    className={`rounded-full px-6 py-2.5 font-body text-xs uppercase tracking-[0.2em] transition-all border ${
+                      (invitationConfig.theme || 'classic-botanical') === 'classic-botanical'
+                        ? 'bg-amber-500 text-black border-amber-400 font-bold shadow-lg shadow-amber-500/20'
+                        : 'border-white/10 text-white/70 hover:border-white/20 hover:text-white bg-white/5'
+                    }`}
+                  >
+                    Style 1: Botanical Garden
+                  </button>
+                  <button
+                    onClick={() => handleThemeToggle('navy-royal')}
+                    disabled={isUpdating}
+                    className={`rounded-full px-6 py-2.5 font-body text-xs uppercase tracking-[0.2em] transition-all border ${
+                      invitationConfig.theme === 'navy-royal'
+                        ? 'bg-amber-500 text-black border-amber-400 font-bold shadow-lg shadow-amber-500/20'
+                        : 'border-white/10 text-white/70 hover:border-white/20 hover:text-white bg-white/5'
+                    }`}
+                  >
+                    Style 2: Navy Royal &amp; Gold
+                  </button>
+                </div>
+
+                {/* Side-by-side previews */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                  {/* Style 1 preview */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 1 Preview (Botanical)</p>
+                    </div>
+                    <div className="w-[280px] aspect-[5/7] rounded-xl overflow-hidden shadow-2xl border border-white/5 hover:border-white/10 transition-colors">
+                      <InvitationCard 
+                        config={{ ...invitationConfig, theme: 'classic-botanical' }} 
+                        guestName="The Parker Family" 
+                        widthClass="w-full h-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Style 2 preview */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">Style 2 Preview (Navy &amp; Gold)</p>
+                    </div>
+                    <div className="w-[280px] aspect-[5/7] rounded-xl overflow-hidden shadow-2xl border border-white/5 hover:border-white/10 transition-colors">
+                      <InvitationCard 
+                        config={{ ...invitationConfig, theme: 'navy-royal' }} 
+                        guestName="The Parker Family" 
+                        widthClass="w-full h-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* INVITATION EXPORTS CARD */}
         {invitationConfig && (

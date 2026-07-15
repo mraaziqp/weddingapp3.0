@@ -162,6 +162,20 @@ export function InvitationCard({
   nikkahOnly?: boolean;
   id?: string;
 }) {
+  const theme = _config.theme || 'classic-botanical';
+  if (theme === 'navy-royal') {
+    return (
+      <NavyRoyalCard
+        config={_config}
+        printId={printId}
+        widthClass={widthClass}
+        guestName={guestName}
+        nikkahOnly={nikkahOnly}
+        id={id}
+      />
+    );
+  }
+
   return (
     <motion.div
       variants={stagger}
@@ -555,5 +569,267 @@ export function GiftingCard({
         </p>
       </div>
     </div>
+  );
+}
+
+/* ─── Elegant Navy & Gold Line Art Card (Style 2) ───────────────────────── */
+export function NavyRoyalCard({
+  config: _config,
+  printId = false,
+  widthClass = 'w-full sm:w-[500px] md:w-[540px]',
+  guestName,
+  nikkahOnly = false,
+  id,
+}: {
+  config: InvitationConfig;
+  printId?: boolean;
+  widthClass?: string;
+  guestName?: string;
+  nikkahOnly?: boolean;
+  id?: string;
+}) {
+  return (
+    <motion.div
+      variants={stagger}
+      initial="hidden"
+      animate="show"
+      id={id || (printId ? 'invitation-print-card' : undefined)}
+      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
+      style={{
+        background: 'radial-gradient(circle at center, #fdfcfb 0%, #faf8f5 60%, #f4eee1 100%)'
+      }}
+    >
+      {/* Subtly textured background paper grain overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay z-0" 
+        style={{
+          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
+          backgroundSize: '4px 4px'
+        }}
+      />
+
+      {/* Gold Line Art Flowers framing the Navy & Gold card */}
+      <GoldLineArtFlower className="absolute top-[-4cqw] left-[-6cqw] w-[46cqw] h-[46cqw] select-none pointer-events-none opacity-[0.38] rotate-[15deg] z-10" />
+      <GoldLineArtFlower className="absolute bottom-[-10cqw] right-[-6cqw] w-[50cqw] h-[50cqw] select-none pointer-events-none opacity-[0.38] rotate-[-45deg] scale-x-[-1] z-10" />
+
+      {/* Card content — vertically composed with spaced classic roman typography */}
+      <div className="relative flex h-full flex-col items-center justify-between px-[8.5cqw] py-[6cqw] text-center z-20">
+        
+        {/* Arabic Calligraphy */}
+        <motion.div variants={riseIn} className="flex flex-col items-center mt-[1cqw]">
+          <p
+            className="text-[6.2cqw] font-bold leading-none text-[#b59650] select-none"
+            style={{ fontFamily: "'Amiri', serif" }}
+          >
+            بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
+          </p>
+        </motion.div>
+
+        {/* Invitation Call Header */}
+        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw]">
+          <p
+            className="text-[1.8cqw] font-bold uppercase tracking-[0.24em] text-[#556b82]"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            Kindly Join Us
+          </p>
+          <p
+            className="text-[1.3cqw] font-medium uppercase tracking-[0.2em] text-[#556b82]/85"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            For The Wedding Of
+          </p>
+        </motion.div>
+
+        {/* Groom & Bride Section */}
+        <motion.div variants={stagger} className="flex flex-col items-center w-full my-[1cqw]">
+          {/* Groom: Abduraziq */}
+          <motion.div variants={riseIn} className="flex flex-col items-center">
+            <h1
+              className="text-[6.4cqw] font-normal tracking-[0.24em] text-[#002855] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Abduraziq
+            </h1>
+            <p
+              className="mt-[0.6cqw] text-[1.65cqw] font-semibold tracking-[0.16em] text-[#556b82] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              son of Abdussataar and Shanaaz Parker
+            </p>
+          </motion.div>
+
+          {/* Elegant Navy Script Ampersand */}
+          <motion.span 
+            variants={riseIn}
+            className="text-[5.5cqw] text-[#002855] italic my-[0.5cqw] block"
+            style={{ fontFamily: "'Great Vibes', cursive" }}
+          >
+            &amp;
+          </motion.span>
+
+          {/* Bride: Razia */}
+          <motion.div variants={riseIn} className="flex flex-col items-center">
+            <h1
+              className="text-[6.4cqw] font-normal tracking-[0.24em] text-[#002855] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Razia
+            </h1>
+            <p
+              className="mt-[0.6cqw] text-[1.65cqw] font-semibold tracking-[0.16em] text-[#556b82] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              daughter of Sabri and Samalika Shade
+            </p>
+          </motion.div>
+        </motion.div>
+
+        {/* Wedding Date / Islamic Date */}
+        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.4cqw]">
+          <p
+            className="text-[2.2cqw] font-bold tracking-[0.2em] text-[#002855] uppercase"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            September 6<sup>th</sup> 2026
+          </p>
+          <p
+            className="text-[1.8cqw] font-medium tracking-[0.15em] text-[#556b82] uppercase"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            24 Rabī&apos; Al-Awwal 1448
+          </p>
+        </motion.div>
+
+        {/* Details Grid */}
+        <motion.div
+          variants={riseIn}
+          className={`w-full gap-[3.5cqw] border-t border-b border-[#556b82]/20 py-[1.8cqw] ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
+        >
+          {/* Nikaah Column */}
+          <div className={`flex flex-col items-center text-center space-y-[0.8cqw] ${nikkahOnly ? '' : 'border-r border-[#556b82]/20 pr-[1.5cqw]'}`}>
+            <h3
+              className="text-[2.3cqw] font-bold tracking-[0.22em] text-[#002855] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Nikaah
+            </h3>
+            <div className="h-px bg-[#556b82]/20 w-[10cqw]" />
+            <p
+              className="text-[1.8cqw] font-bold text-[#002855] tracking-[0.14em]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Masjidul Quds Mosque
+            </p>
+            <p
+              className="text-[1.8cqw] font-bold text-[#556b82] tracking-[0.14em]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              10h00
+            </p>
+          </div>
+
+          {/* Reception Column — omitted entirely on the generic Nikaah-only card */}
+          {!nikkahOnly && (
+            <div className="flex flex-col items-center text-center space-y-[0.8cqw] pl-[1.5cqw]">
+              <h3
+                className="text-[2.3cqw] font-bold tracking-[0.22em] text-[#002855] uppercase"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                Reception
+              </h3>
+              <div className="h-px bg-[#556b82]/20 w-[10cqw]" />
+              <p
+                className="text-[1.8cqw] font-bold text-[#002855] tracking-[0.14em]"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                Tuscany Hall, Rylands
+              </p>
+              <p
+                className="text-[1.65cqw] font-bold text-[#556b82] tracking-[0.12em]"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                5:00 PM for 5:30 PM
+              </p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Personalized Guest Name */}
+        {guestName && !nikkahOnly && (
+          <motion.div variants={riseIn} className="flex flex-col items-center">
+            <p
+              className="text-[3.2cqw] font-bold text-[#002855] tracking-[0.18em] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              {guestName}
+            </p>
+          </motion.div>
+        )}
+
+        {/* RSVP Section */}
+        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full mb-[1cqw]">
+          <p
+            className="text-[1.8cqw] font-bold tracking-[0.16em] text-[#556b82] uppercase"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            Kindly RSVP by the 14<sup>th</sup> of August
+          </p>
+          <div 
+            className="flex justify-center gap-[3.5cqw] text-[1.7cqw] text-[#002855] font-semibold tracking-[0.08em] uppercase" 
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            <span>Shanaaz Parker: 0718665122</span>
+            <span>Ayaaz Parker: 0718665123</span>
+          </div>
+          <p
+            className="text-[1.65cqw] font-bold tracking-[0.18em] text-[#b59650] uppercase mt-[0.6cqw]"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            Please accept this as a personal invitation
+          </p>
+        </motion.div>
+
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Gold Outline Ranunculus Flower Component (Style 2 Background) ────── */
+function GoldLineArtFlower({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" fill="none" stroke="#d4af37" strokeWidth="0.45" className={className} aria-hidden>
+      {/* Center petals */}
+      <path d="M50,50 C48,47 52,47 50,50 Z" />
+      <path d="M49,49 C46,45 54,45 51,49" />
+      <path d="M47,51 C43,45 45,39 53,44" />
+      <path d="M53,49 C57,44 55,38 47,43" />
+      
+      {/* Middle Petals layer 1 */}
+      <path d="M46,47 C38,42 41,32 54,35" />
+      <path d="M54,47 C62,42 59,32 46,35" />
+      <path d="M45,52 C35,48 32,58 43,62" />
+      <path d="M55,52 C65,48 68,58 57,62" />
+      
+      {/* Outer Petals layer 2 */}
+      <path d="M42,45 C28,38 32,22 55,26" />
+      <path d="M58,45 C72,38 68,22 45,26" />
+      <path d="M40,55 C22,50 18,70 38,78" />
+      <path d="M60,55 C78,50 82,70 62,78" />
+      
+      {/* Base/Back Petals */}
+      <path d="M50,30 C30,12 70,12 50,30" />
+      <path d="M35,60 C15,75 45,90 35,60" />
+      <path d="M65,60 C85,75 55,90 65,60" />
+      
+      {/* Leaves and stems */}
+      <path d="M50,75 Q52,88 48,98" />
+      {/* Leaf 1 */}
+      <path d="M51,80 C58,78 65,82 60,89 C55,96 52,88 51,80 Z" fill="#d4af37" fillOpacity="0.03" />
+      <path d="M51,80 Q56,84 60,89" />
+      {/* Leaf 2 */}
+      <path d="M49,85 C40,84 34,89 38,96 C42,103 47,94 49,85 Z" fill="#d4af37" fillOpacity="0.03" />
+      <path d="M49,85 Q44,90 38,96" />
+    </svg>
   );
 }
