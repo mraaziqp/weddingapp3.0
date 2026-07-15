@@ -45,10 +45,10 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
         )}
       </motion.div>
 
-      {/* Cinematic grading: vignette + candlelight glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,4,6,0.60)_65%,rgba(1,2,4,0.95)_100%)]" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
-      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.16)_0%,transparent_45%)]" />
+      {/* Cinematic grading: soft, light-lively vignette + warm candlelight glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
+      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
     </div>
   );
 }
@@ -94,22 +94,22 @@ function Countdown({ targetDate }: { targetDate?: string }) {
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.1, duration: 0.8 }}
-          className="relative flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-[#d4af37]/25 bg-black/40 backdrop-blur-md shadow-[inset_0_1px_10px_rgba(212,175,55,0.08),0_8px_30px_rgba(0,0,0,0.4)]"
+          className="relative flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-[#8a6f1f]/25 bg-white/80 backdrop-blur-md shadow-[inset_0_1px_10px_rgba(138,111,31,0.08),0_8px_30px_rgba(138,111,31,0.04)]"
         >
           {c.label === 'Secs' && (
             <motion.span
-              className="absolute inset-0 rounded-2xl border border-[#d4af37]/40"
+              className="absolute inset-0 rounded-2xl border border-[#8a6f1f]/40"
               animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.8, 0.4] }}
               transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
             />
           )}
           <span
-            className="text-xl sm:text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-b from-[#fdf6dd] to-[#d4af37] tabular-nums"
+            className="text-xl sm:text-2xl font-extrabold text-[#031207] tabular-nums"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             {String(c.value).padStart(2, '0')}
           </span>
-          <span className="font-body mt-0.5 text-[7px] sm:text-[8px] uppercase tracking-[0.25em] text-[#f6e7b7]/60">
+          <span className="font-body mt-0.5 text-[7px] sm:text-[8px] uppercase tracking-[0.25em] text-[#031207]/65">
             {c.label}
           </span>
         </motion.div>
@@ -606,7 +606,7 @@ export default function InvitationPage() {
 
   /* ─── Main Invitation Screen ─── */
   return (
-    <div className="relative min-h-screen bg-[#04070a]">
+    <div className="relative min-h-screen bg-[#faf8f5]">
       <Backdrop config={config} parallaxY={parallaxY} />
       <GoldDust />
       <PetalDrift />
@@ -622,13 +622,13 @@ export default function InvitationPage() {
         >
           <button
             onClick={toggleAudio}
-            className="group flex items-center gap-2.5 rounded-full border border-[#d4af37]/35 bg-black/60 p-2.5 pr-4 backdrop-blur-xl shadow-2xl transition-colors hover:border-[#d4af37]/75 hover:bg-black/75"
+            className="group flex items-center gap-2.5 rounded-full border border-[#8a6f1f]/35 bg-white/75 p-2.5 pr-4 backdrop-blur-xl shadow-lg transition-colors hover:border-[#8a6f1f]/75 hover:bg-white/95"
           >
-            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#fdf6dd] to-[#d4af37] text-black">
-              {isAudioPlaying ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#faf8f5] to-[#8a6f1f] text-white">
+              {isAudioPlaying ? <Volume2 size={14} className="text-[#031207]" /> : <VolumeX size={14} className="text-[#031207]" />}
               {isAudioPlaying && (
                 <motion.span
-                  className="absolute inset-0 rounded-full border border-[#d4af37]"
+                  className="absolute inset-0 rounded-full border border-[#8a6f1f]"
                   animate={{ scale: [1, 1.8], opacity: [0.6, 0] }}
                   transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
                 />
@@ -639,13 +639,13 @@ export default function InvitationPage() {
               {[0, 1, 2, 3].map(i => (
                 <motion.span
                   key={i}
-                  className="w-[2px] rounded-full bg-[#d4af37]"
+                  className="w-[2px] rounded-full bg-[#8a6f1f]"
                   animate={isAudioPlaying ? { height: ['25%', '95%', '45%', '85%', '25%'] } : { height: '25%' }}
                   transition={isAudioPlaying ? { duration: 1.2 + i * 0.15, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
                 />
               ))}
             </span>
-            <span className="font-body text-[9px] uppercase tracking-[0.2em] text-white/50 group-hover:text-white/80 transition-colors">
+            <span className="font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/60 group-hover:text-[#031207]/95 transition-colors">
               {isAudioPlaying ? 'Mute' : 'Play Music'}
             </span>
           </button>
@@ -669,7 +669,7 @@ export default function InvitationPage() {
               href={googleCalendarUrl(config)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10"
+              className="flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 bg-white/70 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#031207] backdrop-blur-md transition-all hover:border-[#8a6f1f]/70 hover:bg-[#8a6f1f]/10 hover:shadow-md"
             >
               <CalendarPlus size={13} /> Add to calendar
             </a>
@@ -677,20 +677,20 @@ export default function InvitationPage() {
               href={directionsUrl(config)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10"
+              className="flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 bg-white/70 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#031207] backdrop-blur-md transition-all hover:border-[#8a6f1f]/70 hover:bg-[#8a6f1f]/10 hover:shadow-md"
             >
               <MapPin size={13} /> Directions
             </a>
             <button
               onClick={downloadCard}
               disabled={downloadingCard}
-              className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-black/40 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7]/90 backdrop-blur-md transition-colors hover:border-[#d4af37]/70 hover:bg-[#d4af37]/10 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 bg-white/70 px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.24em] text-[#031207] backdrop-blur-md transition-all hover:border-[#8a6f1f]/70 hover:bg-[#8a6f1f]/10 hover:shadow-md disabled:opacity-60"
             >
               {downloadingCard ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
               {downloadingCard ? 'Preparing…' : 'Download Card'}
             </button>
           </div>
-          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-white/25">
+          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
             Save it, print it, or share it straight to WhatsApp
           </p>
         </motion.div>
@@ -699,7 +699,7 @@ export default function InvitationPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, y: [0, 8, 0] }}
           transition={{ opacity: { delay: 2, duration: 1 }, y: { delay: 2, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
-          className="mt-10 flex flex-col items-center gap-1 text-white/45 animate-bounce"
+          className="mt-10 flex flex-col items-center gap-1 text-[#031207]/55 animate-bounce"
           data-print-hide
         >
           <span className="font-body text-[10px] uppercase tracking-[0.3em]">Respond below</span>
@@ -715,16 +715,16 @@ export default function InvitationPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 1.1, ease: easeLuxe }}
-            className="rounded-2xl border border-white/12 bg-white/[0.05] p-6 text-center backdrop-blur-2xl shadow-[0_18px_55px_rgba(0,0,0,0.4)]"
+            className="rounded-2xl border border-[#8a6f1f]/20 bg-white/90 p-6 text-center backdrop-blur-2xl shadow-[0_15px_45px_rgba(138,111,31,0.08)]"
           >
-            <WeddingBells className="mx-auto mb-3 h-6 w-9 text-[#d4af37]/60" />
+            <WeddingBells className="mx-auto mb-3 h-6 w-9 text-[#8a6f1f]/75" />
             <p
-              className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[#d4af37]/80"
+              className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[#8a6f1f]"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Good to know
             </p>
-            <p className="font-body leading-relaxed text-white/70">{config.extraInfo}</p>
+            <p className="font-body leading-relaxed text-[#031207]/80">{config.extraInfo}</p>
           </motion.div>
         )}
 
@@ -745,7 +745,7 @@ export default function InvitationPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 1.1, ease: easeLuxe }}
-          className="rounded-2xl border border-white/12 bg-white/[0.05] p-6 backdrop-blur-2xl shadow-[0_18px_55px_rgba(0,0,0,0.4)] sm:p-8"
+          className="rounded-2xl border border-[#8a6f1f]/20 bg-white/90 p-6 backdrop-blur-2xl shadow-[0_15px_45px_rgba(138,111,31,0.08)] sm:p-8"
         >
           <AnimatePresence mode="wait" initial={false}>
             {!showForm ? (
@@ -758,11 +758,11 @@ export default function InvitationPage() {
                 className="space-y-5 text-center"
               >
                 <span className="flex items-center justify-center gap-3">
-                  <FlowerSprig className="h-4 w-7 text-[#d4af37]/50 scale-x-[-1]" />
-                  <p className="text-2xl italic text-white/90" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <FlowerSprig className="h-4 w-7 text-[#8a6f1f]/55 scale-x-[-1]" />
+                  <p className="text-2xl italic text-[#031207]/90" style={{ fontFamily: "'Playfair Display', serif" }}>
                     Will you be celebrating with us?
                   </p>
-                  <FlowerSprig className="h-4 w-7 text-[#d4af37]/50" />
+                  <FlowerSprig className="h-4 w-7 text-[#8a6f1f]/55" />
                 </span>
                 <Button
                   onClick={() => setShowForm(true)}
@@ -781,17 +781,17 @@ export default function InvitationPage() {
                 className="space-y-5"
               >
                 <div className="text-center">
-                  <p className="text-2xl italic text-white/90" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <p className="text-2xl italic text-[#031207]/90" style={{ fontFamily: "'Playfair Display', serif" }}>
                     Your response
                   </p>
-                  <p className="mt-1 font-body text-xs uppercase tracking-[0.25em] text-white/40">
+                  <p className="mt-1 font-body text-xs uppercase tracking-[0.25em] text-[#031207]/55">
                     Kindly by {config.rsvpDeadline}
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <Label className="font-body text-xs uppercase tracking-[0.18em] text-white/55">Your name *</Label>
+                    <Label className="font-body text-xs uppercase tracking-[0.18em] text-[#031207]/70">Your name *</Label>
                     {householdGuests.length > 0 && (
                       <div className="mt-2 flex flex-wrap justify-center gap-2">
                         {householdGuests.map(g => (
@@ -801,8 +801,8 @@ export default function InvitationPage() {
                             onClick={() => { setGuestName(g.name); setSelectedGuestId(g.id); }}
                             className={`rounded-full border px-4 py-1.5 font-body text-xs transition-colors ${
                               guestName === g.name
-                                ? 'border-[#d4af37]/80 bg-[#d4af37]/20 text-[#f6e7b7]'
-                                : 'border-white/15 bg-white/5 text-white/60 hover:border-[#d4af37]/40 hover:text-white/85'
+                                ? 'border-[#8a6f1f]/80 bg-[#8a6f1f]/10 text-[#031207]'
+                                : 'border-[#8a6f1f]/20 bg-white/40 text-[#031207]/60 hover:border-[#8a6f1f]/60 hover:text-[#031207]'
                             }`}
                           >
                             {g.name}
@@ -819,17 +819,17 @@ export default function InvitationPage() {
                         if (!householdGuests.some(g => g.name === e.target.value)) setSelectedGuestId(null);
                       }}
                       placeholder={householdGuests.length ? 'Tap your name above, or type it' : 'How should we address you?'}
-                      className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
+                      className="mt-2 border-[#8a6f1f]/20 bg-white/60 font-body text-[#031207] placeholder:text-[#031207]/30 focus:border-[#8a6f1f]/60 focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <Label className="font-body text-xs uppercase tracking-[0.18em] text-white/55">A message for the couple</Label>
+                    <Label className="font-body text-xs uppercase tracking-[0.18em] text-[#031207]/70">A message for the couple</Label>
                     <Input
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       placeholder="Optional"
-                      className="mt-2 border-white/15 bg-white/5 font-body text-white placeholder:text-white/30"
+                      className="mt-2 border-[#8a6f1f]/20 bg-white/60 font-body text-[#031207] placeholder:text-[#031207]/30 focus:border-[#8a6f1f]/60 focus:bg-white"
                     />
                   </div>
                 </div>
@@ -846,7 +846,7 @@ export default function InvitationPage() {
                     onClick={() => submitRsvp('Declined')}
                     disabled={submitting}
                     variant="outline"
-                    className="h-12 flex-1 border-white/20 bg-transparent font-body text-xs uppercase tracking-[0.22em] text-white/65 hover:bg-white/10 hover:text-white"
+                    className="h-12 flex-1 border-[#8a6f1f]/35 bg-transparent font-body text-xs uppercase tracking-[0.22em] text-[#031207]/65 hover:bg-[#8a6f1f]/10 hover:text-[#031207]"
                   >
                     Regretfully decline
                   </Button>
@@ -854,7 +854,7 @@ export default function InvitationPage() {
 
                 <button
                   onClick={() => setShowForm(false)}
-                  className="mx-auto block font-body text-xs uppercase tracking-[0.2em] text-white/35 transition-colors hover:text-white/60"
+                  className="mx-auto block font-body text-xs uppercase tracking-[0.2em] text-[#031207]/40 transition-colors hover:text-[#031207]/80"
                 >
                   ← Back
                 </button>

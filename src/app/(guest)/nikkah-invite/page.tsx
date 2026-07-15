@@ -36,10 +36,10 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
         )}
       </motion.div>
 
-      {/* Cinematic grading: vignette + candlelight glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,4,6,0.60)_65%,rgba(1,2,4,0.95)_100%)]" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
-      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.16)_0%,transparent_45%)]" />
+      {/* Cinematic grading: soft, light-lively vignette + warm candlelight glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
+      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
     </div>
   );
 }
@@ -276,7 +276,7 @@ export default function NikkahInvitePage() {
 
   /* ─── Main Nikaah Invitation Screen ─── */
   return (
-    <div className="relative min-h-screen bg-[#04070a]">
+    <div className="relative min-h-screen bg-[#faf8f5]">
       <Backdrop config={config} parallaxY={parallaxY} />
       <GoldDust />
       <PetalDrift />
@@ -292,13 +292,13 @@ export default function NikkahInvitePage() {
         >
           <button
             onClick={toggleAudio}
-            className="group flex items-center gap-2.5 rounded-full border border-[#d4af37]/35 bg-black/60 p-2.5 pr-4 backdrop-blur-xl shadow-2xl transition-colors hover:border-[#d4af37]/75 hover:bg-black/75"
+            className="group flex items-center gap-2.5 rounded-full border border-[#8a6f1f]/35 bg-white/75 p-2.5 pr-4 backdrop-blur-xl shadow-lg transition-colors hover:border-[#8a6f1f]/75 hover:bg-white/95"
           >
-            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#fdf6dd] to-[#d4af37] text-black">
-              {isAudioPlaying ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#faf8f5] to-[#8a6f1f] text-white">
+              {isAudioPlaying ? <Volume2 size={14} className="text-[#031207]" /> : <VolumeX size={14} className="text-[#031207]" />}
               {isAudioPlaying && (
                 <motion.span
-                  className="absolute inset-0 rounded-full border border-[#d4af37]"
+                  className="absolute inset-0 rounded-full border border-[#8a6f1f]"
                   animate={{ scale: [1, 1.8], opacity: [0.6, 0] }}
                   transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
                 />
@@ -309,13 +309,13 @@ export default function NikkahInvitePage() {
               {[0, 1, 2, 3].map(i => (
                 <motion.span
                   key={i}
-                  className="w-[2px] rounded-full bg-[#d4af37]"
+                  className="w-[2px] rounded-full bg-[#8a6f1f]"
                   animate={isAudioPlaying ? { height: ['25%', '95%', '45%', '85%', '25%'] } : { height: '25%' }}
                   transition={isAudioPlaying ? { duration: 1.2 + i * 0.15, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
                 />
               ))}
             </span>
-            <span className="font-body text-[9px] uppercase tracking-[0.2em] text-white/50 group-hover:text-white/80 transition-colors">
+            <span className="font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/60 group-hover:text-[#031207]/95 transition-colors">
               {isAudioPlaying ? 'Mute' : 'Play Music'}
             </span>
           </button>
@@ -331,14 +331,14 @@ export default function NikkahInvitePage() {
           className="text-center"
           data-print-hide
         >
-          <WeddingBells className="mx-auto mb-2 h-6 w-9 text-[#d4af37]/60" />
+          <WeddingBells className="mx-auto mb-2 h-6 w-9 text-[#8a6f1f]/75" />
           <p
-            className="font-body text-[10px] uppercase tracking-[0.35em] text-[#f6e7b7]/70"
+            className="font-body text-[10px] uppercase tracking-[0.35em] text-[#8a6f1f]"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             Generic Nikaah Invitation
           </p>
-          <p className="mt-2 max-w-md font-body text-xs text-white/60">
+          <p className="mt-2 max-w-md font-body text-xs text-[#031207]/65">
             No name, no Reception details — just the Nikaah. Download this once and forward
             it to anyone; it doesn&apos;t need a personal link.
           </p>
@@ -358,12 +358,12 @@ export default function NikkahInvitePage() {
           <button
             onClick={download}
             disabled={downloading}
-            className="flex items-center gap-2 rounded-full border border-[#d4af37]/35 bg-[#122217] px-6 py-3 font-body text-[10px] uppercase tracking-[0.24em] text-[#f6e7b7] shadow-lg transition-colors hover:bg-[#1a3220] disabled:opacity-60"
+            className="flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 bg-[#052611] px-6 py-3 font-body text-[10px] uppercase tracking-[0.24em] text-[#faf8f5] shadow-lg transition-colors hover:bg-[#031207] disabled:opacity-60"
           >
             {downloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
             {downloading ? 'Preparing…' : 'Download Nikaah Invite'}
           </button>
-          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-white/40">
+          <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
             Save it, print it, or share it straight to WhatsApp
           </p>
         </motion.div>
