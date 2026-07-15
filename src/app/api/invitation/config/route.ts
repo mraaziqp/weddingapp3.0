@@ -45,8 +45,8 @@ export async function GET() {
         Object.assign(copy, DEFAULT_INVITATION_CONFIG);
         changed = true;
       }
-      if (copy.extraInfo && copy.extraInfo.includes('5:00 PM')) {
-        copy.extraInfo = copy.extraInfo.replace('5:00 PM', '5:30 PM');
+      if (copy.extraInfo && copy.extraInfo.includes('at 5:30 PM') && !copy.extraInfo.includes('5:00 PM')) {
+        copy.extraInfo = copy.extraInfo.replace('at 5:30 PM', 'at 5:00 PM for 5:30 PM');
         changed = true;
       }
 

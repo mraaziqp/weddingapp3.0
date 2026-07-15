@@ -345,10 +345,10 @@ export function InvitationCard({
                 6 September 2026
               </p>
               <p
-                className="text-[2.2cqw] font-extrabold text-[#031207]"
+                className="text-[1.75cqw] font-extrabold text-[#031207]"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                5:30 PM
+                5:00 PM for 5:30 PM
               </p>
               <div className="h-px bg-[#031207]/28 w-[10cqw]" />
               <p

@@ -31,7 +31,7 @@ export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
   location: 'Masjidul Quds Mosque, Rylands',
   dressCode: 'Formal & Modest Attire',
   rsvpDeadline: '14 August 2026',
-  extraInfo: 'Tuscany Hall, Rylands - 2 Jane Avenue, Gatesville at 5:30 PM',
+  extraInfo: 'Tuscany Hall, Rylands - 2 Jane Avenue, Gatesville at 5:00 PM for 5:30 PM',
   weddingDate: '2026-09-06T10:00:00+02:00',
   giftingPoem:
     "With all that we have, we've been truly blessed,\n" +

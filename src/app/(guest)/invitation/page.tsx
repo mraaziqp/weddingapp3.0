@@ -241,28 +241,27 @@ export default function InvitationPage() {
       .eq('id', householdId)
       .single()
       .then(({ data }) => {
-        if (data) setResolvedHousehold(dbToHousehold(data));
-      });
+        if (data) {
+          const hh = dbToHousehold(data);
+          setResolvedHousehold(hh);
 
-    if (nameParam) return;
+          // Pull autofill from Household Name directly as requested
+          if (!nameParam && hh.name) {
+            setGuestName(hh.name);
+          }
 
-    supabase
-      .from('guests')
-      .select('id, first_name, last_name')
-      .eq('household_id', householdId)
-      .then(({ data }) => {
-        if (!data?.length) return;
-        const guests = data.map(g => ({
-          id: g.id as string,
-          name: [g.first_name, g.last_name].filter(Boolean).join(' ').trim(),
-        })).filter(g => g.name);
-        setHouseholdGuests(guests);
-        // A single-guest household gets their name filled in; multi-guest joins them with '&'.
-        if (guests.length === 1) {
-          setGuestName(current => current || guests[0].name);
-          setSelectedGuestId(current => current ?? guests[0].id);
-        } else if (guests.length > 1) {
-          setGuestName(current => current || guests.map(g => g.name).join(' & '));
+          // Populate the household guests list for the RSVP checkbox fields
+          if (hh.guests) {
+            const guests = hh.guests.map(g => ({
+              id: g.id,
+              name: [g.firstName, g.lastName].filter(Boolean).join(' ').trim(),
+            })).filter(g => g.name);
+            setHouseholdGuests(guests);
+
+            if (guests.length === 1) {
+              setSelectedGuestId(current => current ?? guests[0].id);
+            }
+          }
         }
       });
   }, [params]);
