@@ -421,28 +421,30 @@ export function InvitationCard({
         )}
 
         {/* RSVP Section */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full">
-          <span className="flex items-center gap-[1.6cqw] mb-[0.3cqw]">
-            <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 scale-x-[-1] rotate-180" />
-            <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 rotate-180" />
-          </span>
-          <p
-            className="text-[2.4cqw] font-extrabold tracking-[0.08em] text-[#122217]"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Kindly RSVP by 14 August 2026
-          </p>
-          <div className="flex justify-center gap-[3.5cqw] text-[2.1cqw] text-[#2e3b32] font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
-            <span>Shanaaz Parker: 0718665122</span>
-            <span>Ayaaz Parker: 0718665123</span>
-          </div>
-          <p
-            className="text-[1.8cqw] font-bold tracking-[0.12em] text-[#083d1c] uppercase mt-[0.8cqw]"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Please accept this as a personal invitation
-          </p>
-        </motion.div>
+        {!nikkahOnly && (
+          <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full">
+            <span className="flex items-center gap-[1.6cqw] mb-[0.3cqw]">
+              <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 scale-x-[-1] rotate-180" />
+              <FlowerSprig className="h-[2cqw] w-[3.4cqw] text-[#8a6f1f]/55 rotate-180" />
+            </span>
+            <p
+              className="text-[2.4cqw] font-extrabold tracking-[0.08em] text-[#122217]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Kindly RSVP by 14 August 2026
+            </p>
+            <div className="flex justify-center gap-[3.5cqw] text-[2.1cqw] text-[#2e3b32] font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <span>Shanaaz Parker: 0718665122</span>
+              <span>Ayaaz Parker: 0718665123</span>
+            </div>
+            <p
+              className="text-[1.8cqw] font-bold tracking-[0.12em] text-[#083d1c] uppercase mt-[0.8cqw]"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Please accept this as a personal invitation
+            </p>
+          </motion.div>
+        )}
 
       </div>
     </motion.div>
@@ -768,27 +770,29 @@ export function NavyRoyalCard({
         )}
 
         {/* RSVP Section */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full mb-[1cqw]">
-          <p
-            className="text-[1.8cqw] font-bold tracking-[0.16em] text-[#556b82] uppercase"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Kindly RSVP by the 14<sup>th</sup> of August
-          </p>
-          <div 
-            className="flex justify-center gap-[3.5cqw] text-[1.7cqw] text-[#002855] font-semibold tracking-[0.08em] uppercase" 
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            <span>Shanaaz Parker: 0718665122</span>
-            <span>Ayaaz Parker: 0718665123</span>
-          </div>
-          <p
-            className="text-[1.65cqw] font-bold tracking-[0.18em] text-[#b59650] uppercase mt-[0.6cqw]"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Please accept this as a personal invitation
-          </p>
-        </motion.div>
+        {!nikkahOnly && (
+          <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw] w-full mb-[1cqw]">
+            <p
+              className="text-[1.8cqw] font-bold tracking-[0.16em] text-[#556b82] uppercase"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Kindly RSVP by the 14<sup>th</sup> of August
+            </p>
+            <div 
+              className="flex justify-center gap-[3.5cqw] text-[1.7cqw] text-[#002855] font-semibold tracking-[0.08em] uppercase" 
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              <span>Shanaaz Parker: 0718665122</span>
+              <span>Ayaaz Parker: 0718665123</span>
+            </div>
+            <p
+              className="text-[1.65cqw] font-bold tracking-[0.18em] text-[#b59650] uppercase mt-[0.6cqw]"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Please accept this as a personal invitation
+            </p>
+          </motion.div>
+        )}
 
       </div>
     </motion.div>
