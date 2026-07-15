@@ -11,23 +11,27 @@ import { Download, Copy, Share2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface QRModalProps {
-  householdId: string;
-  householdName: string;
-  guestCount: number;
+  household: Household;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function QRCodeModal({
-  householdId,
-  householdName,
-  guestCount,
+  household,
   isOpen,
   onClose,
 }: QRModalProps) {
   const { toast } = useToast();
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://raziaraaziq.co.za';
-  const invitationUrl = `${baseUrl}/invitation?id=${householdId}&household=${householdId}`;
+  
+  // Detect side (Bride vs Groom) based on guest tags
+  const isBrideSide = household.guests?.some(g => g.tags?.some(t => t.includes("Bride's")));
+  const isGroomSide = household.guests?.some(g => g.tags?.some(t => t.includes("Groom's")));
+  let sideParam = '';
+  if (isBrideSide) sideParam = '&side=bride';
+  else if (isGroomSide) sideParam = '&side=groom';
+
+  const invitationUrl = `${baseUrl}/invitation?id=${household.id}&household=${household.id}${sideParam}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(invitationUrl);
@@ -38,7 +42,7 @@ export function QRCodeModal({
   };
 
   const handleDownloadQR = async () => {
-    const svg = document.getElementById(`qr-${householdId}`);
+    const svg = document.getElementById(`qr-${household.id}`);
     if (!svg) return;
 
     const canvas = document.createElement('canvas');
@@ -57,12 +61,12 @@ export function QRCodeModal({
 
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
-      link.download = `qr-${householdName.toLowerCase().replace(/\s/g, '-')}.png`;
+      link.download = `qr-${household.name.toLowerCase().replace(/\s/g, '-')}.png`;
       link.click();
 
       toast({
         title: 'Downloaded!',
-        description: `QR code saved for ${householdName}`,
+        description: `QR code saved for ${household.name}`,
       });
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
@@ -72,7 +76,7 @@ export function QRCodeModal({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Join ${householdName} at Our Wedding!`,
+          title: `Join ${household.name} at Our Wedding!`,
           text: 'Please RSVP to our wedding invitation',
           url: invitationUrl,
         });
@@ -89,7 +93,7 @@ export function QRCodeModal({
       <DialogContent className="glass-card max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">
-            QR Code for {householdName}
+            QR Code for {household.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -102,7 +106,7 @@ export function QRCodeModal({
           {/* QR Code */}
           <div className="flex justify-center p-6 bg-white rounded-lg">
             <QRCode
-              id={`qr-${householdId}`}
+              id={`qr-${household.id}`}
               value={invitationUrl}
               size={200}
               level="H"
@@ -112,10 +116,10 @@ export function QRCodeModal({
           {/* Info */}
           <div className="space-y-2">
             <p className="text-sm text-white/70">
-              <strong>Household:</strong> {householdName}
+              <strong>Household:</strong> {household.name}
             </p>
             <p className="text-sm text-white/70">
-              <strong>Guests:</strong> {guestCount} person(s)
+              <strong>Guests:</strong> {household.guests?.length || 0} person(s)
             </p>
             <p className="text-xs text-white/60 break-all">
               {invitationUrl}
@@ -229,9 +233,7 @@ export function QRCodeManager({ households }: QRCodeManagerProps) {
           <QRCodeModal
             isOpen={!!selectedHousehold}
             onClose={() => setSelectedHousehold(null)}
-            householdId={selectedHousehold.id}
-            householdName={selectedHousehold.name}
-            guestCount={selectedHousehold.guests?.length || 0}
+            household={selectedHousehold}
           />
         )}
       </AnimatePresence>

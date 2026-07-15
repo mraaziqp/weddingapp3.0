@@ -241,9 +241,15 @@ export function GuestLedger() {
     };
 
     const handleCopyInviteLink = (household: Household) => {
-        // Straight to the invitation — one less redirect hop than the
-        // QR-code path (/invite/<qrCode>), which still works for scanning.
-        const link = `${window.location.origin}/invitation?household=${household.id}&id=${household.id}`;
+        // Check if any guest belongs to bride or groom side
+        const isBrideSide = household.guests?.some(g => g.tags?.some(t => t.includes("Bride's")));
+        const isGroomSide = household.guests?.some(g => g.tags?.some(t => t.includes("Groom's")));
+        
+        let sideParam = '';
+        if (isBrideSide) sideParam = '&side=bride';
+        else if (isGroomSide) sideParam = '&side=groom';
+
+        const link = `${window.location.origin}/invitation?household=${household.id}&id=${household.id}${sideParam}`;
         navigator.clipboard.writeText(link).then(() => {
             toast({ title: 'Invite Link Copied!', description: link });
         });
