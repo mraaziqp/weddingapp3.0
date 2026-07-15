@@ -710,7 +710,6 @@ export default function InvitationPage() {
           config={config} 
           guestName={guestName || undefined} 
           printId 
-          widthClass="w-[calc(min(100vw-8px,(100dvh-30px)*5/7))] sm:w-[500px] md:w-[540px]"
         />
 
         <motion.div

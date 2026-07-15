@@ -381,3 +381,9 @@
 .c2-rsvp-header { font-size: calc(2.1 * var(--cqw)); }
 .c2-rsvp-contact { font-size: calc(1.95 * var(--cqw)); }
 .c2-rsvp-footnote { font-size: calc(1.95 * var(--cqw)); }
+
+/* Dynamic sizing for both styles of invitation card */
+.invitation-card-size {
+  width: calc(min(100vw - 16px, (100dvh - 80px) * 5 / 7));
+}
+

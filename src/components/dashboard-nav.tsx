@@ -49,6 +49,7 @@ export function DashboardNav() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const updateScrollState = useCallback(() => {
     const el = scrollerRef.current;
@@ -65,6 +66,7 @@ export function DashboardNav() {
     const active = el.querySelector<HTMLElement>('[data-active="true"]');
     active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     updateScrollState();
+    setIsMobile(window.innerWidth < 640);
 
     const resizeObserver = new ResizeObserver(updateScrollState);
     resizeObserver.observe(el);
@@ -109,41 +111,53 @@ export function DashboardNav() {
         >
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const linkContent = (
+              <Link href={item.href} passHref>
+                <motion.div
+                  data-active={isActive}
+                  whileHover={isMobile ? undefined : { scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className={cn(
+                    `relative flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full transition-all duration-300 sm:h-12 sm:w-12`,
+                    isActive ? 'text-black' : 'text-gray-300 hover:text-white'
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-nav-item"
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f6e7b7] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {item.icon}
+                  </div>
+                </motion.div>
+              </Link>
+            );
+
+            if (isMobile) {
+              return (
+                <div key={item.href}>
+                  {linkContent}
+                </div>
+              );
+            }
+
             return (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
-                  <Link href={item.href} passHref>
-                    <motion.div
-                      data-active={isActive}
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                      className={cn(
-                        `relative flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full transition-all duration-300 sm:h-12 sm:w-12`,
-                        isActive ? 'text-black' : 'text-gray-300 hover:text-white'
-                      )}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="active-nav-item"
-                          className="absolute inset-0 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f6e7b7] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.8, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        />
-                      )}
-                      <div className="relative z-10">
-                        {item.icon}
-                      </div>
-                    </motion.div>
-                  </Link>
+                  {linkContent}
                 </TooltipTrigger>
                 <TooltipContent side="top" className="glass-card !rounded-lg !py-1 !px-2 !text-xs">
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
-            )
+            );
           })}
         </div>
 

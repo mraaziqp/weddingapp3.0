@@ -100,9 +100,9 @@ export function PetalDrift({ count = 10 }: { count?: number }) {
 
 /* ─── Small botanical accents (bells + flourish) ──────────────────────── */
 
-export function WeddingBells({ className }: { className?: string }) {
+export function WeddingBells({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 64 40" className={className} fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden>
+    <svg viewBox="0 0 64 40" className={className} style={style} fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden>
       {/* ribbon bow at center */}
       <path d="M32 3c-3 0-5.5 2-5.5 2s2.5 2 5.5 2 5.5-2 5.5-2-2.5-2-5.5-2z" fill="currentColor" stroke="none" opacity="0.9" />
       <circle cx="32" cy="5" r="1.1" fill="currentColor" stroke="none" />
@@ -125,9 +125,9 @@ export function WeddingBells({ className }: { className?: string }) {
 
 /* A tiny trailing sprig — three petals off a curved stem — used to flank
    the ampersand and frame small details without competing with the photo. */
-export function FlowerSprig({ className }: { className?: string }) {
+export function FlowerSprig({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 40 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.1" aria-hidden>
+    <svg viewBox="0 0 40 24" className={className} style={style} fill="none" stroke="currentColor" strokeWidth="1.1" aria-hidden>
       <path d="M2 20c8-2 14-8 20-16" strokeLinecap="round" />
       {[[10, 15], [16, 10], [22, 6]].map(([x, y], i) => (
         <g key={i} transform={`translate(${x} ${y})`}>
@@ -147,7 +147,7 @@ export function FlowerSprig({ className }: { className?: string }) {
 export function InvitationCard({
   config: _config,
   printId = false,
-  widthClass = 'w-full sm:w-[500px] md:w-[540px]',
+  widthClass = 'invitation-card-size max-w-[540px] sm:max-w-[620px] md:max-w-[700px] lg:max-w-[760px]',
   guestName,
   nikkahOnly = false,
   id,
@@ -592,7 +592,7 @@ export function GiftingCard({
 export function NavyRoyalCard({
   config: _config,
   printId = false,
-  widthClass = 'w-full sm:w-[500px] md:w-[540px]',
+  widthClass = 'invitation-card-size max-w-[540px] sm:max-w-[620px] md:max-w-[700px] lg:max-w-[760px]',
   guestName,
   nikkahOnly = false,
   id,

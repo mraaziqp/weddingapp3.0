@@ -22,6 +22,7 @@ export interface InvitationConfig {
   weddingDate?: string;
   /** Poem shown on the cream "Gifting" enclosure card. Empty string hides the card. */
   giftingPoem?: string;
+  theme?: 'classic-botanical' | 'navy-royal';
 }
 
 export const DEFAULT_INVITATION_CONFIG: InvitationConfig = {
