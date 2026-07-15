@@ -271,7 +271,7 @@ export function InvitationCard({
               className="mt-[0.6cqw] c1-parent font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              son of Abdussataar and Shanaaz Parker
+              Son of Abdussataar and Shanaaz Parker
             </p>
           </div>
 
@@ -299,7 +299,7 @@ export function InvitationCard({
               className="mt-[0.6cqw] c1-parent font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              daughter of Sabri and Samalika Shade
+              The Daughter of Sabri and Samalika Shade
             </p>
           </div>
         </motion.div>
@@ -671,7 +671,7 @@ export function NavyRoyalCard({
               className="mt-[0.6cqw] c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
-              son of Abdussataar and Shanaaz Parker
+              Son of Abdussataar and Shanaaz Parker
             </p>
           </motion.div>
 
@@ -696,7 +696,7 @@ export function NavyRoyalCard({
               className="mt-[0.6cqw] c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
-              daughter of Sabri and Samalika Shade
+              The Daughter of Sabri and Samalika Shade
             </p>
           </motion.div>
         </motion.div>

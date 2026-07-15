@@ -99,6 +99,12 @@ export default function NikkahInvitePage() {
           if (tempTheme === 'classic-botanical' || tempTheme === 'navy-royal') {
             merged.theme = tempTheme;
           }
+          const tempSide = queryParams.get('side');
+          if (tempSide === 'bride') {
+            merged.theme = 'navy-royal';
+          } else if (tempSide === 'groom') {
+            merged.theme = 'classic-botanical';
+          }
         }
         setConfig(merged);
       })
@@ -116,9 +122,9 @@ export default function NikkahInvitePage() {
       setIsAudioPlaying(true);
     }
     
-    // Spawn falling wedding bells and flowers particles exploding from the center
-    const emojis = ['🔔', '🌸', '🌹', '🌺', '🌼', '🌷', '🔔', '🌸', '🌹', '🌼'];
-    const newParticles = Array.from({ length: 48 }).map((_, i) => {
+    // Spawn falling wedding bells and flowers particles exploding from the center (empty for navy-royal simple plain open animation)
+    const emojis = config?.theme === 'navy-royal' ? [] : ['🔔', '🌸', '🌹', '🌺', '🌼', '🌷', '🔔', '🌸', '🌹', '🌼'];
+    const newParticles = emojis.length > 0 ? Array.from({ length: 48 }).map((_, i) => {
       const emoji = emojis[i % emojis.length];
       const angle = Math.random() * Math.PI * 2;
       const distance = 80 + Math.random() * 240; // travel distance
@@ -132,21 +138,17 @@ export default function NikkahInvitePage() {
         delay: Math.random() * 0.15,
         duration: 1.8 + Math.random() * 1.2,
       };
-    });
+    }) : [];
     setParticles(newParticles);
   };
 
   const toggleAudio = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (isAudioPlaying) {
-      audio.pause();
-      setIsAudioPlaying(false);
-    } else {
-      audio.muted = false;
-      audio.play().catch(() => {});
-      setIsAudioPlaying(true);
-    }
+    const turningOn = !isAudioPlaying;
+    audio.muted = !turningOn;
+    if (turningOn) audio.play().catch(() => {});
+    setIsAudioPlaying(turningOn);
   };
 
   const download = async () => {
@@ -183,20 +185,44 @@ export default function NikkahInvitePage() {
     return (
       <div 
         onClick={handleOpenEnvelope}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden select-none cursor-pointer"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none cursor-pointer"
       >
-        {/* Intro Video Element */}
-        <video
-          src="/intro-video.mp4"
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleOpenEnvelope}
-          className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ${isOpening ? 'opacity-0' : 'opacity-100'}`}
-        />
+        {/* Living theme backdrop behind the video */}
+        <div className="absolute inset-0 z-0">
+          <Backdrop config={config} parallaxY={new MotionValue()} />
+          <GoldDust />
+          {config.theme !== 'navy-royal' && <PetalDrift />}
+        </div>
 
-        {/* Cinematic Vignette Overlay to darken the video slightly */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/45 z-20 pointer-events-none" />
+        {/* Floating Cinematic Video Frame */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4">
+          <video
+            src="/intro-video.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            onEnded={handleOpenEnvelope}
+            className={`w-[calc(min(100vw-32px,(100dvh-160px)*9/16))] aspect-[9/16] max-h-[80vh] rounded-2xl border border-[#d4af37]/30 shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100'}`}
+          />
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-4 text-center z-20"
+          >
+            <p
+              className="text-[11px] uppercase tracking-[0.25em] text-[#8a6f1f] bg-white/70 px-4 py-1.5 rounded-full border border-[#8a6f1f]/20 backdrop-blur-md shadow-sm animate-pulse"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Tap to Open Invitation
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Cinematic Vignette Overlay to darken the background slightly */}
+        <div className="absolute inset-0 bg-black/25 z-0 pointer-events-none" />
 
         {/* Falling wedding bells & flowers particles */}
         {particles.map(p => (
