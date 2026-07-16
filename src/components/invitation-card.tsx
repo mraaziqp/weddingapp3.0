@@ -612,6 +612,7 @@ export function NavyRoyalCard({
       id={id || (printId ? 'invitation-print-card' : undefined)}
       className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.5),0_0_40px_rgba(212,175,55,0.15)] border border-[#d4af37]/30`}
       style={{
+        backgroundColor: '#000e21',
         backgroundImage: 'url("/navy-stars.jpg")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
