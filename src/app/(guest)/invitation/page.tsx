@@ -218,6 +218,7 @@ export default function InvitationPage() {
   const [downloadingCard, setDownloadingCard] = useState(false);
   const [params, setParams] = useState<URLSearchParams | null>(null);
   const [householdGuests, setHouseholdGuests] = useState<{ id: string; name: string }[]>([]);
+  const [guestRsvps, setGuestRsvps] = useState<Record<string, 'Accepted' | 'Declined'>>({});
   // The real Supabase guests.id for whoever is responding, when known — lets
   // the RSVP write land on that exact row instead of just a name string.
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
@@ -338,6 +339,13 @@ export default function InvitationPage() {
               setSelectedGuestId(current => current ?? guests[0].id);
             }
 
+            // Initialize guestRsvps mapping
+            const rsvps: Record<string, 'Accepted' | 'Declined'> = {};
+            hh.guests.forEach(g => {
+              rsvps[g.id] = g.rsvpStatus === 'Regret' ? 'Declined' : 'Accepted';
+            });
+            setGuestRsvps(rsvps);
+
             // Check if anyone in this household belongs to the bride or groom side
             const isBrideSide = hh.guests.some(g => 
               g.tags?.some(t => t.includes("Bride's"))
@@ -433,43 +441,86 @@ export default function InvitationPage() {
 
 
 
-  const submitRsvp = async (rsvpStatus: 'Accepted' | 'Declined') => {
+  const submitRsvp = async (singleStatus?: 'Accepted' | 'Declined') => {
     if (!guestName.trim()) {
       alert('Please enter your name');
       return;
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rsvp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestId: params?.get('id') || 'guest-' + Date.now(),
-          householdId: params?.get('household'),
-          // The real guests.id, when we know exactly who's responding — lets
-          // the server sync this RSVP straight onto that guest's own row.
-          resolvedGuestId: selectedGuestId,
-          guestName,
-          status: rsvpStatus,
-          message: message || undefined,
-        }),
-      });
-      if (res.ok) {
-        setStatus(rsvpStatus === 'Accepted' ? 'accepted' : 'declined');
-        // Confetti on accept
-        if (rsvpStatus === 'Accepted') {
-          import('canvas-confetti').then(({ default: confetti }) => {
-            const end = Date.now() + 3000;
-            const colors = ['#d4af37', '#f6e7b7', '#ffffff'];
-            (function frame() {
-              confetti({ particleCount: 3, angle: 60, spread: 80, origin: { x: 0, y: 0.6 }, colors });
-              confetti({ particleCount: 3, angle: 120, spread: 80, origin: { x: 1, y: 0.6 }, colors });
-              if (Date.now() < end) requestAnimationFrame(frame);
-            }());
+      if (householdGuests.length > 0 && !singleStatus) {
+        // Multi-guest/household submit path
+        let hasAccepted = false;
+        
+        const promises = householdGuests.map(g => {
+          const status = guestRsvps[g.id] || 'Accepted';
+          if (status === 'Accepted') hasAccepted = true;
+          
+          return fetch('/api/rsvp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              guestId: g.id,
+              householdId: params?.get('household'),
+              resolvedGuestId: g.id,
+              guestName: g.name,
+              status: status,
+              message: message || undefined,
+            }),
           });
+        });
+
+        const results = await Promise.all(promises);
+        const allOk = results.every(r => r.ok);
+        if (allOk) {
+          setStatus(hasAccepted ? 'accepted' : 'declined');
+          // Confetti on accept
+          if (hasAccepted) {
+            import('canvas-confetti').then(({ default: confetti }) => {
+              const end = Date.now() + 3000;
+              const colors = ['#d4af37', '#f6e7b7', '#ffffff'];
+              (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 80, origin: { x: 0, y: 0.6 }, colors });
+                confetti({ particleCount: 3, angle: 120, spread: 80, origin: { x: 1, y: 0.6 }, colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+              }());
+            });
+          }
+        } else {
+          alert('Failed to submit RSVP. Please try again.');
         }
       } else {
-        alert('Failed to submit RSVP. Please try again.');
+        // Single guest fallback path
+        const rsvpStatus = singleStatus || 'Accepted';
+        const res = await fetch('/api/rsvp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            guestId: params?.get('id') || 'guest-' + Date.now(),
+            householdId: params?.get('household'),
+            resolvedGuestId: selectedGuestId,
+            guestName,
+            status: rsvpStatus,
+            message: message || undefined,
+          }),
+        });
+        if (res.ok) {
+          setStatus(rsvpStatus === 'Accepted' ? 'accepted' : 'declined');
+          // Confetti on accept
+          if (rsvpStatus === 'Accepted') {
+            import('canvas-confetti').then(({ default: confetti }) => {
+              const end = Date.now() + 3000;
+              const colors = ['#d4af37', '#f6e7b7', '#ffffff'];
+              (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 80, origin: { x: 0, y: 0.6 }, colors });
+                confetti({ particleCount: 3, angle: 120, spread: 80, origin: { x: 1, y: 0.6 }, colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+              }());
+            });
+          }
+        } else {
+          alert('Failed to submit RSVP. Please try again.');
+        }
       }
     } catch {
       alert('Error submitting RSVP');
@@ -647,11 +698,14 @@ export default function InvitationPage() {
       const householdObj: Household = resolvedHousehold
         ? {
             ...resolvedHousehold,
-            guests: resolvedHousehold.guests.map(g =>
-              g.id === selectedGuestId
-                ? { ...g, rsvpStatus: 'Confirmed' }
-                : g
-            ),
+            guests: resolvedHousehold.guests.map(g => {
+              const rsvpStatus = guestRsvps[g.id] || 'Accepted';
+              return {
+                ...g,
+                rsvpStatus: rsvpStatus === 'Declined' ? ('Regret' as const) : ('Confirmed' as const),
+                isAttending: rsvpStatus === 'Accepted'
+              };
+            }),
           }
         : {
             id: params?.get('household') || 'hh-' + Date.now(),
@@ -910,36 +964,84 @@ export default function InvitationPage() {
                 <div className="space-y-4">
                   <div>
                     <Label className="font-body text-xs uppercase tracking-[0.18em] text-[#031207]/70">Your name *</Label>
-                    {householdGuests.length > 0 && (
-                      <div className="mt-2 flex flex-wrap justify-center gap-2">
-                        {householdGuests.map(g => (
-                          <button
-                            key={g.id}
-                            type="button"
-                            onClick={() => { setGuestName(g.name); setSelectedGuestId(g.id); }}
-                            className={`rounded-full border px-4 py-1.5 font-body text-xs transition-colors ${
-                              guestName === g.name
-                                ? 'border-[#8a6f1f]/80 bg-[#8a6f1f]/10 text-[#031207]'
-                                : 'border-[#8a6f1f]/20 bg-white/40 text-[#031207]/60 hover:border-[#8a6f1f]/60 hover:text-[#031207]'
-                            }`}
-                          >
-                            {g.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                     <Input
                       value={guestName}
                       onChange={e => {
                         setGuestName(e.target.value);
-                        // Typing something that no longer matches the selected chip
-                        // means we can't be sure which guest row this is anymore.
-                        if (!householdGuests.some(g => g.name === e.target.value)) setSelectedGuestId(null);
                       }}
-                      placeholder={householdGuests.length ? 'Tap your name above, or type it' : 'How should we address you?'}
+                      placeholder="How should we address you?"
                       className="mt-2 border-[#8a6f1f]/20 bg-white/60 font-body text-[#031207] placeholder:text-[#031207]/30 focus:border-[#8a6f1f]/60 focus:bg-white"
                     />
                   </div>
+
+                  {householdGuests.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between bg-[#8a6f1f]/5 rounded-xl p-2.5 border border-[#8a6f1f]/10">
+                        <span className="font-body text-xs font-semibold uppercase tracking-[0.1em] text-[#031207]/70">
+                          Attending Guests:
+                        </span>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newMap = { ...guestRsvps };
+                              householdGuests.forEach(g => { newMap[g.id] = 'Accepted'; });
+                              setGuestRsvps(newMap);
+                            }}
+                            className="px-2 py-0.5 rounded border border-[#8a6f1f]/35 hover:bg-[#8a6f1f]/10 text-[9px] uppercase tracking-wider font-semibold text-[#031207]"
+                          >
+                            All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newMap = { ...guestRsvps };
+                              householdGuests.forEach(g => { newMap[g.id] = 'Declined'; });
+                              setGuestRsvps(newMap);
+                            }}
+                            className="px-2 py-0.5 rounded border border-red-200 hover:bg-red-50 text-[9px] uppercase tracking-wider font-semibold text-red-600"
+                          >
+                            None
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {householdGuests.map((g) => {
+                          const status = guestRsvps[g.id] || 'Accepted';
+                          return (
+                            <div key={g.id} className="flex items-center justify-between p-2 rounded-lg bg-white/40 border border-[#8a6f1f]/10">
+                              <span className="font-body text-xs font-medium text-[#031207]/90 pl-1">{g.name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setGuestRsvps({ ...guestRsvps, [g.id]: 'Accepted' })}
+                                  className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider transition-colors ${
+                                    status === 'Accepted'
+                                      ? 'bg-green-600 text-white shadow-sm'
+                                      : 'bg-white/60 text-[#031207]/45 border border-[#8a6f1f]/10 hover:bg-white/80'
+                                  }`}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setGuestRsvps({ ...guestRsvps, [g.id]: 'Declined' })}
+                                  className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider transition-colors ${
+                                    status === 'Declined'
+                                      ? 'bg-red-600 text-white shadow-sm'
+                                      : 'bg-white/60 text-[#031207]/45 border border-[#8a6f1f]/10 hover:bg-white/80'
+                                  }`}
+                                >
+                                  Decline
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <Label className="font-body text-xs uppercase tracking-[0.18em] text-[#031207]/70">A message for the couple</Label>
@@ -952,23 +1054,35 @@ export default function InvitationPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 pt-1 sm:flex-row">
-                  <Button
-                    onClick={() => submitRsvp('Accepted')}
-                    disabled={submitting}
-                    className="h-12 flex-1 bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] font-body text-xs font-semibold uppercase tracking-[0.22em] text-black hover:shadow-[0_8px_30px_rgba(212,175,55,0.4)]"
-                  >
-                    Joyfully accept
-                  </Button>
-                  <Button
-                    onClick={() => submitRsvp('Declined')}
-                    disabled={submitting}
-                    variant="outline"
-                    className="h-12 flex-1 border-[#8a6f1f]/35 bg-transparent font-body text-xs uppercase tracking-[0.22em] text-[#031207]/65 hover:bg-[#8a6f1f]/10 hover:text-[#031207]"
-                  >
-                    Regretfully decline
-                  </Button>
-                </div>
+                {householdGuests.length > 0 ? (
+                  <div className="pt-1">
+                    <Button
+                      onClick={() => submitRsvp()}
+                      disabled={submitting}
+                      className="h-12 w-full bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] font-body text-xs font-semibold uppercase tracking-[0.22em] text-black hover:shadow-[0_8px_30px_rgba(212,175,55,0.4)]"
+                    >
+                      {submitting ? 'Submitting…' : 'Submit RSVP Responses'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+                    <Button
+                      onClick={() => submitRsvp('Accepted')}
+                      disabled={submitting}
+                      className="h-12 flex-1 bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] font-body text-xs font-semibold uppercase tracking-[0.22em] text-black hover:shadow-[0_8px_30px_rgba(212,175,55,0.4)]"
+                    >
+                      Joyfully accept
+                    </Button>
+                    <Button
+                      onClick={() => submitRsvp('Declined')}
+                      disabled={submitting}
+                      variant="outline"
+                      className="h-12 flex-1 border-[#8a6f1f]/35 bg-transparent font-body text-xs uppercase tracking-[0.22em] text-[#031207]/65 hover:bg-[#8a6f1f]/10 hover:text-[#031207]"
+                    >
+                      Regretfully decline
+                    </Button>
+                  </div>
+                )}
 
                 <button
                   onClick={() => setShowForm(false)}
