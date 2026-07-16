@@ -367,6 +367,18 @@ export function GuestLedger() {
         h.guests?.some(g => g.tags?.some(t => t.includes("Bride's")))
     ).length;
 
+    const totalIndividuals = households.reduce((sum, h) => sum + (h.guests?.length || 0), 0);
+
+    const groomIndividuals = households.reduce((sum, h) => {
+      const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Groom's"))) || [];
+      return sum + sideGuests.length;
+    }, 0);
+
+    const brideIndividuals = households.reduce((sum, h) => {
+      const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Bride's"))) || [];
+      return sum + sideGuests.length;
+    }, 0);
+
     const filteredHouseholds = households.filter(h => {
         // 1. Filter by Groom/Bride Side Segment Tab
         if (activeSideTab === 'groom') {
@@ -472,39 +484,39 @@ export function GuestLedger() {
             </div>
 
             {/* Groom / Bride / All Segment Tabs Switcher */}
-            <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 max-w-md gap-1 self-start">
+            <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 max-w-2xl gap-1 self-start">
                 <button
                     onClick={() => setActiveSideTab('all')}
                     className={cn(
-                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
                         activeSideTab === 'all'
-                            ? "bg-[#d4af37] text-black shadow-md"
+                            ? "bg-[#d4af37] text-black shadow-md font-bold"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    All Guests ({households.length})
+                    All ({households.length} Invites · {totalIndividuals} Guests)
                 </button>
                 <button
                     onClick={() => setActiveSideTab('groom')}
                     className={cn(
-                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
                         activeSideTab === 'groom'
-                            ? "bg-[#d4af37] text-black shadow-md"
+                            ? "bg-[#d4af37] text-black shadow-md font-bold"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    Groom's Side ({groomCount})
+                    Groom's Side ({groomCount} Invites · {groomIndividuals} Guests)
                 </button>
                 <button
                     onClick={() => setActiveSideTab('bride')}
                     className={cn(
-                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
                         activeSideTab === 'bride'
-                            ? "bg-[#d4af37] text-black shadow-md"
+                            ? "bg-[#d4af37] text-black shadow-md font-bold"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    Bride's Side ({brideCount})
+                    Bride's Side ({brideCount} Invites · {brideIndividuals} Guests)
                 </button>
             </div>
 

@@ -431,7 +431,7 @@ const LiveRsvpFeed = () => {
   const [responses, setResponses] = useState<RsvpResponse[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [latestSeenTime, setLatestSeenTime] = useState<number | null>(null);
-  const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'messages'>('all');
+  const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'groom' | 'bride' | 'messages'>('all');
   const { toast } = useToast();
 
   const fetchResponses = async (isInitial = false) => {
@@ -491,9 +491,16 @@ const LiveRsvpFeed = () => {
     window.open(url, '_blank');
   };
 
+  const groomResponses = responses.filter(r => r.guest_id === 'guest-groom');
+  const brideResponses = responses.filter(r => r.guest_id === 'guest-bride');
+  const groomAcceptedCount = groomResponses.filter(r => r.status === 'Accepted').length;
+  const brideAcceptedCount = brideResponses.filter(r => r.status === 'Accepted').length;
+
   const filteredResponses = responses.filter(r => {
     if (filter === 'accepted') return r.status === 'Accepted';
     if (filter === 'declined') return r.status === 'Declined';
+    if (filter === 'groom') return r.guest_id === 'guest-groom';
+    if (filter === 'bride') return r.guest_id === 'guest-bride';
     if (filter === 'messages') return !!r.message;
     return true;
   });
@@ -508,12 +515,14 @@ const LiveRsvpFeed = () => {
           <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[#d4af37] flex items-center gap-2">
             <Bell className="h-4 w-4 text-[#d4af37] animate-bounce" /> Live RSVP Feed &amp; Messages
           </CardTitle>
-          <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Real-time RSVP responses and guest messages</p>
+          <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1 leading-normal">
+            Real-time RSVPs · Groom: {groomAcceptedCount} Accepted / {groomResponses.length} Responded · Bride: {brideAcceptedCount} Accepted / {brideResponses.length} Responded
+          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Segment Filter Switcher */}
-          <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 gap-1 shrink-0">
+          <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 gap-1 shrink-0 flex-wrap">
             <button
               onClick={() => setFilter('all')}
               className={cn(
@@ -546,6 +555,28 @@ const LiveRsvpFeed = () => {
               )}
             >
               Declined ({responses.filter(r => r.status === 'Declined').length})
+            </button>
+            <button
+              onClick={() => setFilter('groom')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'groom' 
+                  ? "bg-[#10b981] text-black shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              Groom ({groomResponses.length})
+            </button>
+            <button
+              onClick={() => setFilter('bride')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'bride' 
+                  ? "bg-[#ec4899] text-white shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              Bride ({brideResponses.length})
             </button>
             <button
               onClick={() => setFilter('messages')}
