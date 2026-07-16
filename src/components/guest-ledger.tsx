@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy, Send, Search } from 'lucide-react';
 import { fetchHouseholds, addHousehold, addGuestToHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { Household } from '@/lib/types';
+import type { Household, GuestTag } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
@@ -40,16 +40,24 @@ type HouseholdFormValues = z.infer<typeof householdSchema>;
 /** Quick-add one person: either as their own invite or into an existing household. */
 function AddGuestForm({
     households,
+    activeSide = 'groom',
     onDone,
 }: {
     households: Household[];
+    activeSide?: 'groom' | 'bride';
     onDone: () => void;
 }) {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [selectedSide, setSelectedSide] = useState<'groom' | 'bride'>(activeSide);
     const [target, setTarget] = useState<string>('own');
     const [saving, setSaving] = useState(false);
     const { toast } = useToast();
+
+    // Reset selectedSide if activeSide changes
+    useEffect(() => {
+        setSelectedSide(activeSide);
+    }, [activeSide]);
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,7 +66,12 @@ function AddGuestForm({
             return;
         }
         setSaving(true);
-        const person = { firstName: firstName.trim(), lastName: lastName.trim() };
+        const sideTag = (selectedSide === 'groom' ? "Groom's Family" : "Bride's Family") as GuestTag;
+        const person = { 
+            firstName: firstName.trim(), 
+            lastName: lastName.trim(),
+            tags: [sideTag]
+        };
         try {
             if (target === 'own') {
                 await addHousehold(`${person.firstName} ${person.lastName}`, [person]);
@@ -88,26 +101,42 @@ function AddGuestForm({
                     <Input id="ag-last" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="mt-1" />
                 </div>
             </div>
-            <div>
-                <Label>Invite</Label>
-                <Select value={target} onValueChange={setTarget}>
-                    <SelectTrigger className="mt-1">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="glass-card-static border-white/10 max-h-64">
-                        <SelectItem value="own">✨ Their own invite (single guest)</SelectItem>
-                        <SelectItem value="new-multi">✨ Create a new household (multi-guest invite)</SelectItem>
-                        {households.map(h => (
-                            <SelectItem key={h.id} value={h.id}>
-                                Join: {h.name} ({h.guests.length} {h.guests.length === 1 ? 'guest' : 'guests'})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                    &ldquo;Their own invite&rdquo; creates a solo guest invite. &ldquo;Create a new household&rdquo; creates a multi-guest family invite. Joining a household adds them to an existing invite.
-                </p>
+            
+            <div className="flex gap-2">
+                <div className="flex-1">
+                    <Label htmlFor="ag-side">Guest Side</Label>
+                    <Select value={selectedSide} onValueChange={(val: 'groom' | 'bride') => setSelectedSide(val)}>
+                        <SelectTrigger id="ag-side" className="mt-1 bg-black/10 border-white/10 text-white">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-card-static border-white/10">
+                            <SelectItem value="groom">Groom's Side</SelectItem>
+                            <SelectItem value="bride">Bride's Side</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex-1">
+                    <Label>Invite Type</Label>
+                    <Select value={target} onValueChange={setTarget}>
+                        <SelectTrigger className="mt-1">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-card-static border-white/10 max-h-64">
+                            <SelectItem value="own">✨ Their own invite (single guest)</SelectItem>
+                            <SelectItem value="new-multi">✨ Create a new household</SelectItem>
+                            {households.map(h => (
+                                <SelectItem key={h.id} value={h.id}>
+                                    Join: {h.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
+            
+            <p className="text-xs text-muted-foreground">
+                &ldquo;Their own invite&rdquo; creates a solo guest invite. &ldquo;Create a new household&rdquo; creates a multi-guest family invite. Joining a household adds them to an existing invite.
+            </p>
             <Button type="submit" disabled={saving} className="w-full">
                 {saving ? 'Adding…' : 'Add Guest'}
             </Button>
@@ -117,12 +146,14 @@ function AddGuestForm({
 
 function HouseholdForm({
     defaultValues,
+    defaultSide = 'groom',
     onSubmit,
     submitLabel,
     mode = 'multi',
 }: {
     defaultValues: HouseholdFormValues;
-    onSubmit: (data: HouseholdFormValues) => void;
+    defaultSide?: 'groom' | 'bride';
+    onSubmit: (data: any) => void;
     submitLabel: string;
     /** 'single' hides the household name field and locks the form to one guest. */
     mode?: 'single' | 'multi';
@@ -134,21 +165,50 @@ function HouseholdForm({
     const { fields, append, remove } = useFieldArray({ control, name: 'guests' });
     const isSingle = mode === 'single';
     const firstGuest = watch('guests.0');
+    const [selectedSide, setSelectedSide] = useState<'groom' | 'bride'>(defaultSide);
+
+    // Reset selectedSide if defaultSide changes
+    useEffect(() => {
+        setSelectedSide(defaultSide);
+    }, [defaultSide]);
 
     return (
         <form
-            onSubmit={handleSubmit((data) =>
-                onSubmit(isSingle ? { ...data, name: `${data.guests[0].firstName} ${data.guests[0].lastName}` } : data)
-            )}
+            onSubmit={handleSubmit((data) => {
+                const sideTag = (selectedSide === 'groom' ? "Groom's Family" : "Bride's Family") as GuestTag;
+                const guestsWithTags = data.guests.map(g => ({
+                    ...g,
+                    tags: [sideTag]
+                }));
+                onSubmit(isSingle 
+                    ? { ...data, name: `${data.guests[0].firstName} ${data.guests[0].lastName}`, guests: guestsWithTags } 
+                    : { ...data, guests: guestsWithTags }
+                );
+            })}
             className="space-y-4"
         >
-            {!isSingle && (
-                <div>
-                    <Label htmlFor="name">Household Name</Label>
-                    <Input id="name" {...register('name')} placeholder="e.g., The Smith Family" className="mt-1" />
-                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+            <div className="flex gap-4">
+                {!isSingle && (
+                    <div className="flex-1">
+                        <Label htmlFor="name">Household Name</Label>
+                        <Input id="name" {...register('name')} placeholder="e.g., The Smith Family" className="mt-1" />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                    </div>
+                )}
+                <div className={cn("w-44", isSingle && "w-full")}>
+                    <Label htmlFor="side">Guest Side</Label>
+                    <Select value={selectedSide} onValueChange={(val: 'groom' | 'bride') => setSelectedSide(val)}>
+                        <SelectTrigger className="mt-1 bg-black/10 border-white/10 text-white">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-card-static border-white/10">
+                            <SelectItem value="groom">Groom's Side</SelectItem>
+                            <SelectItem value="bride">Bride's Side</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
-            )}
+            </div>
+            
             <div className="space-y-2">
                 <Label>{isSingle ? 'Guest' : 'Guests'}</Label>
                 {fields.slice(0, isSingle ? 1 : undefined).map((field, index) => (
@@ -182,6 +242,7 @@ function HouseholdForm({
 export function GuestLedger() {
     const [households, setHouseholds] = useState<Household[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeSideTab, setActiveSideTab] = useState<'all' | 'groom' | 'bride'>('all');
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addMode, setAddMode] = useState<'single' | 'multi'>('multi');
@@ -298,7 +359,25 @@ export function GuestLedger() {
         }
     };
 
+    const groomCount = households.filter(h =>
+        h.guests?.some(g => g.tags?.some(t => t.includes("Groom's")))
+    ).length;
+
+    const brideCount = households.filter(h =>
+        h.guests?.some(g => g.tags?.some(t => t.includes("Bride's")))
+    ).length;
+
     const filteredHouseholds = households.filter(h => {
+        // 1. Filter by Groom/Bride Side Segment Tab
+        if (activeSideTab === 'groom') {
+            const isGroom = h.guests?.some(g => g.tags?.some(t => t.includes("Groom's")));
+            if (!isGroom) return false;
+        } else if (activeSideTab === 'bride') {
+            const isBride = h.guests?.some(g => g.tags?.some(t => t.includes("Bride's")));
+            if (!isBride) return false;
+        }
+
+        // 2. Filter by Search Query
         const query = searchQuery.trim().toLowerCase();
         if (!query) return true;
         const nameMatch = h.name?.toLowerCase().includes(query);
@@ -349,8 +428,9 @@ export function GuestLedger() {
                                 </DialogTitle>
                             </DialogHeader>
                             <HouseholdForm
-                                key={addMode}
+                                key={`${addMode}-${activeSideTab}`}
                                 defaultValues={{ name: '', guests: [{ firstName: '', lastName: '' }] }}
+                                defaultSide={activeSideTab === 'bride' ? 'bride' : 'groom'}
                                 onSubmit={handleAddHousehold}
                                 submitLabel={addMode === 'single' ? 'Add Single Guest' : 'Add Household'}
                                 mode={addMode}
@@ -370,6 +450,7 @@ export function GuestLedger() {
                             </DialogHeader>
                             <AddGuestForm
                                 households={households}
+                                activeSide={activeSideTab === 'bride' ? 'bride' : 'groom'}
                                 onDone={async () => {
                                     setIsAddGuestOpen(false);
                                     const fresh = await fetchHouseholds();
@@ -388,6 +469,43 @@ export function GuestLedger() {
                         Export Manifest (.csv)
                     </a>
                 </div>
+            </div>
+
+            {/* Groom / Bride / All Segment Tabs Switcher */}
+            <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 max-w-md gap-1 self-start">
+                <button
+                    onClick={() => setActiveSideTab('all')}
+                    className={cn(
+                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        activeSideTab === 'all'
+                            ? "bg-[#d4af37] text-black shadow-md"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    All Guests ({households.length})
+                </button>
+                <button
+                    onClick={() => setActiveSideTab('groom')}
+                    className={cn(
+                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        activeSideTab === 'groom'
+                            ? "bg-[#d4af37] text-black shadow-md"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    Groom's Side ({groomCount})
+                </button>
+                <button
+                    onClick={() => setActiveSideTab('bride')}
+                    className={cn(
+                        "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                        activeSideTab === 'bride'
+                            ? "bg-[#d4af37] text-black shadow-md"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    Bride's Side ({brideCount})
+                </button>
             </div>
 
             <Card className="glass-card-static flex-1">
