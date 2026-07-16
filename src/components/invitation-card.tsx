@@ -49,8 +49,8 @@ export function GoldDust({ count = 26 }: { count?: number }) {
               background: 'radial-gradient(circle, rgba(246,231,183,0.95) 0%, rgba(212,175,55,0.55) 55%, transparent 100%)',
               boxShadow: '0 0 8px 2px rgba(212,175,55,0.35)',
               animation: `floatGoldSparkle ${duration}s ease-in-out ${delay}s infinite`,
-              ['--drift-x' as any]: `${drift}px`,
-            }}
+              '--drift-x': `${drift}px`,
+            } as React.CSSProperties}
           />
         );
       })}
