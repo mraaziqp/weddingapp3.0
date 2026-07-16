@@ -12,7 +12,7 @@ import { differenceInSeconds } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { usePartyMode } from '@/hooks/use-party-mode';
 import { cn } from '@/lib/utils';
-import { fetchDashboardStats } from '@/lib/stats';
+import { fetchDashboardStats, type DashboardStats } from '@/lib/stats';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -211,7 +211,7 @@ const MusicWidget = () => (
     </MotionCard>
 );
 
-const RSVPStatus = ({ confirmed, total }: { confirmed: number; total: number }) => {
+const RSVPStatus = ({ confirmed, pending, declined, total }: { confirmed: number; pending: number; declined: number; total: number }) => {
     const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
     const [offset, setOffset] = useState(251);
 
@@ -221,10 +221,10 @@ const RSVPStatus = ({ confirmed, total }: { confirmed: number; total: number }) 
         <MotionCard variants={itemVariants} whileHover={{ y: -4 }} className="bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl group relative overflow-hidden">
              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="pb-0">
-                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">RSVP Status</CardTitle>
+                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">RSVP Summary</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center p-6">
-                <div className="relative w-28 h-28 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <CardContent className="flex flex-col items-center justify-center p-5">
+                <div className="relative w-24 h-24 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                     <svg className="w-full h-full" viewBox="0 0 100 100">
                         <circle className="text-white/5" strokeWidth="6" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
                         <motion.circle
@@ -244,10 +244,84 @@ const RSVPStatus = ({ confirmed, total }: { confirmed: number; total: number }) 
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="font-serif text-3xl font-light text-white">{confirmed}</span>
+                        <span className="font-serif text-2xl font-light text-white">{percentage}%</span>
+                        <span className="text-[8px] uppercase tracking-widest text-white/40">Attending</span>
                     </div>
                 </div>
-                 <p className="text-[10px] uppercase tracking-widest text-white/40 mt-4">Out of {total}</p>
+                
+                <div className="w-full mt-4 space-y-1.5 text-[11px] text-white/80">
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Accepted</span>
+                        <span className="font-semibold">{confirmed}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Declined</span>
+                        <span className="font-semibold">{declined}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-zinc-500" /> Pending</span>
+                        <span className="font-semibold">{pending}</span>
+                    </div>
+                </div>
+            </CardContent>
+        </MotionCard>
+    );
+};
+
+const GuestSideBreakdown = ({ groom, bride, total }: { groom: number; bride: number; total: number }) => {
+    const groomPercent = total > 0 ? Math.round((groom / total) * 100) : 0;
+    const bridePercent = total > 0 ? Math.round((bride / total) * 100) : 0;
+    const untagged = Math.max(0, total - (groom + bride));
+    const untaggedPercent = total > 0 ? Math.round((untagged / total) * 100) : 0;
+
+    return (
+        <MotionCard variants={itemVariants} whileHover={{ y: -4 }} className="bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="pb-0">
+                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Side Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col justify-center p-5">
+                <div className="space-y-4">
+                    {/* Visual Segmented Progress Bar */}
+                    <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden flex border border-white/5">
+                        {groom > 0 && (
+                            <div 
+                                style={{ width: `${groomPercent}%` }} 
+                                className="h-full bg-emerald-600 bg-gradient-to-r from-emerald-700 to-emerald-500" 
+                            />
+                        )}
+                        {bride > 0 && (
+                            <div 
+                                style={{ width: `${bridePercent}%` }} 
+                                className="h-full bg-indigo-600 bg-gradient-to-r from-indigo-700 to-indigo-500" 
+                            />
+                        )}
+                        {untagged > 0 && (
+                            <div 
+                                style={{ width: `${untaggedPercent}%` }} 
+                                className="h-full bg-zinc-600" 
+                            />
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Groom's Side</p>
+                            <p className="font-serif text-lg text-emerald-400 mt-0.5">{groom}</p>
+                            <p className="text-[9px] text-white/50">{groomPercent}% of total</p>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Bride's Side</p>
+                            <p className="font-serif text-lg text-indigo-400 mt-0.5">{bride}</p>
+                            <p className="text-[9px] text-white/50">{bridePercent}% of total</p>
+                        </div>
+                    </div>
+                    {untagged > 0 && (
+                        <p className="text-[9px] text-white/30 text-center italic mt-1 leading-none">
+                            {untagged} untagged guest{untagged > 1 ? 's' : ''}
+                        </p>
+                    )}
+                </div>
             </CardContent>
         </MotionCard>
     );
@@ -273,7 +347,7 @@ const LatestGift = () => (
 );
 
 const SeatingMiniMap = () => (
-    <MotionCard variants={itemVariants} whileHover={{ y: -4 }} className="md:col-span-3 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden relative group">
+    <MotionCard variants={itemVariants} whileHover={{ y: -4 }} className="md:col-span-2 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden relative group">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
          <CardHeader className="relative z-10 border-b border-white/5 pb-4 bg-black/20">
             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-400 flex items-center justify-between">
@@ -302,13 +376,21 @@ const SeatingMiniMap = () => (
 );
 
 export function AnalyticsDashboard() {
-  const [stats, setStats] = useState({ confirmedGuests: 0, totalGuests: 0 });
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     fetchDashboardStats()
-      .then(data => setStats({ confirmedGuests: data.confirmedGuests, totalGuests: data.totalGuests }))
+      .then(data => setStats(data))
       .catch(err => console.error('Failed to fetch stats:', err));
   }, []);
+
+  if (!stats) {
+    return (
+      <div className="flex h-48 w-full items-center justify-center">
+        <span className="text-[#d4af37] font-serif italic text-lg animate-pulse">Loading dashboard...</span>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -320,10 +402,19 @@ export function AnalyticsDashboard() {
         <CountdownCard />
         <QuickActions />
         <MusicWidget />
-        <RSVPStatus confirmed={stats.confirmedGuests} total={stats.totalGuests || 250} />
+        <RSVPStatus 
+          confirmed={stats.confirmedGuests} 
+          pending={stats.pendingGuests}
+          declined={stats.declinedGuests}
+          total={stats.totalGuests}
+        />
+        <GuestSideBreakdown 
+          groom={stats.groomCount}
+          bride={stats.brideCount}
+          total={stats.totalGuests}
+        />
         <LatestGift />
         <SeatingMiniMap />
     </motion.div>
   )
 }
-

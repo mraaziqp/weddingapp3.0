@@ -10,6 +10,8 @@ export interface DashboardStats {
   checkedInCount: number;
   vegetarianCount: number;
   veganCount: number;
+  groomCount: number;
+  brideCount: number;
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
@@ -17,7 +19,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     // Fetch guests with RSVP counts
     const { data: guests, error: guestErr } = await supabase
       .from('guests')
-      .select('id, rsvp_status, dietary_restrictions, checked_in_at');
+      .select('id, rsvp_status, dietary_restrictions, checked_in_at, tags');
 
     if (guestErr) throw guestErr;
 
@@ -27,6 +29,9 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     const pendingGuests = guestList.filter(g => g.rsvp_status === 'Pending').length;
     const declinedGuests = guestList.filter(g => g.rsvp_status === 'Regret').length;
     const checkedInCount = guestList.filter(g => g.checked_in_at).length;
+
+    const groomCount = guestList.filter(g => g.tags?.some((t: string) => t.includes("Groom's"))).length;
+    const brideCount = guestList.filter(g => g.tags?.some((t: string) => t.includes("Bride's"))).length;
 
     // Dietary counts
     const vegetarianCount = guestList.filter(
@@ -55,6 +60,8 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       checkedInCount,
       vegetarianCount,
       veganCount,
+      groomCount,
+      brideCount,
     };
   } catch (error) {
     console.error('Failed to fetch dashboard stats:', error);
@@ -68,6 +75,8 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       checkedInCount: 0,
       vegetarianCount: 0,
       veganCount: 0,
+      groomCount: 0,
+      brideCount: 0,
     };
   }
 }
