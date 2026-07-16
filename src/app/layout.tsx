@@ -7,6 +7,7 @@ import { AudioProvider } from '@/lib/audio-context';
 import { LuxuryToaster } from '@/components/luxury-toaster';
 import { SwRegistration } from '@/components/sw-registration';
 import { ExperienceSettingsSync } from '@/components/experience-settings-sync';
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,7 @@ export default function RootLayout({
         </AudioProvider>
         <LuxuryToaster />
         <SwRegistration />
+        <PwaInstallPrompt />
       </body>
     </html>
   );
