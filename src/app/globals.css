@@ -371,23 +371,23 @@
 }
 
 /* Botanical Card (Style 1) Classes */
-.c1-bismillah { font-size: calc(7.8 * var(--cqw)); }
-.c1-bismillah-sub { font-size: calc(2.1 * var(--cqw)); }
-.c1-bismillah-trans { font-size: calc(2.7 * var(--cqw)); }
+.c1-bismillah { font-size: calc(6.8 * var(--cqw)); }
+.c1-bismillah-sub { font-size: calc(1.8 * var(--cqw)); }
+.c1-bismillah-trans { font-size: calc(2.2 * var(--cqw)); }
 .c1-divider { width: calc(80 * var(--cqw)); }
-.c1-name { font-size: calc(8.8 * var(--cqw)); }
-.c1-parent { font-size: calc(2.8 * var(--cqw)); }
-.c1-ampersand-wrap { gap: calc(1.4 * var(--cqw)); }
-.c1-ampersand { font-size: calc(5.8 * var(--cqw)); }
-.c1-col-header { font-size: calc(3.1 * var(--cqw)); }
-.c1-col-text { font-size: calc(2.8 * var(--cqw)); }
-.c1-col-sub { font-size: calc(2.5 * var(--cqw)); }
-.c1-poem-header { font-size: calc(2.9 * var(--cqw)); }
-.c1-poem-text { font-size: calc(2.5 * var(--cqw)); }
-.c1-guest-name { font-size: calc(4.4 * var(--cqw)); }
-.c1-rsvp-header { font-size: calc(2.8 * var(--cqw)); }
-.c1-rsvp-contact { font-size: calc(2.5 * var(--cqw)); }
-.c1-rsvp-footnote { font-size: calc(2.3 * var(--cqw)); }
+.c1-name { font-size: calc(7.6 * var(--cqw)); }
+.c1-parent { font-size: calc(2.4 * var(--cqw)); }
+.c1-ampersand-wrap { gap: calc(1.2 * var(--cqw)); }
+.c1-ampersand { font-size: calc(4.6 * var(--cqw)); }
+.c1-col-header { font-size: calc(2.7 * var(--cqw)); }
+.c1-col-text { font-size: calc(2.4 * var(--cqw)); }
+.c1-col-sub { font-size: calc(2.1 * var(--cqw)); }
+.c1-poem-header { font-size: calc(2.4 * var(--cqw)); }
+.c1-poem-text { font-size: calc(2.1 * var(--cqw)); }
+.c1-guest-name { font-size: calc(3.6 * var(--cqw)); }
+.c1-rsvp-header { font-size: calc(2.3 * var(--cqw)); }
+.c1-rsvp-contact { font-size: calc(2.1 * var(--cqw)); }
+.c1-rsvp-footnote { font-size: calc(1.8 * var(--cqw)); }
 
 /* Style 1 Sizing Polyfills */
 .c1-card-radius {
@@ -414,30 +414,30 @@
   width: 36vw;
 }
 .c1-card-content {
-  gap: 2.5vw;
-  padding: 4vw 8.5vw;
+  gap: 1.2vw;
+  padding: 3vw 7vw;
 }
 .c1-bismillah-sub-container {
   max-width: 52vw;
 }
 .c1-bismillah-sub-margin {
-  margin-top: 1vw;
+  margin-top: 0.5vw;
 }
 .c1-header-container {
   max-width: 80vw;
 }
 .c1-parent-margin {
-  margin-top: 0.6vw;
+  margin-top: 0.3vw;
 }
 .c1-ampersand-margin {
-  margin-top: 0.3vw;
-  margin-bottom: 0.3vw;
+  margin-top: 0.2vw;
+  margin-bottom: 0.2vw;
 }
 .c1-poem-text-margin {
-  margin-top: 0.2vw;
+  margin-top: 0.1vw;
 }
 .c1-rsvp-footnote-margin {
-  margin-top: 0.8vw;
+  margin-top: 0.4vw;
 }
 
 @supports (width: 1cqw) {
@@ -465,30 +465,30 @@
     width: 36cqw;
   }
   .c1-card-content {
-    gap: 2.5cqw;
-    padding: 4cqw 8.5cqw;
+    gap: 1.2cqw;
+    padding: 3cqw 7cqw;
   }
   .c1-bismillah-sub-container {
     max-width: 52cqw;
   }
   .c1-bismillah-sub-margin {
-    margin-top: 1cqw;
+    margin-top: 0.5cqw;
   }
   .c1-header-container {
     max-width: 80cqw;
   }
   .c1-parent-margin {
-    margin-top: 0.6cqw;
+    margin-top: 0.3cqw;
   }
   .c1-ampersand-margin {
-    margin-top: 0.3cqw;
-    margin-bottom: 0.3cqw;
+    margin-top: 0.2cqw;
+    margin-bottom: 0.2cqw;
   }
   .c1-poem-text-margin {
-    margin-top: 0.2cqw;
+    margin-top: 0.1cqw;
   }
   .c1-rsvp-footnote-margin {
-    margin-top: 0.8cqw;
+    margin-top: 0.4cqw;
   }
 }
 
