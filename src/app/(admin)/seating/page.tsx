@@ -12,7 +12,7 @@ export default function SeatingPage() {
   const [activeTab, setActiveTab] = useState<'visual' | 'manage'>('visual');
 
   return (
-    <div className="relative min-h-screen space-y-8 p-4 md:p-8 overflow-hidden font-sans">
+    <div className="relative h-screen flex flex-col p-4 md:p-6 overflow-hidden font-sans">
       {/* Background Animated Blobs for Premium Feel */}
       <div className="fixed inset-0 pointer-events-none z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-blue-900/15 blur-[120px] mix-blend-screen animate-pulse duration-10000" />
@@ -24,18 +24,18 @@ export default function SeatingPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-6 border-b border-white/10"
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-4 border-b border-white/10 shrink-0"
       >
-        <div className="space-y-2">
-          <Badge variant="outline" className="text-[10px] uppercase tracking-[0.2em] border-blue-500/30 text-blue-300 py-1 px-3 bg-blue-500/10 mb-2">
+        <div className="space-y-1">
+          <Badge variant="outline" className="text-[10px] uppercase tracking-[0.2em] border-blue-500/30 text-blue-300 py-1 px-3 bg-blue-500/10 mb-1.5">
             <Sparkles size={12} className="mr-2 inline" /> Seating Control
           </Badge>
-          <h1 className="font-serif text-5xl md:text-6xl font-light tracking-tight text-white/90">
+          <h1 className="font-serif text-3xl md:text-4xl font-light tracking-tight text-white/90">
             {activeTab === 'visual' ? 'Visual' : 'Table'} <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500">Seating</span> Studio
           </h1>
-          <p className="text-muted-foreground tracking-wide text-sm md:text-base max-w-2xl font-light">
+          <p className="text-muted-foreground tracking-wide text-xs max-w-2xl font-light">
             {activeTab === 'visual'
-              ? 'Venue preset loaded for a 21-person layout with a bride & groom head table and stage-front flow. Drag and drop guests to optimize the floor plan.'
+              ? 'Ballroom preset loaded for Tuscany Venue (300 guests capacity). Drag and drop guests to optimize the floor plan.'
               : 'Manage table assignments, track guest placement, and organize seating arrangements with real-time analytics.'}
           </p>
         </div>
@@ -45,17 +45,17 @@ export default function SeatingPage() {
           <Button
             onClick={() => setActiveTab('visual')}
             variant={activeTab === 'visual' ? 'default' : 'outline'}
-            className={activeTab === 'visual' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+            className={activeTab === 'visual' ? 'bg-blue-600 hover:bg-blue-700 h-9 text-xs' : 'h-9 text-xs'}
           >
-            <Map size={16} className="mr-2" />
+            <Map size={14} className="mr-2" />
             Visual Planner
           </Button>
           <Button
             onClick={() => setActiveTab('manage')}
             variant={activeTab === 'manage' ? 'default' : 'outline'}
-            className={activeTab === 'manage' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={activeTab === 'manage' ? 'bg-emerald-600 hover:bg-emerald-700 h-9 text-xs' : 'h-9 text-xs'}
           >
-            <ListTodo size={16} className="mr-2" />
+            <ListTodo size={14} className="mr-2" />
             Table Manager
           </Button>
         </div>
@@ -65,6 +65,7 @@ export default function SeatingPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
+        className="flex-1 min-h-0 flex flex-col mt-4"
       >
         {activeTab === 'visual' && <SeatingChart />}
         {activeTab === 'manage' && <SeatingManager />}

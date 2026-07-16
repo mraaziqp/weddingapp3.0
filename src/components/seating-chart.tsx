@@ -55,13 +55,23 @@ const VENUE_LAYOUT_TABLES: Table[] = [
     name: 'Bride & Groom',
     capacity: 2,
     shape: 'rectangle',
-    x: 300,
+    x: 875,
     y: 135,
     guests: [],
   },
-  { id: 'table-1', name: 'Table 1', capacity: 8, shape: 'round-8', guests: [], x: 70, y: 345 },
-  { id: 'table-2', name: 'Table 2', capacity: 8, shape: 'round-8', guests: [], x: 330, y: 345 },
-  { id: 'table-3', name: 'Table 3', capacity: 8, shape: 'round-8', guests: [], x: 590, y: 345 },
+  // Left Side (Groom's Side)
+  { id: 'table-1', name: 'Table 1', capacity: 10, shape: 'round-10', guests: [], x: 600, y: 320 },
+  { id: 'table-2', name: 'Table 2', capacity: 10, shape: 'round-10', guests: [], x: 300, y: 320 },
+  { id: 'table-3', name: 'Table 3', capacity: 8, shape: 'round-8', guests: [], x: 600, y: 600 },
+  { id: 'table-4', name: 'Table 4', capacity: 8, shape: 'round-8', guests: [], x: 300, y: 600 },
+  { id: 'table-5', name: 'Table 5', capacity: 8, shape: 'round-8', guests: [], x: 450, y: 880 },
+
+  // Right Side (Bride's Side)
+  { id: 'table-6', name: 'Table 6', capacity: 10, shape: 'round-10', guests: [], x: 1150, y: 320 },
+  { id: 'table-7', name: 'Table 7', capacity: 10, shape: 'round-10', guests: [], x: 1450, y: 320 },
+  { id: 'table-8', name: 'Table 8', capacity: 8, shape: 'round-8', guests: [], x: 1150, y: 600 },
+  { id: 'table-9', name: 'Table 9', capacity: 8, shape: 'round-8', guests: [], x: 1450, y: 600 },
+  { id: 'table-10', name: 'Table 10', capacity: 8, shape: 'round-8', guests: [], x: 1300, y: 880 },
 ];
 
 const VENUE_DIMENSIONS = {
@@ -869,9 +879,9 @@ export function SeatingChart() {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-3">
+    <div className="flex-1 flex flex-col gap-3 min-h-0">
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" data-print-hide>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between shrink-0" data-print-hide>
         {/* Summary badge */}
         <div className="flex flex-wrap items-center gap-2 text-sm text-white/50">
           <Users size={14} />
@@ -902,6 +912,24 @@ export function SeatingChart() {
               {showUnseatedPanel ? 'Hide Guests' : 'Show Guests'}
             </Button>
           )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size={isMobile ? 'sm' : 'default'} 
+                className="gap-2 border-white/10 hover:bg-white/5 text-white"
+              >
+                <Plus size={15} /> Add Table
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 glass-card p-1 text-white border-white/10" align="end">
+              <div className="flex flex-col">
+                <Button variant="ghost" className="justify-start text-xs text-white/80 hover:text-white" onClick={() => addTable('round-8')}>Round 8-Seater</Button>
+                <Button variant="ghost" className="justify-start text-xs text-white/80 hover:text-white" onClick={() => addTable('round-10')}>Round 10-Seater</Button>
+                <Button variant="ghost" className="justify-start text-xs text-white/80 hover:text-white" onClick={() => addTable('rectangle')}>Rectangular Table</Button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             variant="outline"
             size={isMobile ? 'sm' : 'default'}
@@ -955,8 +983,8 @@ export function SeatingChart() {
       <div id="seating-print-area" className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         {(showUnseatedPanel || !isMobile) && (
-          <Card className="glass-card lg:col-span-3" data-print-hide>
-            <CardHeader className="space-y-2">
+          <Card className="glass-card lg:col-span-3 h-full flex flex-col min-h-0" data-print-hide>
+            <CardHeader className="space-y-2 shrink-0">
               <CardTitle className="flex items-center justify-between">
                 <span>Unseated Guests</span>
                 <span className="text-xs font-normal text-white/40">{unseatedGuests.length}</span>
@@ -974,7 +1002,7 @@ export function SeatingChart() {
               )}
               <p className="text-[11px] text-white/35">Drag a guest onto a table, or tap <ArrowRightLeft className="inline h-2.5 w-2.5 -translate-y-px" /> to assign instantly.</p>
             </CardHeader>
-            <CardContent className="space-y-2 overflow-y-auto pr-2 max-h-[34dvh] lg:max-h-[calc(100%-6rem)]">
+            <CardContent className="space-y-2 overflow-y-auto pr-2 flex-1 min-h-0">
               {filteredUnseatedGuests.length === 0 ? (
                 <p className="py-6 text-center text-sm text-white/30">
                   {unseatedGuests.length === 0 ? 'Everyone is seated 🎉' : 'No guests match your search.'}
@@ -996,9 +1024,9 @@ export function SeatingChart() {
           </Card>
         )}
 
-        <div className="lg:col-span-9">
-        <div className="relative h-[62dvh] min-h-[520px] overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4 lg:h-full" id="canvas-shell">
-        <div ref={canvasBoundsRef} className="relative min-h-[520px] min-w-[760px] lg:min-h-full lg:min-w-0" id="canvas">
+        <div className="lg:col-span-9 h-full min-h-0">
+        <div className="relative h-[62dvh] min-h-[520px] overflow-auto rounded-2xl border border-white/10 bg-black/20 p-4 lg:h-full scrollbar-thin" id="canvas-shell">
+        <div ref={canvasBoundsRef} className="relative w-[2000px] h-[1200px] rounded-2xl bg-black/30 border border-white/5 overflow-hidden" id="canvas">
           <div
             aria-hidden
             className="absolute inset-0 opacity-20 pointer-events-none"
@@ -1013,28 +1041,15 @@ export function SeatingChart() {
             Approx Hall: {VENUE_DIMENSIONS.depthMeters}m x {VENUE_DIMENSIONS.widthMeters}m
           </div>
 
-          <div className="absolute top-[94px] left-1/2 -translate-x-1/2 h-[68%] w-[96px] rounded-full border border-[#d4af37]/35 bg-[#d4af37]/10 pointer-events-none z-0" />
-          <div className="absolute top-[130px] left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.2em] text-[#f6e7b7]/80 pointer-events-none z-0">
+          <div className="absolute top-[140px] left-1/2 -translate-x-1/2 h-[950px] w-[96px] rounded-full border border-[#d4af37]/25 bg-[#d4af37]/5 pointer-events-none z-0" />
+          <div className="absolute top-[180px] left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.25em] text-[#f6e7b7]/90 font-bold pointer-events-none z-0">
             Main Aisle
           </div>
 
-          <div id="main-stage" className="absolute top-4 left-1/2 -translate-x-1/2 w-[40%] h-20 bg-aurora-gold/20 border-2 border-aurora-gold rounded-lg flex items-center justify-center z-0">
+          <div id="main-stage" className="absolute top-4 left-1/2 -translate-x-1/2 w-[480px] h-20 bg-aurora-gold/25 border-2 border-aurora-gold rounded-xl flex items-center justify-center z-0 shadow-lg shadow-aurora-gold/10">
             <h3 className='font-headline text-xl text-aurora-soft-gold italic flex items-center gap-2'><Crown /> Main Stage</h3>
           </div>
           
-           <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size={isMobile ? 'sm' : 'default'} className="absolute right-4 top-4 z-20" data-print-hide> <Plus className="mr-2"/> Add Table</Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto glass-card p-2">
-                <div className="flex flex-col gap-2">
-                    <Button variant="ghost" onClick={() => addTable('round-8')}>Round 8-Seater</Button>
-                    <Button variant="ghost" onClick={() => addTable('round-10')}>Round 10-Seater</Button>
-                    <Button variant="ghost" onClick={() => addTable('rectangle')}>Rectangular Table</Button>
-                </div>
-            </PopoverContent>
-          </Popover>
-
             <SortableContext items={containers}>
             {tables.map(table => (
               <DraggableTableWrapper key={table.id} table={table} onPositionChange={handleTablePositionChange} dragBoundsRef={canvasBoundsRef}>
