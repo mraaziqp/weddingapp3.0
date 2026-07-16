@@ -182,7 +182,7 @@ export function InvitationCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
+      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
         backgroundImage: 'url("/villa-courtyard.jpg")',
         backgroundSize: 'cover',
@@ -197,33 +197,33 @@ export function InvitationCard({
       <img
         src="/wedding-flowers.png"
         alt=""
-        className="absolute top-[-4cqw] left-[-4cqw] w-[34cqw] select-none pointer-events-none opacity-90 rotate-[-12deg] z-10"
+        className="absolute select-none pointer-events-none opacity-90 rotate-[-12deg] z-10 c1-corner-flower-tl"
         style={{ mixBlendMode: 'multiply' }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/wedding-flowers.png"
         alt=""
-        className="absolute top-[-4cqw] right-[-4cqw] w-[34cqw] select-none pointer-events-none opacity-90 scale-x-[-1] rotate-[12deg] z-10"
+        className="absolute select-none pointer-events-none opacity-90 scale-x-[-1] rotate-[12deg] z-10 c1-corner-flower-tr"
         style={{ mixBlendMode: 'multiply' }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/wedding-flowers.png"
         alt=""
-        className="absolute bottom-[-5cqw] left-[-5cqw] w-[36cqw] select-none pointer-events-none opacity-90 scale-y-[-1] rotate-[12deg] z-10"
+        className="absolute select-none pointer-events-none opacity-90 scale-y-[-1] rotate-[12deg] z-10 c1-corner-flower-bl"
         style={{ mixBlendMode: 'multiply' }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/wedding-flowers.png"
         alt=""
-        className="absolute bottom-[-5cqw] right-[-5cqw] w-[36cqw] select-none pointer-events-none opacity-90 scale-[-1] rotate-[-12deg] z-10"
+        className="absolute select-none pointer-events-none opacity-90 scale-[-1] rotate-[-12deg] z-10 c1-corner-flower-br"
         style={{ mixBlendMode: 'multiply' }}
       />
 
       {/* Card content — vertically composed and centered with compact spacing */}
-      <div className="relative flex h-full flex-col items-center justify-center gap-[2.5cqw] px-[8.5cqw] py-[5.5cqw] text-center z-20">
+      <div className="relative flex h-full flex-col items-center justify-center text-center z-20 c1-card-content">
         
         {/* Arabic Calligraphy and Translation */}
         <motion.div variants={riseIn} className="flex flex-col items-center">
@@ -234,7 +234,7 @@ export function InvitationCard({
             بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
           </p>
           <p
-            className="mt-[1cqw] c1-bismillah-sub font-bold uppercase tracking-[0.14em] text-[#2e3b32] max-w-[52cqw] leading-relaxed"
+            className="c1-bismillah-sub-margin c1-bismillah-sub font-bold uppercase tracking-[0.14em] text-[#2e3b32] c1-bismillah-sub-container leading-relaxed"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             In The Name of Allah, <br />
@@ -248,7 +248,7 @@ export function InvitationCard({
         {/* Families Invitation Header */}
         <motion.p
           variants={riseIn}
-          className="c1-bismillah-trans leading-[1.6] text-[#122217] max-w-[80cqw] font-bold"
+          className="c1-bismillah-trans leading-[1.6] text-[#122217] c1-header-container font-bold"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
           The Parker and Shade Families Request The Honour Of Your Presence At <br />
@@ -268,7 +268,7 @@ export function InvitationCard({
               Abduraziq Parker
             </h1>
             <p
-              className="mt-[0.6cqw] c1-parent font-semibold text-[#2e3b32]"
+              className="c1-parent-margin c1-parent font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Son of Abdussataar and Shanaaz Parker
@@ -276,7 +276,7 @@ export function InvitationCard({
           </div>
 
           {/* Script Ampersand, flanked by tiny flower sprigs */}
-          <span className="flex items-center my-[0.3cqw]" style={{ gap: 'calc(1.4 * var(--cqw))' }}>
+          <span className="flex items-center c1-ampersand-margin" style={{ gap: 'calc(1.4 * var(--cqw))' }}>
             <FlowerSprig className="text-[#7a8f6a]/70 scale-x-[-1]" style={{ height: 'calc(2.4 * var(--cqw))', width: 'calc(4 * var(--cqw))' }} />
             <span
               className="c1-ampersand text-[#083d1c] font-bold"
@@ -296,7 +296,7 @@ export function InvitationCard({
               Razia Shade
             </h1>
             <p
-              className="mt-[0.6cqw] c1-parent font-semibold text-[#2e3b32]"
+              className="c1-parent-margin c1-parent font-semibold text-[#2e3b32]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               The Daughter of Sabri and Samalika Shade
@@ -410,7 +410,7 @@ export function InvitationCard({
               &ldquo;And We created you in pairs&rdquo;
             </p>
             <p
-              className="c1-poem-text text-[#455249] font-medium mt-[0.2cqw]"
+              className="c1-poem-text text-[#455249] font-medium c1-poem-text-margin"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               (Surah 78, verse 8)
@@ -452,7 +452,7 @@ export function InvitationCard({
               <span>Ayaaz Parker: 0718665123</span>
             </div>
             <p
-              className="c1-rsvp-footnote font-bold tracking-[0.12em] text-[#083d1c] uppercase mt-[0.8cqw]"
+              className="c1-rsvp-footnote font-bold tracking-[0.12em] text-[#083d1c] uppercase c1-rsvp-footnote-margin"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Please accept this as a personal invitation
@@ -533,7 +533,7 @@ export function GiftingCard({
 }) {
   return (
     <div
-      className={`relative mx-auto ${widthClass} [container-type:inline-size] overflow-hidden rounded-[2cqw] shadow-[0_30px_90px_rgba(0,0,0,0.55),0_0_40px_rgba(212,175,55,0.08)]`}
+      className={`relative mx-auto ${widthClass} [container-type:inline-size] overflow-hidden cg-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.55),0_0_40px_rgba(212,175,55,0.08)]`}
       style={{
         background:
           'radial-gradient(circle at 50% 8%, rgba(255,252,244,1) 0%, rgba(250,243,229,1) 55%, rgba(242,232,212,1) 100%)',
@@ -543,42 +543,42 @@ export function GiftingCard({
       <div className="pointer-events-none absolute inset-0 opacity-[0.35] mix-blend-multiply bg-[url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20700%20700%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22p%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.9%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23p)%22%20opacity%3D%220.35%22%2F%3E%3C%2Fsvg%3E')]" />
 
       {/* hairline gold frame */}
-      <div className="pointer-events-none absolute inset-[2.6cqw] rounded-[1.2cqw] border border-[#b49254]/40" />
+      <div className="pointer-events-none absolute cg-card-border-inset cg-card-border-radius border border-[#b49254]/40" />
 
       {/* henna corner mandalas */}
-      <div className="pointer-events-none absolute left-[1cqw] top-[1cqw] h-[24cqw] w-[24cqw] text-[#a08a5f]/55">
+      <div className="pointer-events-none absolute cg-henna-corner-tl cg-henna-size text-[#a08a5f]/55">
         <HennaCorner className="h-full w-full" />
       </div>
-      <div className="pointer-events-none absolute right-[1cqw] top-[1cqw] h-[24cqw] w-[24cqw] scale-x-[-1] text-[#a08a5f]/55">
+      <div className="pointer-events-none absolute cg-henna-corner-tr cg-henna-size scale-x-[-1] text-[#a08a5f]/55">
         <HennaCorner className="h-full w-full" />
       </div>
-      <div className="pointer-events-none absolute bottom-[1cqw] left-[1cqw] h-[24cqw] w-[24cqw] scale-y-[-1] text-[#a08a5f]/55">
+      <div className="pointer-events-none absolute cg-henna-corner-bl cg-henna-size scale-y-[-1] text-[#a08a5f]/55">
         <HennaCorner className="h-full w-full" />
       </div>
-      <div className="pointer-events-none absolute bottom-[1cqw] right-[1cqw] h-[24cqw] w-[24cqw] scale-x-[-1] scale-y-[-1] text-[#a08a5f]/55">
+      <div className="pointer-events-none absolute cg-henna-corner-br cg-henna-size scale-x-[-1] scale-y-[-1] text-[#a08a5f]/55">
         <HennaCorner className="h-full w-full" />
       </div>
 
       {/* content */}
-      <div className="relative flex flex-col items-center px-[13cqw] py-[9cqw] text-center">
+      <div className="relative flex flex-col items-center cg-card-content text-center">
         <p
-          className="text-[11cqw] leading-none text-[#8a6f3c]"
+          className="cg-title-text leading-none text-[#8a6f3c]"
           style={{ fontFamily: "'Great Vibes', cursive", textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}
         >
           Gifting
         </p>
 
         {/* small flourish divider */}
-        <div className="mt-[3cqw] flex items-center gap-[2cqw] text-[#b49254]">
-          <div className="h-px w-[10cqw] bg-gradient-to-r from-transparent to-[#b49254]/70" />
-          <svg viewBox="0 0 24 24" className="h-[2.6cqw] w-[2.6cqw]" fill="currentColor" aria-hidden>
+        <div className="cg-divider-margin flex items-center text-[#b49254]" style={{ gap: 'calc(2 * var(--cqw))' }}>
+          <div className="h-px cg-line-size bg-gradient-to-r from-transparent to-[#b49254]/70" />
+          <svg viewBox="0 0 24 24" className="cg-icon-size" fill="currentColor" aria-hidden>
             <path d="M12 21s-6.7-4.3-9.3-8.4C.8 9.5 2.3 5.6 5.7 5.1c2-.3 3.9.8 4.9 2.6l1.4 2.3 1.4-2.3c1-1.8 2.9-2.9 4.9-2.6 3.4.5 4.9 4.4 3 7.5C18.7 16.7 12 21 12 21z" />
           </svg>
-          <div className="h-px w-[10cqw] bg-gradient-to-l from-transparent to-[#b49254]/70" />
+          <div className="h-px cg-line-size bg-gradient-to-l from-transparent to-[#b49254]/70" />
         </div>
 
         <p
-          className="mt-[4.5cqw] whitespace-pre-line text-[3.9cqw] italic leading-[1.85] text-[#4c4436]"
+          className="cg-poem-margin whitespace-pre-line cg-poem-text italic leading-[1.85] text-[#4c4436]"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
           {poem}
@@ -610,7 +610,7 @@ export function NavyRoyalCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden rounded-[2.5cqw] shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
+      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
       style={{
         background: 'radial-gradient(circle at center, #fdfcfb 0%, #faf8f5 60%, #f4eee1 100%)'
       }}
@@ -625,14 +625,14 @@ export function NavyRoyalCard({
       />
 
       {/* Gold Line Art Flowers framing the Navy & Gold card */}
-      <GoldLineArtFlower className="absolute top-[-4cqw] left-[-6cqw] w-[46cqw] h-[46cqw] select-none pointer-events-none opacity-[0.38] rotate-[15deg] z-10" />
-      <GoldLineArtFlower className="absolute bottom-[-10cqw] right-[-6cqw] w-[50cqw] h-[50cqw] select-none pointer-events-none opacity-[0.38] rotate-[-45deg] scale-x-[-1] z-10" />
+      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.38] rotate-[15deg] z-10 c2-flower-top" />
+      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.38] rotate-[-45deg] scale-x-[-1] z-10 c2-flower-bottom" />
 
       {/* Card content — vertically composed with spaced classic roman typography */}
-      <div className="relative flex h-full flex-col items-center justify-between px-[8.5cqw] py-[6cqw] text-center z-20">
+      <div className="relative flex h-full flex-col items-center justify-between text-center z-20 c2-card-content">
         
         {/* Arabic Calligraphy */}
-        <motion.div variants={riseIn} className="flex flex-col items-center mt-[1cqw]">
+        <motion.div variants={riseIn} className="flex flex-col items-center c2-bismillah-margin">
           <p
             className="c2-bismillah font-bold leading-none text-[#b59650] select-none"
             style={{ fontFamily: "'Amiri', serif" }}
@@ -642,7 +642,7 @@ export function NavyRoyalCard({
         </motion.div>
 
         {/* Invitation Call Header */}
-        <motion.div variants={riseIn} className="flex flex-col items-center gap-[0.5cqw]">
+        <motion.div variants={riseIn} className="flex flex-col items-center c2-header-gap">
           <p
             className="c2-header font-bold uppercase tracking-[0.24em] text-[#556b82]"
             style={{ fontFamily: "'Cinzel', serif" }}
@@ -658,7 +658,7 @@ export function NavyRoyalCard({
         </motion.div>
 
         {/* Groom & Bride Section */}
-        <motion.div variants={stagger} className="flex flex-col items-center w-full my-[1cqw]">
+        <motion.div variants={stagger} className="flex flex-col items-center w-full c2-names-margin">
           {/* Groom: Abduraziq */}
           <motion.div variants={riseIn} className="flex flex-col items-center">
             <h1
@@ -668,7 +668,7 @@ export function NavyRoyalCard({
               Abduraziq
             </h1>
             <p
-              className="mt-[0.6cqw] c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
+              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Son of Abdussataar and Shanaaz Parker
@@ -678,7 +678,7 @@ export function NavyRoyalCard({
           {/* Elegant Navy Script Ampersand */}
           <motion.span 
             variants={riseIn}
-            className="c2-ampersand text-[#002855] italic my-[0.5cqw] block"
+            className="c2-ampersand text-[#002855] italic c2-ampersand-margin block"
             style={{ fontFamily: "'Great Vibes', cursive" }}
           >
             &amp;
@@ -693,7 +693,7 @@ export function NavyRoyalCard({
               Razia
             </h1>
             <p
-              className="mt-[0.6cqw] c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
+              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               The Daughter of Sabri and Samalika Shade
@@ -799,7 +799,7 @@ export function NavyRoyalCard({
 
         {/* RSVP Section */}
         {!nikkahOnly && (
-          <motion.div variants={riseIn} className="flex flex-col items-center w-full mb-[1cqw]" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
+          <motion.div variants={riseIn} className="flex flex-col items-center w-full c2-rsvp-margin" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
             <p
               className="c2-rsvp-header font-bold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
@@ -814,7 +814,7 @@ export function NavyRoyalCard({
               <span>Ayaaz Parker: 0718665123</span>
             </div>
             <p
-              className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#b59650] uppercase mt-[0.6cqw]"
+              className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#b59650] uppercase c2-rsvp-footnote-margin"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Please accept this as a personal invitation

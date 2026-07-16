@@ -333,14 +333,15 @@
 
 /* ─── Robust Cross-Device CSS Variable Sizing Polyfill ─────────────────── */
 .invitation-container {
-  --cqw: max(1.1vw, 5.0px);
+  --cqw: 5.2px; /* Legacy static fallback for very old engines (no max() support) */
+  --cqw: max(1.1vw, 5.0px); /* Responsive fallback if max() is supported */
 }
 @media (min-width: 640px) {
   .invitation-container {
     --cqw: 5.6px;
   }
 }
-@supports (container-type: inline-size) {
+@supports (width: 1cqw) {
   .invitation-container {
     --cqw: max(1cqw, 5.0px);
   }
@@ -365,6 +366,109 @@
 .c1-rsvp-contact { font-size: calc(2.3 * var(--cqw)); }
 .c1-rsvp-footnote { font-size: calc(2.1 * var(--cqw)); }
 
+/* Style 1 Sizing Polyfills */
+.c1-card-radius {
+  border-radius: 2.5vw;
+}
+.c1-corner-flower-tl {
+  top: -4vw;
+  left: -4vw;
+  width: 34vw;
+}
+.c1-corner-flower-tr {
+  top: -4vw;
+  right: -4vw;
+  width: 34vw;
+}
+.c1-corner-flower-bl {
+  bottom: -5vw;
+  left: -5vw;
+  width: 36vw;
+}
+.c1-corner-flower-br {
+  bottom: -5vw;
+  right: -5vw;
+  width: 36vw;
+}
+.c1-card-content {
+  gap: 2.5vw;
+  padding: 5.5vw 8.5vw;
+}
+.c1-bismillah-sub-container {
+  max-width: 52vw;
+}
+.c1-bismillah-sub-margin {
+  margin-top: 1vw;
+}
+.c1-header-container {
+  max-width: 80vw;
+}
+.c1-parent-margin {
+  margin-top: 0.6vw;
+}
+.c1-ampersand-margin {
+  margin-top: 0.3vw;
+  margin-bottom: 0.3vw;
+}
+.c1-poem-text-margin {
+  margin-top: 0.2vw;
+}
+.c1-rsvp-footnote-margin {
+  margin-top: 0.8vw;
+}
+
+@supports (width: 1cqw) {
+  .c1-card-radius {
+    border-radius: 2.5cqw;
+  }
+  .c1-corner-flower-tl {
+    top: -4cqw;
+    left: -4cqw;
+    width: 34cqw;
+  }
+  .c1-corner-flower-tr {
+    top: -4cqw;
+    right: -4cqw;
+    width: 34cqw;
+  }
+  .c1-corner-flower-bl {
+    bottom: -5cqw;
+    left: -5cqw;
+    width: 36cqw;
+  }
+  .c1-corner-flower-br {
+    bottom: -5cqw;
+    right: -5cqw;
+    width: 36cqw;
+  }
+  .c1-card-content {
+    gap: 2.5cqw;
+    padding: 5.5cqw 8.5cqw;
+  }
+  .c1-bismillah-sub-container {
+    max-width: 52cqw;
+  }
+  .c1-bismillah-sub-margin {
+    margin-top: 1cqw;
+  }
+  .c1-header-container {
+    max-width: 80cqw;
+  }
+  .c1-parent-margin {
+    margin-top: 0.6cqw;
+  }
+  .c1-ampersand-margin {
+    margin-top: 0.3cqw;
+    margin-bottom: 0.3cqw;
+  }
+  .c1-poem-text-margin {
+    margin-top: 0.2cqw;
+  }
+  .c1-rsvp-footnote-margin {
+    margin-top: 0.8cqw;
+  }
+}
+
 /* Navy Royal Card (Style 2) Classes */
 .c2-bismillah { font-size: calc(6.8 * var(--cqw)); }
 .c2-header { font-size: calc(2.1 * var(--cqw)); }
@@ -382,8 +486,179 @@
 .c2-rsvp-contact { font-size: calc(1.95 * var(--cqw)); }
 .c2-rsvp-footnote { font-size: calc(1.95 * var(--cqw)); }
 
+/* Style 2 Sizing Polyfills */
+.c2-flower-top {
+  top: -4vw;
+  left: -6vw;
+  width: 46vw;
+  height: 46vw;
+}
+.c2-flower-bottom {
+  bottom: -10vw;
+  right: -6vw;
+  width: 50vw;
+  height: 50vw;
+}
+.c2-card-content {
+  padding: 6vw 8.5vw;
+}
+.c2-bismillah-margin {
+  margin-top: 1vw;
+}
+.c2-header-gap {
+  gap: 0.5vw;
+}
+.c2-names-margin {
+  margin-top: 1vw;
+  margin-bottom: 1vw;
+}
+.c2-parent-margin {
+  margin-top: 0.6vw;
+}
+.c2-ampersand-margin {
+  margin-top: 0.5vw;
+  margin-bottom: 0.5vw;
+}
+.c2-rsvp-margin {
+  margin-bottom: 1vw;
+}
+.c2-rsvp-footnote-margin {
+  margin-top: 0.6vw;
+}
+
+@supports (width: 1cqw) {
+  .c2-flower-top {
+    top: -4cqw;
+    left: -6cqw;
+    width: 46cqw;
+    height: 46cqw;
+  }
+  .c2-flower-bottom {
+    bottom: -10cqw;
+    right: -6cqw;
+    width: 50cqw;
+    height: 50cqw;
+  }
+  .c2-card-content {
+    padding: 6cqw 8.5cqw;
+  }
+  .c2-bismillah-margin {
+    margin-top: 1cqw;
+  }
+  .c2-header-gap {
+    gap: 0.5cqw;
+  }
+  .c2-names-margin {
+    margin-top: 1cqw;
+    margin-bottom: 1cqw;
+  }
+  .c2-parent-margin {
+    margin-top: 0.6cqw;
+  }
+  .c2-ampersand-margin {
+    margin-top: 0.5cqw;
+    margin-bottom: 0.5cqw;
+  }
+  .c2-rsvp-margin {
+    margin-bottom: 1cqw;
+  }
+  .c2-rsvp-footnote-margin {
+    margin-top: 0.6cqw;
+  }
+}
+
+/* Gifting Card Polyfills */
+.cg-card-radius {
+  border-radius: 2vw;
+}
+.cg-card-border-inset {
+  top: 2.6vw;
+  right: 2.6vw;
+  bottom: 2.6vw;
+  left: 2.6vw;
+}
+.cg-card-border-radius {
+  border-radius: 1.2vw;
+}
+.cg-henna-corner-tl { left: 1vw; top: 1vw; }
+.cg-henna-corner-tr { right: 1vw; top: 1vw; }
+.cg-henna-corner-bl { left: 1vw; bottom: 1vw; }
+.cg-henna-corner-br { right: 1vw; bottom: 1vw; }
+.cg-henna-size {
+  width: 24vw;
+  height: 24vw;
+}
+.cg-card-content {
+  padding: 9vw 13vw;
+}
+.cg-title-text {
+  font-size: 11vw;
+}
+.cg-divider-margin {
+  margin-top: 3vw;
+}
+.cg-icon-size {
+  width: 2.6vw;
+  height: 2.6vw;
+}
+.cg-line-size {
+  width: 10vw;
+}
+.cg-poem-margin {
+  margin-top: 4.5vw;
+}
+.cg-poem-text {
+  font-size: 3.9vw;
+}
+
+@supports (width: 1cqw) {
+  .cg-card-radius {
+    border-radius: 2cqw;
+  }
+  .cg-card-border-inset {
+    top: 2.6cqw;
+    right: 2.6cqw;
+    bottom: 2.6cqw;
+    left: 2.6cqw;
+  }
+  .cg-card-border-radius {
+    border-radius: 1.2cqw;
+  }
+  .cg-henna-corner-tl { left: 1cqw; top: 1cqw; }
+  .cg-henna-corner-tr { right: 1cqw; top: 1cqw; }
+  .cg-henna-corner-bl { left: 1cqw; bottom: 1cqw; }
+  .cg-henna-corner-br { right: 1cqw; bottom: 1cqw; }
+  .cg-henna-size {
+    width: 24cqw;
+    height: 24cqw;
+  }
+  .cg-card-content {
+    padding: 9cqw 13cqw;
+  }
+  .cg-title-text {
+    font-size: 11cqw;
+  }
+  .cg-divider-margin {
+    margin-top: 3cqw;
+  }
+  .cg-icon-size {
+    width: 2.6cqw;
+    height: 2.6cqw;
+  }
+  .cg-line-size {
+    width: 10cqw;
+  }
+  .cg-poem-margin {
+    margin-top: 4.5cqw;
+  }
+  .cg-poem-text {
+    font-size: 3.9cqw;
+  }
+}
+
 /* Dynamic sizing for both styles of invitation card */
 .invitation-card-size {
+  width: 92vw; /* Fallback for legacy engines (e.g. no min() support) */
   width: calc(min(100vw - 16px, (100dvh - 80px) * 5 / 7));
 }
 
