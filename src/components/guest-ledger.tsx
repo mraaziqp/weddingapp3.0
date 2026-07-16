@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy, Send } from 'lucide-react';
+import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy, Send, Search } from 'lucide-react';
 import { fetchHouseholds, addHousehold, addGuestToHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import type { Household } from '@/lib/types';
@@ -181,6 +181,7 @@ function HouseholdForm({
 
 export function GuestLedger() {
     const [households, setHouseholds] = useState<Household[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addMode, setAddMode] = useState<'single' | 'multi'>('multi');
@@ -297,75 +298,96 @@ export function GuestLedger() {
         }
     };
 
+    const filteredHouseholds = households.filter(h => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return true;
+        const nameMatch = h.name?.toLowerCase().includes(query);
+        const guestMatch = h.guests?.some(g => 
+            `${g.firstName || ''} ${g.lastName || ''}`.toLowerCase().includes(query)
+        );
+        return nameMatch || guestMatch;
+    });
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex flex-col relative gap-3"
         >
-            {/* Action bar */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 text-[#d4af37] border-[#d4af37]/35 bg-[#d4af37]/5 hover:bg-[#d4af37]/10">
-                                <PlusCircle size={16} /> Add Household
+                <div className="relative flex-1 min-w-[260px] max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search guests or households..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-white/30 h-10 focus:border-[#d4af37]/35 focus:ring-1 focus:ring-[#d4af37]/25"
+                    />
+                </div>
+                
+                <div className="flex items-center gap-3 flex-wrap">
+                    <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="gap-2 text-[#d4af37] border-[#d4af37]/35 bg-[#d4af37]/5 hover:bg-[#d4af37]/10">
+                                    <PlusCircle size={16} /> Add Household
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="glass-card-static border-white/10">
+                                <DropdownMenuItem onClick={() => { setAddMode('single'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
+                                    Single Invite
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setAddMode('multi'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
+                                    Multi Invite (Household)
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <DialogContent className="glass-card-static border-white/10 text-foreground">
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-2xl italic">
+                                    {addMode === 'single' ? 'New Single Invite' : 'New Multi Invite (Household)'}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <HouseholdForm
+                                key={addMode}
+                                defaultValues={{ name: '', guests: [{ firstName: '', lastName: '' }] }}
+                                onSubmit={handleAddHousehold}
+                                submitLabel={addMode === 'single' ? 'Add Single Guest' : 'Add Household'}
+                                mode={addMode}
+                            />
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isAddGuestOpen} onOpenChange={setIsAddGuestOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="gap-2">
+                                <UserPlus size={16} /> Add Guest
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="glass-card-static border-white/10">
-                            <DropdownMenuItem onClick={() => { setAddMode('single'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
-                                Single Invite
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setAddMode('multi'); setIsAddModalOpen(true); }} className="gap-2 cursor-pointer text-white hover:bg-white/10">
-                                Multi Invite (Household)
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <DialogContent className="glass-card-static border-white/10 text-foreground">
-                        <DialogHeader>
-                            <DialogTitle className="font-headline text-2xl italic">
-                                {addMode === 'single' ? 'New Single Invite' : 'New Multi Invite (Household)'}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <HouseholdForm
-                            key={addMode}
-                            defaultValues={{ name: '', guests: [{ firstName: '', lastName: '' }] }}
-                            onSubmit={handleAddHousehold}
-                            submitLabel={addMode === 'single' ? 'Add Single Guest' : 'Add Household'}
-                            mode={addMode}
-                        />
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent className="glass-card-static border-white/10 text-foreground">
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-2xl italic">Add a Guest</DialogTitle>
+                            </DialogHeader>
+                            <AddGuestForm
+                                households={households}
+                                onDone={async () => {
+                                    setIsAddGuestOpen(false);
+                                    const fresh = await fetchHouseholds();
+                                    setHouseholds(fresh);
+                                }}
+                            />
+                        </DialogContent>
+                    </Dialog>
 
-                <Dialog open={isAddGuestOpen} onOpenChange={setIsAddGuestOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                            <UserPlus size={16} /> Add Guest
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="glass-card-static border-white/10 text-foreground">
-                        <DialogHeader>
-                            <DialogTitle className="font-headline text-2xl italic">Add a Guest</DialogTitle>
-                        </DialogHeader>
-                        <AddGuestForm
-                            households={households}
-                            onDone={async () => {
-                                setIsAddGuestOpen(false);
-                                const fresh = await fetchHouseholds();
-                                setHouseholds(fresh);
-                            }}
-                        />
-                    </DialogContent>
-                </Dialog>
-
-                <a
-                    href="/api/export/guests"
-                    download="wedu-guest-manifest.csv"
-                    className="inline-flex items-center gap-2 rounded-md border border-[#d4af37]/50 bg-[#d4af37]/10 px-4 py-2 text-sm font-medium text-[#f6e7b7] hover:bg-[#d4af37]/20 transition-colors"
-                >
-                    <Download size={15} />
-                    Export Manifest (.csv)
-                </a>
+                    <a
+                        href="/api/export/guests"
+                        download="wedu-guest-manifest.csv"
+                        className="inline-flex items-center gap-2 rounded-md border border-[#d4af37]/50 bg-[#d4af37]/10 px-4 py-2 text-sm font-medium text-[#f6e7b7] hover:bg-[#d4af37]/20 transition-colors"
+                    >
+                        <Download size={15} />
+                        Export Manifest (.csv)
+                    </a>
+                </div>
             </div>
 
             <Card className="glass-card-static flex-1">
@@ -396,7 +418,14 @@ export function GuestLedger() {
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                {!loading && households.map((household) => (
+                                {!loading && filteredHouseholds.length === 0 && households.length > 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                            No guests found matching &ldquo;{searchQuery}&rdquo;.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {!loading && filteredHouseholds.map((household) => (
                                     <TableRow key={household.id} className="border-white/10 hover:bg-white/5">
                                         <TableCell className="font-medium">
                                             <div>{household.name}</div>
