@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
-import { Download, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { Download, Loader2, Volume2, VolumeX, Send } from 'lucide-react';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GoldDust, PetalDrift, WeddingBells, easeLuxe } from '@/components/invitation-card';
 import { downloadElementAsImage } from '@/lib/download-card';
@@ -107,6 +107,7 @@ export default function NikkahInvitePage() {
   const [config, setConfig] = useState<InvitationConfig | null>(null);
   const [activeTheme, setActiveTheme] = useState<'classic-botanical' | 'navy-royal' | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const { toast } = useToast();
 
   /* Interactive Envelope Reveal states */
@@ -230,6 +231,33 @@ export default function NikkahInvitePage() {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!phoneNumber) {
+      toast({
+        variant: 'destructive',
+        title: 'Phone number required',
+        description: 'Please enter a valid phone number to share.',
+      });
+      return;
+    }
+    // Clean phone number (remove spaces, leading zeros, etc. and prep country code if needed)
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('0') && cleaned.length === 10) {
+      cleaned = '27' + cleaned.substring(1); // default to South Africa country code +27
+    } else if (!cleaned.startsWith('27') && cleaned.length === 9) {
+      cleaned = '27' + cleaned;
+    }
+    
+    // Construct public invitation URL
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://raziazaraaziq.co.za';
+    const inviteUrl = `${baseUrl}/nikkah-invite?theme=${activeTheme}`;
+    
+    const textMessage = `Assalamu Alaikum. You are warmly invited to our Nikaah ceremony. Please view the details and invitation card here: ${inviteUrl}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleaned}&text=${encodeURIComponent(textMessage)}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   if (!config || !activeTheme) {
@@ -490,7 +518,44 @@ export default function NikkahInvitePage() {
             {downloading ? 'Preparing…' : `Download ${currentTheme === 'navy-royal' ? 'Bride' : 'Groom'} Invite`}
           </button>
           <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
-            Save it, print it, or share it straight to WhatsApp
+            Save it to your device or share it manually
+          </p>
+        </motion.div>
+
+        {/* WhatsApp Direct Share Panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 1, ease: easeLuxe }}
+          className="w-full max-w-[95vw] sm:max-w-sm p-5 bg-white/60 backdrop-blur-md rounded-2xl border border-[#8a6f1f]/20 shadow-lg text-center"
+          data-print-hide
+        >
+          <h4 className="font-body text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#031207] mb-2.5">
+            Auto-Send to Guest via WhatsApp
+          </h4>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-body text-[10px] font-bold text-[#031207]/45">
+                +27
+              </span>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
+                placeholder="071 866 5122"
+                className="w-full pl-11 pr-3 py-2.5 rounded-full border border-[#8a6f1f]/35 bg-white/70 font-body text-xs tracking-wider text-[#031207] placeholder-[#031207]/35 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]"
+              />
+            </div>
+            <button
+              onClick={handleWhatsAppShare}
+              className={`flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 font-body text-[10px] uppercase tracking-[0.18em] text-white shadow-md transition-colors ${currentTheme === 'navy-royal' ? 'bg-[#002855] hover:bg-[#001733]' : 'bg-[#052611] hover:bg-[#031207]'}`}
+            >
+              <Send size={11} />
+              <span>Share</span>
+            </button>
+          </div>
+          <p className="mt-2 text-[9px] font-body text-[#031207]/55 uppercase tracking-[0.14em]">
+            Auto-prefixes +27 country code. Opens WhatsApp web or app.
           </p>
         </motion.div>
       </section>
