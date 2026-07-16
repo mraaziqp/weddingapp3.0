@@ -20,27 +20,39 @@ function toGuestRsvpStatus(status: string): 'Confirmed' | 'Regret' {
  * not just the rsvp_responses audit log below.
  */
 async function syncGuestRecord(params: {
+  guestId?: string;
   resolvedGuestId?: string;
   householdId?: string;
   status: string;
   dietaryRestrictions?: string;
 }) {
-  const { resolvedGuestId, householdId, status, dietaryRestrictions } = params;
+  const { guestId, resolvedGuestId, householdId, status, dietaryRestrictions } = params;
   const rsvpStatus = toGuestRsvpStatus(status);
 
-  if (resolvedGuestId) {
+  // Resolve target guest / household ID dynamically if not explicitly set
+  let targetResolvedGuestId = resolvedGuestId;
+  let targetHouseholdId = householdId;
+
+  if (!targetResolvedGuestId && guestId && guestId.startsWith('guest-')) {
+    targetResolvedGuestId = guestId;
+  }
+  if (!targetHouseholdId && guestId && guestId.startsWith('household-')) {
+    targetHouseholdId = guestId;
+  }
+
+  if (targetResolvedGuestId) {
     // We know exactly which guest responded — update just that row.
     const update: Record<string, string> = { rsvp_status: rsvpStatus };
     if (dietaryRestrictions) update.dietary_restrictions = dietaryRestrictions;
-    const { error } = await supabaseAdmin.from('guests').update(update).eq('id', resolvedGuestId);
+    const { error } = await supabaseAdmin.from('guests').update(update).eq('id', targetResolvedGuestId);
     if (error) throw error;
     return;
   }
 
-  if (householdId) {
+  if (targetHouseholdId) {
     // No specific guest identified (e.g. a shared household link) — the
     // whole household's RSVP applies to everyone in it.
-    const { error } = await supabaseAdmin.from('guests').update({ rsvp_status: rsvpStatus }).eq('household_id', householdId);
+    const { error } = await supabaseAdmin.from('guests').update({ rsvp_status: rsvpStatus }).eq('household_id', targetHouseholdId);
     if (error) throw error;
   }
 }
@@ -70,18 +82,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const sql = getDb();
-    await ensureTable();
-
-    await sql`
-      INSERT INTO rsvp_responses (guest_id, household_id, guest_name, status, dietary_restrictions, message)
-      VALUES (${guestId}, ${householdId}, ${guestName}, ${status}, ${dietaryRestrictions || null}, ${message || null})
-    `;
+    // Neon SQL write - wrapped in try/catch to make it completely non-blocking
+    try {
+      const sql = getDb();
+      await ensureTable();
+      await sql`
+        INSERT INTO rsvp_responses (guest_id, household_id, guest_name, status, dietary_restrictions, message)
+        VALUES (${guestId}, ${householdId}, ${guestName}, ${status}, ${dietaryRestrictions || null}, ${message || null})
+      `;
+    } catch (sqlErr) {
+      console.error('[RSVP] Neon SQL insert failed (non-blocking):', sqlErr);
+    }
 
     // Keep the real guest record in sync. This must never fail the request —
     // the audit log above already has a durable record of the response.
     try {
-      await syncGuestRecord({ resolvedGuestId, householdId, status, dietaryRestrictions });
+      await syncGuestRecord({ guestId, resolvedGuestId, householdId, status, dietaryRestrictions });
     } catch (syncErr) {
       console.error('[RSVP] Guest table sync failed:', syncErr);
     }
