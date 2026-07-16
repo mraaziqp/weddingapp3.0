@@ -333,11 +333,11 @@
 
 /* ─── Robust Cross-Device CSS Variable Sizing Polyfill ─────────────────── */
 .invitation-container {
-  --cqw: 0.95vw; /* Legacy mobile viewport fallback */
+  --cqw: 1.05vw; /* Legacy mobile viewport fallback scaled up for readability */
 }
 @media (min-width: 480px) {
   .invitation-container {
-    --cqw: 0.9vw;
+    --cqw: 1.0vw;
   }
 }
 @media (min-width: 640px) {
@@ -347,16 +347,25 @@
 }
 @supports (width: 1cqw) {
   .invitation-container {
-    --cqw: 1.06cqw; /* Slightly scaled up for modern container-query browsers (Samsung, Chrome, Safari) */
+    --cqw: 1.16cqw; /* Significantly scaled up for mobile modern container-query browsers (Samsung, Chrome, Safari) */
+  }
+}
+@media (min-width: 640px) {
+  @supports (width: 1cqw) {
+    .invitation-container {
+      --cqw: 1.04cqw; /* Standard size on desktop/tablet modern browsers */
+    }
   }
 }
 
 .invitation-aspect {
-  aspect-ratio: 5 / 8.2; /* Taller aspect ratio on mobile to allocate more vertical space for typography details */
+  aspect-ratio: auto; /* Remove strict aspect ratio on mobile to fill screen height dynamically */
+  height: calc(100dvh - 110px); /* Stretches tall on mobile to match drawn guidelines */
 }
 @media (min-width: 640px) {
   .invitation-aspect {
     aspect-ratio: 5 / 7; /* Standard 5x7 aspect ratio on tablet/desktop */
+    height: auto;
   }
 }
 
@@ -671,8 +680,7 @@
 
 /* Dynamic sizing for both styles of invitation card */
 .invitation-card-size {
-  width: 95vw; /* Slightly wider on mobile for improved screen real estate */
-  width: calc(min(100vw - 12px, (100dvh - 90px) * 5 / 8.2));
+  width: 96vw; /* Expand width close to the margins as requested */
 }
 @media (min-width: 640px) {
   .invitation-card-size {
