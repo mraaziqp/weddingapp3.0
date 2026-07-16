@@ -680,3 +680,14 @@
   }
 }
 
+@keyframes floatGoldSparkle {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: translate3d(var(--drift-x, 0px), -46px, 0) scale(1.15);
+    opacity: 0.85;
+  }
+}
+

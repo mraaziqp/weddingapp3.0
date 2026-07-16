@@ -38,7 +38,7 @@ export function GoldDust({ count = 26 }: { count?: number }) {
         const delay = (i % 7) * 1.15;
         const drift = ((i % 4) - 1.5) * 14;
         return (
-          <motion.span
+          <span
             key={i}
             className="absolute rounded-full"
             style={{
@@ -48,14 +48,9 @@ export function GoldDust({ count = 26 }: { count?: number }) {
               height: size,
               background: 'radial-gradient(circle, rgba(246,231,183,0.95) 0%, rgba(212,175,55,0.55) 55%, transparent 100%)',
               boxShadow: '0 0 8px 2px rgba(212,175,55,0.35)',
+              animation: `floatGoldSparkle ${duration}s ease-in-out ${delay}s infinite`,
+              ['--drift-x' as any]: `${drift}px`,
             }}
-            animate={{
-              y: [0, -46, 0],
-              x: [0, drift, 0],
-              opacity: [0, 0.85, 0],
-              scale: [0.6, 1.15, 0.6],
-            }}
-            transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
           />
         );
       })}
