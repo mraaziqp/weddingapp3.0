@@ -112,7 +112,7 @@ export function DashboardNav() {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const linkContent = (
-              <Link href={item.href} passHref>
+              <Link href={item.href} passHref prefetch={false}>
                 <motion.div
                   data-active={isActive}
                   whileHover={isMobile ? undefined : { scale: 1.15 }}

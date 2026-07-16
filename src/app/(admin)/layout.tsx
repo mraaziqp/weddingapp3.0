@@ -51,10 +51,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}
-                initial={{ opacity: 0, y: 18, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -14, scale: 0.995 }}
-                transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
               >
                 {children}
               </motion.div>

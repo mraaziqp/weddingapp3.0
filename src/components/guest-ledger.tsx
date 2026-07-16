@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy } from 'lucide-react';
+import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy, Send } from 'lucide-react';
 import { fetchHouseholds, addHousehold, addGuestToHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import type { Household } from '@/lib/types';
@@ -255,6 +255,30 @@ export function GuestLedger() {
         });
     };
 
+    const handleWhatsAppShare = (household: Household) => {
+        // Check if any guest belongs to bride or groom side
+        const isBrideSide = household.guests?.some(g => g.tags?.some(t => t.includes("Bride's")));
+        const isGroomSide = household.guests?.some(g => g.tags?.some(t => t.includes("Groom's")));
+        
+        let sideParam = '';
+        if (isBrideSide) sideParam = '&side=bride';
+        else if (isGroomSide) sideParam = '&side=groom';
+
+        // Construct link (with fallback to production URL if local testing)
+        let baseUrl = 'https://raziazaraaziq.co.za';
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            baseUrl = window.location.origin;
+        }
+
+        const link = `${baseUrl}/invitation?household=${household.id}&id=${household.id}${sideParam}`;
+        
+        // Draft a beautiful message
+        const textMessage = `Assalamu Alaikum. We would love for you to join us on our special day. Please view your personalized invitation card and RSVP details here: ${link}`;
+        
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
+        window.open(whatsappUrl, '_blank');
+    };
+
     const handleRsvpChange = async (guestId: string, newStatus: 'Confirmed' | 'Pending' | 'Regret') => {
         // Optimistic update
         setHouseholds(current =>
@@ -404,31 +428,47 @@ export function GuestLedger() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="gap-1.5 text-[#d4af37] hover:text-[#d4af37] hover:bg-[#d4af37]/10"
-                                                onClick={() => handleCopyInviteLink(household)}
-                                            >
-                                                <Copy size={13} />
-                                                Copy Link
-                                            </Button>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="glass-card-static border-white/10">
-                                                    <DropdownMenuItem onClick={() => setEditingHousehold(household)} className="gap-2 cursor-pointer">
-                                                        <Pencil size={14} /> Edit Household
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleCopyInviteLink(household)} className="gap-2 cursor-pointer">
-                                                        <Link2 size={14} /> Copy Invite Link
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator className="bg-white/10" />
+                                             <div className="flex items-center gap-1.5">
+                                                 <Button
+                                                     variant="ghost"
+                                                     size="sm"
+                                                     className="gap-1 text-[#d4af37] hover:text-[#d4af37] hover:bg-[#d4af37]/10 h-8 px-2"
+                                                     onClick={() => handleCopyInviteLink(household)}
+                                                     title="Copy Invite Link"
+                                                 >
+                                                     <Copy size={13} />
+                                                     <span className="hidden xl:inline">Copy Link</span>
+                                                 </Button>
+                                                 <Button
+                                                     variant="ghost"
+                                                     size="sm"
+                                                     className="gap-1 text-green-400 hover:text-green-400 hover:bg-green-500/10 h-8 px-2"
+                                                     onClick={() => handleWhatsAppShare(household)}
+                                                     title="Share via WhatsApp"
+                                                 >
+                                                     <Send size={13} />
+                                                     <span className="hidden xl:inline">WhatsApp</span>
+                                                 </Button>
+                                             </div>
+                                         </TableCell>
+                                         <TableCell className="text-right">
+                                             <DropdownMenu>
+                                                 <DropdownMenuTrigger asChild>
+                                                     <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                         <MoreHorizontal className="h-4 w-4" />
+                                                     </Button>
+                                                 </DropdownMenuTrigger>
+                                                 <DropdownMenuContent align="end" className="glass-card-static border-white/10">
+                                                     <DropdownMenuItem onClick={() => setEditingHousehold(household)} className="gap-2 cursor-pointer">
+                                                         <Pencil size={14} /> Edit Household
+                                                     </DropdownMenuItem>
+                                                     <DropdownMenuItem onClick={() => handleCopyInviteLink(household)} className="gap-2 cursor-pointer">
+                                                         <Link2 size={14} /> Copy Invite Link
+                                                     </DropdownMenuItem>
+                                                     <DropdownMenuItem onClick={() => handleWhatsAppShare(household)} className="gap-2 cursor-pointer text-green-400 focus:text-green-400">
+                                                         <Send size={14} /> Send over WhatsApp
+                                                     </DropdownMenuItem>
+                                                     <DropdownMenuSeparator className="bg-white/10" />
                                                     <DropdownMenuItem
                                                         onClick={() => setDeletingHousehold(household)}
                                                         className="gap-2 cursor-pointer text-red-400 focus:text-red-400"
