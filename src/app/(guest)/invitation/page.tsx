@@ -19,10 +19,34 @@ const DEFAULT_WEDDING_DATE = new Date('2026-09-06T18:00:00+02:00');
 
 /* ─── Cinematic backdrop: video > image > aurora, with parallax ───────── */
 function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: MotionValue<string> }) {
+  const isNavyRoyal = config.theme === 'navy-royal';
+
   return (
     <div className="fixed inset-0 z-0 overflow-hidden" data-print-hide>
       <motion.div style={{ y: parallaxY }} className="absolute inset-[-12%]">
-        {config.videoUrl ? (
+        {isNavyRoyal ? (
+          <div 
+            className="h-full w-full relative"
+            style={{
+              backgroundColor: '#000e21',
+              backgroundImage: 'url("/navy-stars.jpg")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* Deep navy color overlay to tint the black stars image to a luxurious navy blue */}
+            <div className="absolute inset-0 bg-[#000e21]/45 mix-blend-multiply z-0 pointer-events-none" />
+
+            {/* Gold radial shimmer to make the stars look like gold speckles on the page background */}
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none opacity-[0.55]" 
+              style={{
+                background: 'radial-gradient(circle at center, rgba(212,175,55,0.3) 0%, rgba(0,14,33,0.85) 100%)',
+                mixBlendMode: 'color-dodge'
+              }}
+            />
+          </div>
+        ) : config.videoUrl ? (
           <video
             src={config.videoUrl}
             autoPlay
@@ -45,10 +69,14 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
         )}
       </motion.div>
 
-      {/* Cinematic grading: soft, light-lively vignette + warm candlelight glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
-      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
+      {/* Cinematic grading overlays (only for classic botanical style) */}
+      {!isNavyRoyal && (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
+        </>
+      )}
     </div>
   );
 }

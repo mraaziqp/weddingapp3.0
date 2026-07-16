@@ -610,41 +610,23 @@ export function NavyRoyalCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.5),0_0_40px_rgba(212,175,55,0.15)] border border-[#d4af37]/30`}
+      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
       style={{
-        backgroundColor: '#000e21',
-        backgroundImage: 'url("/navy-stars.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: 'radial-gradient(circle at center, #fdfcfb 0%, #faf8f5 60%, #f4eee1 100%)'
       }}
     >
-      {/* Deep navy color overlay to tint the black stars image to a luxurious navy blue */}
-      <div className="absolute inset-0 bg-[#000e21]/78 mix-blend-multiply z-0 pointer-events-none" />
-
-      {/* Gold radial shimmer to make the stars look like gold speckles */}
-      <div 
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.7]" 
-        style={{
-          background: 'radial-gradient(circle at center, rgba(212,175,55,0.48) 0%, rgba(0,14,33,0.7) 100%)',
-          mixBlendMode: 'color-dodge'
-        }}
-      />
-
       {/* Subtly textured background paper grain overlay */}
       <div 
-        className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay z-0" 
+        className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay z-0" 
         style={{
-          backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
           backgroundSize: '4px 4px'
         }}
       />
 
-      {/* Fine gold border frame to outline the card and anchor the celestial layout */}
-      <div className="pointer-events-none absolute cg-card-border-inset cg-card-border-radius border border-[#d4af37]/35 z-10" />
-
       {/* Gold Line Art Flowers framing the Navy & Gold card */}
-      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.45] rotate-[15deg] z-10 c2-flower-top" />
-      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.45] rotate-[-45deg] scale-x-[-1] z-10 c2-flower-bottom" />
+      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.38] rotate-[15deg] z-10 c2-flower-top" />
+      <GoldLineArtFlower className="absolute select-none pointer-events-none opacity-[0.38] rotate-[-45deg] scale-x-[-1] z-10 c2-flower-bottom" />
 
       {/* Card content — vertically composed with spaced classic roman typography */}
       <div className="relative flex h-full flex-col items-center justify-between text-center z-20 c2-card-content">
@@ -652,7 +634,7 @@ export function NavyRoyalCard({
         {/* Arabic Calligraphy */}
         <motion.div variants={riseIn} className="flex flex-col items-center c2-bismillah-margin">
           <p
-            className="c2-bismillah font-bold leading-none text-[#d4af37] select-none"
+            className="c2-bismillah font-bold leading-none text-[#b59650] select-none"
             style={{ fontFamily: "'Amiri', serif" }}
           >
             بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
@@ -662,13 +644,13 @@ export function NavyRoyalCard({
         {/* Invitation Call Header */}
         <motion.div variants={riseIn} className="flex flex-col items-center c2-header-gap">
           <p
-            className="c2-header font-bold uppercase tracking-[0.24em] text-[#e5c158]"
+            className="c2-header font-bold uppercase tracking-[0.24em] text-[#556b82]"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             Kindly Join Us
           </p>
           <p
-            className="c2-header-sub font-medium uppercase tracking-[0.2em] text-[#fdfaf2]/85"
+            className="c2-header-sub font-medium uppercase tracking-[0.2em] text-[#556b82]/85"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             For The Wedding Of
@@ -680,13 +662,13 @@ export function NavyRoyalCard({
           {/* Groom: Abduraziq */}
           <motion.div variants={riseIn} className="flex flex-col items-center">
             <h1
-              className="c2-name font-semibold tracking-[0.26em] text-[#fdfaf2] uppercase"
+              className="c2-name font-normal tracking-[0.24em] text-[#002855] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Abduraziq
             </h1>
             <p
-              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#fdfaf2]/70 uppercase"
+              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Son of Abdussataar and Shanaaz Parker
@@ -696,7 +678,7 @@ export function NavyRoyalCard({
           {/* Elegant Navy Script Ampersand */}
           <motion.span 
             variants={riseIn}
-            className="c2-ampersand text-[#e5c158] italic c2-ampersand-margin block"
+            className="c2-ampersand text-[#002855] italic c2-ampersand-margin block"
             style={{ fontFamily: "'Great Vibes', cursive" }}
           >
             &amp;
@@ -705,13 +687,13 @@ export function NavyRoyalCard({
           {/* Bride: Razia */}
           <motion.div variants={riseIn} className="flex flex-col items-center">
             <h1
-              className="c2-name font-semibold tracking-[0.26em] text-[#fdfaf2] uppercase"
+              className="c2-name font-normal tracking-[0.24em] text-[#002855] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Razia
             </h1>
             <p
-              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#fdfaf2]/70 uppercase"
+              className="c2-parent-margin c2-parent font-semibold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               The Daughter of Sabri and Samalika Shade
@@ -722,13 +704,13 @@ export function NavyRoyalCard({
         {/* Wedding Date / Islamic Date */}
         <motion.div variants={riseIn} className="flex flex-col items-center" style={{ gap: 'calc(0.4 * var(--cqw))' }}>
           <p
-            className="c2-date-main font-bold tracking-[0.2em] text-[#d4af37] uppercase"
+            className="c2-date-main font-bold tracking-[0.2em] text-[#002855] uppercase"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             September 6<sup>th</sup> 2026
           </p>
           <p
-            className="c2-date-sub font-semibold tracking-[0.14em] text-[#fdfaf2]/70 uppercase"
+            className="c2-date-sub font-medium tracking-[0.15em] text-[#556b82] uppercase"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             24 Rabi&apos; Al-Awwal 1448
@@ -738,7 +720,7 @@ export function NavyRoyalCard({
         {/* Details Grid */}
         <motion.div
           variants={riseIn}
-          className={`w-full border-t border-b border-[#d4af37]/35 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
+          className={`w-full border-t border-b border-[#556b82]/20 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
           style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.8 * var(--cqw))', paddingBottom: 'calc(1.8 * var(--cqw))' }}
         >
           {/* Nikaah Column */}
@@ -747,24 +729,24 @@ export function NavyRoyalCard({
             style={{ 
               gap: 'calc(0.8 * var(--cqw))',
               paddingRight: nikkahOnly ? 0 : 'calc(1.5 * var(--cqw))',
-              borderRight: nikkahOnly ? 'none' : '1px solid rgba(212, 175, 55, 0.35)'
+              borderRight: nikkahOnly ? 'none' : '1px solid rgba(85, 107, 130, 0.2)'
             }}
           >
             <h3
-              className="c2-col-header font-bold tracking-[0.22em] text-[#d4af37] uppercase"
+              className="c2-col-header font-bold tracking-[0.22em] text-[#002855] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Nikaah
             </h3>
-            <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
+            <div className="h-px bg-[#556b82]/20" style={{ width: 'calc(10 * var(--cqw))' }} />
             <p
-              className="c2-col-text font-semibold text-[#fdfaf2] tracking-[0.14em]"
+              className="c2-col-text font-bold text-[#002855] tracking-[0.14em]"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Masjidul Quds Mosque
             </p>
             <p
-              className="c2-col-text font-medium text-[#fdfaf2]/80 tracking-[0.14em]"
+              className="c2-col-text font-bold text-[#556b82] tracking-[0.14em]"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               10h00
@@ -781,20 +763,20 @@ export function NavyRoyalCard({
               }}
             >
               <h3
-                className="c2-col-header font-bold tracking-[0.22em] text-[#d4af37] uppercase"
+                className="c2-col-header font-bold tracking-[0.22em] text-[#002855] uppercase"
                 style={{ fontFamily: "'Cinzel', serif" }}
               >
                 Reception
               </h3>
-              <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
+              <div className="h-px bg-[#556b82]/20" style={{ width: 'calc(10 * var(--cqw))' }} />
               <p
-                className="c2-col-text font-semibold text-[#fdfaf2] tracking-[0.14em]"
+                className="c2-col-text font-bold text-[#002855] tracking-[0.14em]"
                 style={{ fontFamily: "'Cinzel', serif" }}
               >
                 Tuscany Hall, Rylands
               </p>
               <p
-                className="c2-col-sub font-medium text-[#fdfaf2]/80 tracking-[0.12em]"
+                className="c2-col-sub font-bold text-[#556b82] tracking-[0.12em]"
                 style={{ fontFamily: "'Cinzel', serif" }}
               >
                 5:00 PM for 5:30 PM
@@ -807,7 +789,7 @@ export function NavyRoyalCard({
         {guestName && !nikkahOnly && (
           <motion.div variants={riseIn} className="flex flex-col items-center">
             <p
-              className="c2-guest-name font-semibold text-[#d4af37] tracking-[0.18em] uppercase"
+              className="c2-guest-name font-bold text-[#002855] tracking-[0.18em] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               {guestName}
@@ -819,20 +801,20 @@ export function NavyRoyalCard({
         {!nikkahOnly && (
           <motion.div variants={riseIn} className="flex flex-col items-center w-full c2-rsvp-margin" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
             <p
-              className="c2-rsvp-header font-semibold tracking-[0.16em] text-[#e5c158] uppercase"
+              className="c2-rsvp-header font-bold tracking-[0.16em] text-[#556b82] uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Kindly RSVP by the 14<sup>th</sup> of August
             </p>
             <div 
-              className="flex justify-center c2-rsvp-contact text-[#fdfaf2]/90 font-semibold tracking-[0.08em] uppercase" 
+              className="flex justify-center c2-rsvp-contact text-[#002855] font-semibold tracking-[0.08em] uppercase" 
               style={{ fontFamily: "'Cinzel', serif", gap: 'calc(3.5 * var(--cqw))' }}
             >
               <span>Shanaaz Parker: 0718665122</span>
               <span>Ayaaz Parker: 0718665123</span>
             </div>
             <p
-              className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#d4af37] uppercase c2-rsvp-footnote-margin"
+              className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#b59650] uppercase c2-rsvp-footnote-margin"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
               Please accept this as a personal invitation
