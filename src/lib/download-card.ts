@@ -42,14 +42,17 @@ import html2canvas from 'html2canvas-pro';
  * a handful of exotic CSS features than a "real" SVG capture would be,
  * but it actually works.
  */
-export async function downloadElementAsImage(elementId: string, filename: string): Promise<void> {
+export async function downloadElementAsImage(
+  elementId: string, 
+  filename: string,
+  options?: { width?: number; height?: number }
+): Promise<void> {
   const original = document.getElementById(elementId);
   if (!original) throw new Error(`Element #${elementId} not found`);
 
-  const rect = original.getBoundingClientRect();
-  const pixelRatio = 3; // ≈300dpi at the card's on-screen size — sharp
-  // enough to print, small enough to share over WhatsApp/email.
-  const targetWidth = Math.round(rect.width * pixelRatio);
+  // Default target dimensions to print-ready A5 size (1748 x 2480 pixels @ 300 DPI)
+  const targetWidth = options?.width || 1748;
+  const targetHeight = options?.height || 2480;
 
   // Clone into the real, live page (off-screen — the guest never sees
   // this) and resize the CLONE to the full export resolution there, so
@@ -57,11 +60,21 @@ export async function downloadElementAsImage(elementId: string, filename: string
   // container-query engine before html2canvas ever reads it.
   const clone = original.cloneNode(true) as HTMLElement;
   clone.removeAttribute('id'); // avoid a transient duplicate #invitation-print-card
+  
+  // Strip layout class constraints so the clone sizes freely to target A5 pixels
+  clone.classList.remove('invitation-aspect');
   clone.style.position = 'fixed';
   clone.style.top = '0';
   clone.style.left = '-99999px';
   clone.style.margin = '0';
   clone.style.width = `${targetWidth}px`;
+  clone.style.height = `${targetHeight}px`;
+  clone.style.maxWidth = 'none';
+  clone.style.maxHeight = 'none';
+  clone.style.minWidth = '0';
+  clone.style.minHeight = '0';
+  clone.style.aspectRatio = 'auto';
+
   // Clear every cloned element's stale pre-animation opacity/transform —
   // Framer Motion's entrance animations are long finished by the time a
   // guest can click "Download", but they're driven by the Web Animations
