@@ -359,13 +359,14 @@
 }
 
 .invitation-aspect {
-  aspect-ratio: auto; /* Remove strict aspect ratio on mobile to fill screen height dynamically */
-  height: calc(100dvh - 110px); /* Stretches tall on mobile to match drawn guidelines */
+  aspect-ratio: auto !important; /* Force dynamic viewport aspect ratio override */
+  height: calc(100vh - 90px) !important; /* Fallback for older mobile rendering engines */
+  height: calc(100dvh - 90px) !important; /* Stretches tall on mobile to match drawn guidelines */
 }
 @media (min-width: 640px) {
   .invitation-aspect {
-    aspect-ratio: 5 / 7; /* Standard 5x7 aspect ratio on tablet/desktop */
-    height: auto;
+    aspect-ratio: 5 / 7 !important; /* Standard 5x7 aspect ratio on tablet/desktop */
+    height: auto !important;
   }
 }
 
@@ -680,11 +681,11 @@
 
 /* Dynamic sizing for both styles of invitation card */
 .invitation-card-size {
-  width: 96vw; /* Expand width close to the margins as requested */
+  width: 98vw !important; /* Maximize width close to the margins as requested */
 }
 @media (min-width: 640px) {
   .invitation-card-size {
-    width: calc(min(100vw - 32px, (100dvh - 120px) * 5 / 7));
+    width: calc(min(100vw - 32px, (100dvh - 120px) * 5 / 7)) !important;
   }
 }
 
