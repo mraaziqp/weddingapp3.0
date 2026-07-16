@@ -333,11 +333,11 @@
 
 /* ─── Robust Cross-Device CSS Variable Sizing Polyfill ─────────────────── */
 .invitation-container {
-  --cqw: 1.0vw; /* Legacy mobile viewport fallback scaled up for readability */
+  --cqw: 1.05vw; /* Legacy mobile viewport fallback scaled up for readability */
 }
 @media (min-width: 480px) {
   .invitation-container {
-    --cqw: 0.95vw;
+    --cqw: 0.98vw;
   }
 }
 @media (min-width: 640px) {
@@ -347,7 +347,7 @@
 }
 @supports (width: 1cqw) {
   .invitation-container {
-    --cqw: 1.10cqw; /* Perfectly scaled up for mobile modern container-query browsers (Samsung, Chrome, Safari) */
+    --cqw: 1.14cqw; /* Perfectly scaled up for mobile modern container-query browsers (Samsung, Chrome, Safari) */
   }
 }
 @media (min-width: 640px) {
@@ -360,8 +360,8 @@
 
 .invitation-aspect {
   aspect-ratio: auto !important; /* Force dynamic viewport aspect ratio override */
-  height: calc(100vh - 130px) !important; /* Fallback for older mobile rendering engines */
-  height: calc(100svh - 110px) !important; /* Short viewport height on mobile to guarantee no page scrolling */
+  height: calc(100vh - 65px) !important; /* Fallback for older mobile rendering engines */
+  height: calc(100svh - 50px) !important; /* Maximizes card viewport occupancy on mobile with minimal safe border margin */
 }
 @media (min-width: 640px) {
   .invitation-aspect {
@@ -414,30 +414,30 @@
   width: 36vw;
 }
 .c1-card-content {
-  gap: 1.2vw;
-  padding: 3vw 7vw;
+  gap: 1.5vw;
+  padding: 4.5vw 7.5vw;
 }
 .c1-bismillah-sub-container {
   max-width: 52vw;
 }
 .c1-bismillah-sub-margin {
-  margin-top: 0.5vw;
+  margin-top: 1.8vw;
 }
 .c1-header-container {
   max-width: 80vw;
 }
 .c1-parent-margin {
-  margin-top: 0.3vw;
+  margin-top: 0.5vw;
 }
 .c1-ampersand-margin {
-  margin-top: 0.2vw;
-  margin-bottom: 0.2vw;
+  margin-top: 0.3vw;
+  margin-bottom: 0.3vw;
 }
 .c1-poem-text-margin {
-  margin-top: 0.1vw;
+  margin-top: 0.2vw;
 }
 .c1-rsvp-footnote-margin {
-  margin-top: 0.4vw;
+  margin-top: 0.8vw;
 }
 
 @supports (width: 1cqw) {
@@ -465,30 +465,30 @@
     width: 36cqw;
   }
   .c1-card-content {
-    gap: 1.2cqw;
-    padding: 3cqw 7cqw;
+    gap: 1.5cqw;
+    padding: 4.5cqw 7.5cqw;
   }
   .c1-bismillah-sub-container {
     max-width: 52cqw;
   }
   .c1-bismillah-sub-margin {
-    margin-top: 0.5cqw;
+    margin-top: 1.8cqw;
   }
   .c1-header-container {
     max-width: 80cqw;
   }
   .c1-parent-margin {
-    margin-top: 0.3cqw;
+    margin-top: 0.5cqw;
   }
   .c1-ampersand-margin {
-    margin-top: 0.2cqw;
-    margin-bottom: 0.2cqw;
+    margin-top: 0.3cqw;
+    margin-bottom: 0.3cqw;
   }
   .c1-poem-text-margin {
-    margin-top: 0.1cqw;
+    margin-top: 0.2cqw;
   }
   .c1-rsvp-footnote-margin {
-    margin-top: 0.4cqw;
+    margin-top: 0.8cqw;
   }
 }
 

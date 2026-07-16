@@ -308,7 +308,7 @@ export function InvitationCard({
         <motion.div
           variants={riseIn}
           className={`w-full border-t border-b border-[#122217]/28 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
-          style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.2 * var(--cqw))', paddingBottom: 'calc(1.2 * var(--cqw))' }}
+          style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.6 * var(--cqw))', paddingBottom: 'calc(1.6 * var(--cqw))' }}
         >
           {/* Nikaah Column */}
           <div 
