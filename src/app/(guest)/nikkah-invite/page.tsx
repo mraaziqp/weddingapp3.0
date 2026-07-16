@@ -105,6 +105,7 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
 
 export default function NikkahInvitePage() {
   const [config, setConfig] = useState<InvitationConfig | null>(null);
+  const [activeTheme, setActiveTheme] = useState<'classic-botanical' | 'navy-royal' | null>(null);
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
 
@@ -166,8 +167,12 @@ export default function NikkahInvitePage() {
           }
         }
         setConfig(merged);
+        setActiveTheme(merged.theme || 'classic-botanical');
       })
-      .catch(() => setConfig(DEFAULT_INVITATION_CONFIG));
+      .catch(() => {
+        setConfig(DEFAULT_INVITATION_CONFIG);
+        setActiveTheme(DEFAULT_INVITATION_CONFIG.theme || 'classic-botanical');
+      });
   }, []);
 
   const handleOpenEnvelope = () => {
@@ -181,8 +186,8 @@ export default function NikkahInvitePage() {
       setIsAudioPlaying(true);
     }
     
-    // Spawn falling wedding bells and flowers particles exploding from the center (empty for navy-royal simple plain open animation)
-    const emojis = config?.theme === 'navy-royal' ? [] : ['🔔', '🌸', '🌹', '🌺', '🌼', '🌷', '🔔', '🌸', '🌹', '🌼'];
+    // Spawn falling wedding bells and flowers particles exploding from the center
+    const emojis = activeTheme === 'navy-royal' ? [] : ['🔔', '🌸', '🌹', '🌺', '🌼', '🌷', '🔔', '🌸', '🌹', '🌼'];
     const newParticles = emojis.length > 0 ? Array.from({ length: 48 }).map((_, i) => {
       const emoji = emojis[i % emojis.length];
       const angle = Math.random() * Math.PI * 2;
@@ -227,7 +232,7 @@ export default function NikkahInvitePage() {
     }
   };
 
-  if (!config) {
+  if (!config || !activeTheme) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#04070a]">
         <motion.div
@@ -239,6 +244,9 @@ export default function NikkahInvitePage() {
     );
   }
 
+  const currentTheme = activeTheme;
+  const currentConfig = { ...config, theme: currentTheme };
+
   /* ─── Envelope Screen (Intro Video + Wax Seal Splitting Transition) ─── */
   if (!isOpen) {
     return (
@@ -248,9 +256,9 @@ export default function NikkahInvitePage() {
       >
         {/* Living theme backdrop behind the video */}
         <div className="absolute inset-0 z-0">
-          <Backdrop config={config} parallaxY={new MotionValue()} />
-          <GoldDust count={config?.theme === 'navy-royal' ? 120 : 26} />
-          {config.theme !== 'navy-royal' && <PetalDrift />}
+          <Backdrop config={currentConfig} parallaxY={new MotionValue()} />
+          <GoldDust count={currentTheme === 'navy-royal' ? 120 : 26} />
+          {currentTheme !== 'navy-royal' && <PetalDrift />}
         </div>
 
         {/* Floating Cinematic Video Frame */}
@@ -375,9 +383,9 @@ export default function NikkahInvitePage() {
   /* ─── Main Nikaah Invitation Screen ─── */
   return (
     <div className="relative min-h-screen bg-[#faf8f5]">
-      <Backdrop config={config} parallaxY={parallaxY} />
-      <GoldDust count={config?.theme === 'navy-royal' ? 120 : 26} />
-      {config?.theme !== 'navy-royal' && <PetalDrift />}
+      <Backdrop config={currentConfig} parallaxY={parallaxY} />
+      <GoldDust count={currentTheme === 'navy-royal' ? 120 : 26} />
+      {currentTheme !== 'navy-royal' && <PetalDrift />}
 
       {/* Floating Audio Button */}
       {musicAvailable && (
@@ -422,6 +430,22 @@ export default function NikkahInvitePage() {
 
       {/* Hero: the Nikaah-only card, centered */}
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-0 sm:px-4 py-14 gap-8">
+        {/* Dynamic theme switcher tabs */}
+        <div className="flex gap-2 p-1.5 bg-white/60 backdrop-blur-md rounded-full border border-[#8a6f1f]/20 shadow-sm z-30" data-print-hide>
+          <button
+            onClick={() => setActiveTheme('classic-botanical')}
+            className={`px-4 py-2 rounded-full font-body text-[9px] uppercase tracking-[0.16em] font-bold transition-all ${currentTheme === 'classic-botanical' ? 'bg-[#083d1c] text-[#faf8f5] shadow-md' : 'text-[#2e3b32] hover:bg-[#8a6f1f]/10'}`}
+          >
+            Groom (Botanical)
+          </button>
+          <button
+            onClick={() => setActiveTheme('navy-royal')}
+            className={`px-4 py-2 rounded-full font-body text-[9px] uppercase tracking-[0.16em] font-bold transition-all ${currentTheme === 'navy-royal' ? 'bg-[#002855] text-[#faf8f5] shadow-md' : 'text-[#556b82] hover:bg-[#8a6f1f]/10'}`}
+          >
+            Bride (Navy &amp; Gold)
+          </button>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +460,7 @@ export default function NikkahInvitePage() {
           >
             Generic Nikaah Invitation
           </p>
-          <p className="mt-2 max-w-md font-body text-xs text-[#031207]/65">
+          <p className="mt-2 max-w-md font-body text-xs text-[#031207]/65 px-4">
             No name, no Reception details — just the Nikaah. Download this once and forward
             it to anyone; it doesn&apos;t need a personal link.
           </p>
@@ -444,7 +468,7 @@ export default function NikkahInvitePage() {
 
         {/* Nikaah Only Card */}
         <InvitationCard 
-          config={config} 
+          config={currentConfig} 
           nikkahOnly 
           printId 
         />
@@ -460,10 +484,10 @@ export default function NikkahInvitePage() {
           <button
             onClick={download}
             disabled={downloading}
-            className="flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 bg-[#052611] px-6 py-3 font-body text-[10px] uppercase tracking-[0.24em] text-[#faf8f5] shadow-lg transition-colors hover:bg-[#031207] disabled:opacity-60"
+            className={`flex items-center gap-2 rounded-full border border-[#8a6f1f]/35 px-6 py-3 font-body text-[10px] uppercase tracking-[0.24em] text-[#faf8f5] shadow-lg transition-colors disabled:opacity-60 ${currentTheme === 'navy-royal' ? 'bg-[#002855] hover:bg-[#001733]' : 'bg-[#052611] hover:bg-[#031207]'}`}
           >
             {downloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            {downloading ? 'Preparing…' : 'Download Nikaah Invite'}
+            {downloading ? 'Preparing…' : `Download ${currentTheme === 'navy-royal' ? 'Bride' : 'Groom'} Invite`}
           </button>
           <p className="text-center font-body text-[9px] uppercase tracking-[0.2em] text-[#031207]/55">
             Save it, print it, or share it straight to WhatsApp

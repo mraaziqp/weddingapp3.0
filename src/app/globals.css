@@ -333,38 +333,51 @@
 
 /* ─── Robust Cross-Device CSS Variable Sizing Polyfill ─────────────────── */
 .invitation-container {
-  --cqw: 5.2px; /* Legacy static fallback for very old engines (no max() support) */
-  --cqw: max(1.1vw, 5.0px); /* Responsive fallback if max() is supported */
+  --cqw: 0.95vw; /* Legacy mobile viewport fallback */
+}
+@media (min-width: 480px) {
+  .invitation-container {
+    --cqw: 0.9vw;
+  }
 }
 @media (min-width: 640px) {
   .invitation-container {
-    --cqw: 5.6px;
+    --cqw: 5.2px; /* Legacy desktop fallback */
   }
 }
 @supports (width: 1cqw) {
   .invitation-container {
-    --cqw: max(1cqw, 5.0px);
+    --cqw: 1.06cqw; /* Slightly scaled up for modern container-query browsers (Samsung, Chrome, Safari) */
+  }
+}
+
+.invitation-aspect {
+  aspect-ratio: 5 / 7.6; /* Taller aspect ratio on mobile to allocate more vertical space for typography details */
+}
+@media (min-width: 640px) {
+  .invitation-aspect {
+    aspect-ratio: 5 / 7; /* Standard 5x7 aspect ratio on tablet/desktop */
   }
 }
 
 /* Botanical Card (Style 1) Classes */
-.c1-bismillah { font-size: calc(7.4 * var(--cqw)); }
-.c1-bismillah-sub { font-size: calc(1.9 * var(--cqw)); }
-.c1-bismillah-trans { font-size: calc(2.5 * var(--cqw)); }
+.c1-bismillah { font-size: calc(7.8 * var(--cqw)); }
+.c1-bismillah-sub { font-size: calc(2.1 * var(--cqw)); }
+.c1-bismillah-trans { font-size: calc(2.7 * var(--cqw)); }
 .c1-divider { width: calc(80 * var(--cqw)); }
-.c1-name { font-size: calc(8.0 * var(--cqw)); }
-.c1-parent { font-size: calc(2.6 * var(--cqw)); }
+.c1-name { font-size: calc(8.8 * var(--cqw)); }
+.c1-parent { font-size: calc(2.8 * var(--cqw)); }
 .c1-ampersand-wrap { gap: calc(1.4 * var(--cqw)); }
-.c1-ampersand { font-size: calc(5.4 * var(--cqw)); }
-.c1-col-header { font-size: calc(2.9 * var(--cqw)); }
-.c1-col-text { font-size: calc(2.5 * var(--cqw)); }
-.c1-col-sub { font-size: calc(2.3 * var(--cqw)); }
-.c1-poem-header { font-size: calc(2.7 * var(--cqw)); }
-.c1-poem-text { font-size: calc(2.3 * var(--cqw)); }
-.c1-guest-name { font-size: calc(4.0 * var(--cqw)); }
-.c1-rsvp-header { font-size: calc(2.6 * var(--cqw)); }
-.c1-rsvp-contact { font-size: calc(2.3 * var(--cqw)); }
-.c1-rsvp-footnote { font-size: calc(2.1 * var(--cqw)); }
+.c1-ampersand { font-size: calc(5.8 * var(--cqw)); }
+.c1-col-header { font-size: calc(3.1 * var(--cqw)); }
+.c1-col-text { font-size: calc(2.8 * var(--cqw)); }
+.c1-col-sub { font-size: calc(2.5 * var(--cqw)); }
+.c1-poem-header { font-size: calc(2.9 * var(--cqw)); }
+.c1-poem-text { font-size: calc(2.5 * var(--cqw)); }
+.c1-guest-name { font-size: calc(4.4 * var(--cqw)); }
+.c1-rsvp-header { font-size: calc(2.8 * var(--cqw)); }
+.c1-rsvp-contact { font-size: calc(2.5 * var(--cqw)); }
+.c1-rsvp-footnote { font-size: calc(2.3 * var(--cqw)); }
 
 /* Style 1 Sizing Polyfills */
 .c1-card-radius {
@@ -470,21 +483,21 @@
 }
 
 /* Navy Royal Card (Style 2) Classes */
-.c2-bismillah { font-size: calc(6.8 * var(--cqw)); }
-.c2-header { font-size: calc(2.1 * var(--cqw)); }
-.c2-header-sub { font-size: calc(1.5 * var(--cqw)); }
-.c2-name { font-size: calc(7.2 * var(--cqw)); }
-.c2-parent { font-size: calc(2.0 * var(--cqw)); }
-.c2-ampersand { font-size: calc(6.2 * var(--cqw)); }
-.c2-date-main { font-size: calc(2.5 * var(--cqw)); }
-.c2-date-sub { font-size: calc(2.1 * var(--cqw)); }
-.c2-col-header { font-size: calc(2.6 * var(--cqw)); }
-.c2-col-text { font-size: calc(2.1 * var(--cqw)); }
-.c2-col-sub { font-size: calc(1.95 * var(--cqw)); }
-.c2-guest-name { font-size: calc(3.6 * var(--cqw)); }
-.c2-rsvp-header { font-size: calc(2.1 * var(--cqw)); }
-.c2-rsvp-contact { font-size: calc(1.95 * var(--cqw)); }
-.c2-rsvp-footnote { font-size: calc(1.95 * var(--cqw)); }
+.c2-bismillah { font-size: calc(7.2 * var(--cqw)); }
+.c2-header { font-size: calc(2.3 * var(--cqw)); }
+.c2-header-sub { font-size: calc(1.7 * var(--cqw)); }
+.c2-name { font-size: calc(7.8 * var(--cqw)); }
+.c2-parent { font-size: calc(2.2 * var(--cqw)); }
+.c2-ampersand { font-size: calc(6.6 * var(--cqw)); }
+.c2-date-main { font-size: calc(2.8 * var(--cqw)); }
+.c2-date-sub { font-size: calc(2.3 * var(--cqw)); }
+.c2-col-header { font-size: calc(2.9 * var(--cqw)); }
+.c2-col-text { font-size: calc(2.3 * var(--cqw)); }
+.c2-col-sub { font-size: calc(2.1 * var(--cqw)); }
+.c2-guest-name { font-size: calc(4.0 * var(--cqw)); }
+.c2-rsvp-header { font-size: calc(2.3 * var(--cqw)); }
+.c2-rsvp-contact { font-size: calc(2.1 * var(--cqw)); }
+.c2-rsvp-footnote { font-size: calc(2.1 * var(--cqw)); }
 
 /* Style 2 Sizing Polyfills */
 .c2-flower-top {
@@ -658,7 +671,12 @@
 
 /* Dynamic sizing for both styles of invitation card */
 .invitation-card-size {
-  width: 92vw; /* Fallback for legacy engines (e.g. no min() support) */
-  width: calc(min(100vw - 16px, (100dvh - 80px) * 5 / 7));
+  width: 95vw; /* Slightly wider on mobile for improved screen real estate */
+  width: calc(min(100vw - 12px, (100dvh - 90px) * 5 / 7.6));
+}
+@media (min-width: 640px) {
+  .invitation-card-size {
+    width: calc(min(100vw - 32px, (100dvh - 120px) * 5 / 7));
+  }
 }
 

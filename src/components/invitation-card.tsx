@@ -182,7 +182,7 @@ export function InvitationCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
+      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
       style={{
         backgroundImage: 'url("/villa-courtyard.jpg")',
         backgroundSize: 'cover',
@@ -610,7 +610,7 @@ export function NavyRoyalCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto aspect-[5/7] ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
+      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.18)] bg-[#fcfbfa] border border-[#d4af37]/20`}
       style={{
         background: 'radial-gradient(circle at center, #fdfcfb 0%, #faf8f5 60%, #f4eee1 100%)'
       }}
