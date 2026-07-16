@@ -8,6 +8,14 @@ import { InvitationCard, GoldDust, PetalDrift, WeddingBells, easeLuxe } from '@/
 import { downloadElementAsImage } from '@/lib/download-card';
 import { useToast } from '@/hooks/use-toast';
 
+const staticGoldSpeckles = Array.from({ length: 80 }).map((_, i) => {
+  const x = (i * 17 + 7) % 100;
+  const y = (i * 23 + 13) % 100;
+  const size = 1 + (i % 2); // 1px or 2px gold speckles
+  const opacity = 0.35 + (i % 5) * 0.12;
+  return { x, y, size, opacity };
+});
+
 /* ─── Cinematic backdrop: video > image > aurora, with parallax ───────── */
 function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: MotionValue<string> }) {
   const isNavyRoyal = config.theme === 'navy-royal';
@@ -19,30 +27,46 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
           <div 
             className="h-full w-full relative"
             style={{
-              backgroundColor: '#000914',
+              backgroundColor: '#000307',
               backgroundImage: `
-                radial-gradient(circle at 15% 20%, rgba(0, 56, 155, 0.5) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(13, 0, 77, 0.55) 0%, transparent 60%),
-                radial-gradient(circle at 50% 50%, rgba(0, 82, 163, 0.4) 0%, transparent 70%),
-                radial-gradient(circle at 20% 80%, rgba(9, 21, 64, 0.6) 0%, transparent 55%),
-                radial-gradient(circle at 80% 85%, rgba(0, 56, 120, 0.5) 0%, transparent 50%),
+                radial-gradient(circle at 20% 30%, rgba(6, 22, 54, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 80% 40%, rgba(11, 2, 38, 0.4) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(0, 32, 69, 0.3) 0%, transparent 70%),
                 url("/navy-stars.jpg")
               `,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
-            {/* Deep navy color overlay to tint the black stars image to a luxurious navy blue */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#000b18]/40 via-transparent to-[#000914]/65 z-0 pointer-events-none" />
+            {/* Deep navy/black color overlay to keep it dark and rich */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#000307]/50 via-transparent to-[#000307]/75 z-0 pointer-events-none" />
 
             {/* Gold radial shimmer to make the stars look like gold speckles on the page background */}
             <div 
-              className="absolute inset-0 z-0 pointer-events-none opacity-[0.8]" 
+              className="absolute inset-0 z-0 pointer-events-none opacity-[0.9]" 
               style={{
-                background: 'radial-gradient(circle at center, rgba(212,175,55,0.4) 0%, rgba(0,14,33,0.92) 100%)',
+                background: 'radial-gradient(circle at center, rgba(212,175,55,0.42) 0%, rgba(0,3,10,0.96) 100%)',
                 mixBlendMode: 'color-dodge'
               }}
             />
+
+            {/* Rich field of static golden stars/speckles */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-90">
+              {staticGoldSpeckles.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="absolute rounded-full bg-[#d4af37]"
+                  style={{
+                    left: `${s.x}%`,
+                    top: `${s.y}%`,
+                    width: s.size,
+                    height: s.size,
+                    opacity: s.opacity,
+                    boxShadow: s.size > 1 ? '0 0 4px 1px rgba(212,175,55,0.45)' : 'none',
+                  }}
+                />
+              ))}
+            </div>
           </div>
         ) : config.videoUrl ? (
           <video
@@ -225,7 +249,7 @@ export default function NikkahInvitePage() {
         {/* Living theme backdrop behind the video */}
         <div className="absolute inset-0 z-0">
           <Backdrop config={config} parallaxY={new MotionValue()} />
-          <GoldDust count={config?.theme === 'navy-royal' ? 70 : 26} />
+          <GoldDust count={config?.theme === 'navy-royal' ? 120 : 26} />
           {config.theme !== 'navy-royal' && <PetalDrift />}
         </div>
 
@@ -352,7 +376,7 @@ export default function NikkahInvitePage() {
   return (
     <div className="relative min-h-screen bg-[#faf8f5]">
       <Backdrop config={config} parallaxY={parallaxY} />
-      <GoldDust count={config?.theme === 'navy-royal' ? 70 : 26} />
+      <GoldDust count={config?.theme === 'navy-royal' ? 120 : 26} />
       {config?.theme !== 'navy-royal' && <PetalDrift />}
 
       {/* Floating Audio Button */}
