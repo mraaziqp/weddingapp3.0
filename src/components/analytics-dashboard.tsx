@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell } from "lucide-react";
+import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell, MessageSquare, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -431,6 +431,7 @@ const LiveRsvpFeed = () => {
   const [responses, setResponses] = useState<RsvpResponse[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [latestSeenId, setLatestSeenId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'messages'>('all');
   const { toast } = useToast();
 
   const fetchResponses = async (isInitial = false) => {
@@ -474,103 +475,202 @@ const LiveRsvpFeed = () => {
     return () => clearInterval(interval);
   }, [latestSeenId, soundEnabled]);
 
+  const handleCopyMessage = (rsvp: RsvpResponse) => {
+    if (!rsvp.message) return;
+    navigator.clipboard.writeText(`"${rsvp.message}" - ${rsvp.guest_name}`).then(() => {
+      toast({ title: 'Message Copied!', description: 'Guest message copied to clipboard.' });
+    });
+  };
+
+  const handleWhatsAppReply = (rsvp: RsvpResponse) => {
+    const textMessage = rsvp.status === 'Accepted'
+      ? `Hi ${rsvp.guest_name}! Thank you so much for accepting our wedding invitation. We can't wait to celebrate with you! 🥂`
+      : `Hi ${rsvp.guest_name}! We're so sorry to hear you won't be able to make it to our wedding, but thank you for letting us know. You will be missed! ❤️`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
+    window.open(url, '_blank');
+  };
+
+  const filteredResponses = responses.filter(r => {
+    if (filter === 'accepted') return r.status === 'Accepted';
+    if (filter === 'declined') return r.status === 'Declined';
+    if (filter === 'messages') return !!r.message;
+    return true;
+  });
+
   return (
     <MotionCard
       variants={itemVariants}
       className="md:col-span-3 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden group"
     >
-      <CardHeader className="border-b border-white/5 pb-4 bg-black/20 flex flex-row items-center justify-between gap-4 flex-wrap">
+      <CardHeader className="border-b border-white/5 pb-4 bg-black/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[#d4af37] flex items-center gap-2">
             <Bell className="h-4 w-4 text-[#d4af37] animate-bounce" /> Live RSVP Feed &amp; Messages
           </CardTitle>
           <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Real-time RSVP responses and guest messages</p>
         </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          className={cn(
-            "rounded-full gap-2 text-xs transition-all border border-white/10",
-            soundEnabled 
-              ? "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40 hover:bg-[#d4af37]/25" 
-              : "bg-white/5 text-white/50 hover:bg-white/10"
-          )}
-        >
-          {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-          {soundEnabled ? 'Chime ON' : 'Chime Muted'}
-        </Button>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Segment Filter Switcher */}
+          <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 gap-1 shrink-0">
+            <button
+              onClick={() => setFilter('all')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'all' 
+                  ? "bg-[#d4af37] text-black shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              All ({responses.length})
+            </button>
+            <button
+              onClick={() => setFilter('accepted')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'accepted' 
+                  ? "bg-emerald-500 text-black shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              Accepted ({responses.filter(r => r.status === 'Accepted').length})
+            </button>
+            <button
+              onClick={() => setFilter('declined')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'declined' 
+                  ? "bg-rose-500 text-black shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              Declined ({responses.filter(r => r.status === 'Declined').length})
+            </button>
+            <button
+              onClick={() => setFilter('messages')}
+              className={cn(
+                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
+                filter === 'messages' 
+                  ? "bg-amber-500 text-black shadow-sm font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              Messages ({responses.filter(r => !!r.message).length})
+            </button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={cn(
+              "rounded-full gap-2 text-xs transition-all border border-white/10 shrink-0",
+              soundEnabled 
+                ? "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40 hover:bg-[#d4af37]/25" 
+                : "bg-white/5 text-white/50 hover:bg-white/10"
+            )}
+          >
+            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            {soundEnabled ? 'Chime ON' : 'Chime Muted'}
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent className="p-0">
-        <div className="overflow-y-auto max-h-[380px] divide-y divide-white/5 scrollbar-thin">
-          {responses.length === 0 ? (
+        <div className="overflow-y-auto max-h-[400px] divide-y divide-white/5 scrollbar-thin">
+          {filteredResponses.length === 0 ? (
             <div className="p-12 text-center text-white/40 italic text-sm">
-              No RSVPs recorded yet.
+              No matching RSVP responses found.
             </div>
           ) : (
-            <AnimatePresence initial={false}>
-              {responses.map((rsvp) => (
-                <motion.div
-                  key={rsvp.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="p-4 hover:bg-white/5 transition-colors flex flex-col gap-1.5"
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white text-sm">{rsvp.guest_name}</span>
-                      
-                      {/* Guest Side Tag */}
-                      {rsvp.guest_id && (
-                        <span className={cn(
-                          "text-[9px] px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider",
-                          rsvp.guest_id.startsWith('household-') 
-                            ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
-                            : rsvp.guest_id.includes('bride') 
-                              ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" 
-                              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        )}>
-                          {rsvp.guest_id.startsWith('household-') ? 'Household' : rsvp.guest_id.includes('bride') ? 'Bride\'s' : 'Groom\'s'}
+            <div className="flex flex-col">
+              <AnimatePresence initial={false}>
+                {filteredResponses.map((rsvp) => (
+                  <motion.div
+                    key={rsvp.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="p-4 hover:bg-white/5 transition-colors flex flex-col gap-2"
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white text-sm">{rsvp.guest_name}</span>
+                        
+                        {/* Guest Side Tag */}
+                        {rsvp.guest_id && (
+                          <span className={cn(
+                            "text-[9px] px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider",
+                            rsvp.guest_id.startsWith('household-') 
+                              ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                              : rsvp.guest_id.includes('bride') 
+                                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" 
+                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          )}>
+                            {rsvp.guest_id.startsWith('household-') ? 'Household' : rsvp.guest_id.includes('bride') ? 'Bride\'s' : 'Groom\'s'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[10px] text-white/40">
+                          {new Date(rsvp.responded_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
+                          {new Date(rsvp.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                      )}
+                        
+                        <span className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
+                          rsvp.status === 'Accepted'
+                            ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
+                            : "bg-rose-950/40 text-rose-400 border-rose-500/30"
+                        )}>
+                          {rsvp.status}
+                        </span>
+
+                        {/* Quick Direct Actions */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleWhatsAppReply(rsvp)}
+                            title="Reply via WhatsApp"
+                            className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:text-white transition-all"
+                          >
+                            <MessageSquare size={12} />
+                          </button>
+                          {rsvp.message && (
+                            <button
+                              onClick={() => handleCopyMessage(rsvp)}
+                              title="Copy Message"
+                              className="p-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-white transition-all"
+                            >
+                              <Copy size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-white/40">
-                        {new Date(rsvp.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className={cn(
-                        "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
-                        rsvp.status === 'Accepted'
-                          ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
-                          : "bg-rose-950/40 text-rose-400 border-rose-500/30"
-                      )}>
-                        {rsvp.status}
-                      </span>
-                    </div>
-                  </div>
+                    {/* Message Quote Bubble */}
+                    {rsvp.message && (
+                      <div className="relative mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-4 py-2.5 rounded-r-xl text-white/95 leading-relaxed font-serif shadow-sm">
+                        <span className="absolute top-1 left-2 text-[#d4af37]/10 font-serif text-3xl leading-none select-none">“</span>
+                        "{rsvp.message}"
+                      </div>
+                    )}
 
-                  {/* Message Quote Bubble */}
-                  {rsvp.message && (
-                    <div className="mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-3 py-2 rounded-r-xl text-white/90 leading-relaxed">
-                      "{rsvp.message}"
-                    </div>
-                  )}
-
-                  {/* Dietary Badge */}
-                  {rsvp.dietary_restrictions && (
-                    <div className="flex gap-1.5 items-center mt-1">
-                      <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium leading-none">
-                        Dietary: {rsvp.dietary_restrictions}
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    {/* Dietary Badge */}
+                    {rsvp.dietary_restrictions && (
+                      <div className="flex gap-1.5 items-center">
+                        <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium leading-none">
+                          Dietary: {rsvp.dietary_restrictions}
+                        </span>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </div>
       </CardContent>
