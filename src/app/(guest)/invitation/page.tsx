@@ -28,20 +28,27 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
           <div 
             className="h-full w-full relative"
             style={{
-              backgroundColor: '#000e21',
-              backgroundImage: 'url("/navy-stars.jpg")',
+              backgroundColor: '#000914',
+              backgroundImage: `
+                radial-gradient(circle at 15% 20%, rgba(0, 56, 155, 0.5) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(13, 0, 77, 0.55) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(0, 82, 163, 0.4) 0%, transparent 70%),
+                radial-gradient(circle at 20% 80%, rgba(9, 21, 64, 0.6) 0%, transparent 55%),
+                radial-gradient(circle at 80% 85%, rgba(0, 56, 120, 0.5) 0%, transparent 50%),
+                url("/navy-stars.jpg")
+              `,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
             {/* Deep navy color overlay to tint the black stars image to a luxurious navy blue */}
-            <div className="absolute inset-0 bg-[#000e21]/45 mix-blend-multiply z-0 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#000b18]/40 via-transparent to-[#000914]/65 z-0 pointer-events-none" />
 
             {/* Gold radial shimmer to make the stars look like gold speckles on the page background */}
             <div 
-              className="absolute inset-0 z-0 pointer-events-none opacity-[0.55]" 
+              className="absolute inset-0 z-0 pointer-events-none opacity-[0.8]" 
               style={{
-                background: 'radial-gradient(circle at center, rgba(212,175,55,0.3) 0%, rgba(0,14,33,0.85) 100%)',
+                background: 'radial-gradient(circle at center, rgba(212,175,55,0.4) 0%, rgba(0,14,33,0.92) 100%)',
                 mixBlendMode: 'color-dodge'
               }}
             />
@@ -476,7 +483,7 @@ export default function InvitationPage() {
         {/* Living theme backdrop behind the video */}
         <div className="absolute inset-0 z-0">
           <Backdrop config={config || DEFAULT_INVITATION_CONFIG} parallaxY={new MotionValue()} />
-          <GoldDust />
+          <GoldDust count={config?.theme === 'navy-royal' ? 70 : 26} />
           {config?.theme !== 'navy-royal' && <PetalDrift />}
         </div>
 
@@ -689,8 +696,8 @@ export default function InvitationPage() {
   return (
     <div className="relative min-h-screen bg-[#faf8f5]">
       <Backdrop config={config} parallaxY={parallaxY} />
-      <GoldDust />
-      <PetalDrift />
+      <GoldDust count={config?.theme === 'navy-royal' ? 70 : 26} />
+      {config?.theme !== 'navy-royal' && <PetalDrift />}
 
       {/* Floating Audio Button */}
       {musicAvailable && (
