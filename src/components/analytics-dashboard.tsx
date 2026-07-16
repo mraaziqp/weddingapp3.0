@@ -430,7 +430,7 @@ interface RsvpResponse {
 const LiveRsvpFeed = () => {
   const [responses, setResponses] = useState<RsvpResponse[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [latestSeenId, setLatestSeenId] = useState<number | null>(null);
+  const [latestSeenTime, setLatestSeenTime] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'messages'>('all');
   const { toast } = useToast();
 
@@ -443,12 +443,13 @@ const LiveRsvpFeed = () => {
       setResponses(list);
 
       if (list.length > 0) {
-        const maxId = Math.max(...list.map(r => r.id));
+        const times = list.map(r => new Date(r.responded_at).getTime());
+        const maxTime = Math.max(...times);
         if (isInitial) {
-          setLatestSeenId(maxId);
-        } else if (latestSeenId !== null && maxId > latestSeenId) {
-          // Find all new responses
-          const newResponses = list.filter(r => r.id > latestSeenId);
+          setLatestSeenTime(maxTime);
+        } else if (latestSeenTime !== null && maxTime > latestSeenTime) {
+          // Find all new responses since the last seen timestamp
+          const newResponses = list.filter(r => new Date(r.responded_at).getTime() > latestSeenTime);
           newResponses.forEach(r => {
             // Trigger Toast
             toast({
@@ -461,7 +462,7 @@ const LiveRsvpFeed = () => {
               playChime();
             }
           });
-          setLatestSeenId(maxId);
+          setLatestSeenTime(maxTime);
         }
       }
     } catch (err) {
@@ -473,7 +474,7 @@ const LiveRsvpFeed = () => {
     fetchResponses(true);
     const interval = setInterval(() => fetchResponses(false), 8000);
     return () => clearInterval(interval);
-  }, [latestSeenId, soundEnabled]);
+  }, [latestSeenTime, soundEnabled]);
 
   const handleCopyMessage = (rsvp: RsvpResponse) => {
     if (!rsvp.message) return;

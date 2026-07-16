@@ -114,9 +114,49 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const sql = getDb();
-    await ensureTable();
-    const responses = await sql`SELECT * FROM rsvp_responses ORDER BY responded_at DESC LIMIT 100`;
+    // 1. Fetch any custom messages/comments from Neon (non-blocking)
+    const messagesMap: Record<string, string> = {};
+    try {
+      const sql = getDb();
+      const rsvpRows = await sql`SELECT guest_id, message FROM rsvp_responses WHERE message IS NOT NULL AND message != ''`;
+      rsvpRows.forEach(row => {
+        if (row.guest_id) {
+          messagesMap[row.guest_id] = row.message;
+        }
+      });
+    } catch (sqlErr) {
+      console.warn('[RSVP GET] Neon query failed, message comments will be omitted:', sqlErr);
+    }
+
+    // 2. Fetch all guests who have responded from Supabase
+    const { data: guests, error } = await supabaseAdmin
+      .from('guests')
+      .select('id, first_name, last_name, rsvp_status, dietary_restrictions, song_request, tags, updated_at')
+      .neq('rsvp_status', 'Pending')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    // 3. Map to RsvpResponse format expected by the client
+    const responses = (guests || []).map(g => {
+      const isBride = g.tags?.includes("Bride's") || g.tags?.includes("Bride's Family") || g.tags?.includes("Bride's Friends");
+      
+      // Try to find custom message, fallback to song request
+      let message = messagesMap[g.id] || undefined;
+      if (!message && g.song_request) {
+        message = `🎵 Song Request: ${g.song_request}`;
+      }
+
+      return {
+        id: g.id,
+        guest_id: isBride ? 'guest-bride' : 'guest-groom',
+        guest_name: `${g.first_name} ${g.last_name}`,
+        status: g.rsvp_status === 'Confirmed' ? 'Accepted' : 'Declined',
+        dietary_restrictions: g.dietary_restrictions || undefined,
+        message: message,
+        responded_at: g.updated_at || new Date().toISOString()
+      };
+    });
 
     return NextResponse.json({ responses, count: responses.length });
   } catch (err) {
