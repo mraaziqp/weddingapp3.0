@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles } from "lucide-react";
+import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -375,6 +375,209 @@ const SeatingMiniMap = () => (
     </MotionCard>
 );
 
+function playChime() {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    
+    // Play two notes (a beautiful major-third chime)
+    const now = ctx.currentTime;
+    
+    // Note 1 (E5 - 659.25 Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(659.25, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.15, now + 0.05);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    // Note 2 (G#5 - 830.61 Hz) after a short delay (0.08s)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(830.61, now + 0.08);
+    gain2.gain.setValueAtTime(0, now + 0.08);
+    gain2.gain.linearRampToValueAtTime(0.15, now + 0.13);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.88);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    
+    osc1.start(now);
+    osc2.start(now + 0.08);
+    osc1.stop(now + 0.8);
+    osc2.stop(now + 0.88);
+  } catch (err) {
+    console.error('Audio chime failed:', err);
+  }
+}
+
+interface RsvpResponse {
+  id: number;
+  guest_id: string;
+  household_id?: string;
+  guest_name: string;
+  status: string;
+  dietary_restrictions?: string;
+  message?: string;
+  responded_at: string;
+}
+
+const LiveRsvpFeed = () => {
+  const [responses, setResponses] = useState<RsvpResponse[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [latestSeenId, setLatestSeenId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const fetchResponses = async (isInitial = false) => {
+    try {
+      const res = await fetch('/api/rsvp');
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = (data.responses || []) as RsvpResponse[];
+      setResponses(list);
+
+      if (list.length > 0) {
+        const maxId = Math.max(...list.map(r => r.id));
+        if (isInitial) {
+          setLatestSeenId(maxId);
+        } else if (latestSeenId !== null && maxId > latestSeenId) {
+          // Find all new responses
+          const newResponses = list.filter(r => r.id > latestSeenId);
+          newResponses.forEach(r => {
+            // Trigger Toast
+            toast({
+              title: `🔔 New RSVP Response`,
+              description: `${r.guest_name} has responded: ${r.status}`,
+              variant: r.status === 'Accepted' ? 'default' : 'destructive',
+            });
+            // Play Chime
+            if (soundEnabled) {
+              playChime();
+            }
+          });
+          setLatestSeenId(maxId);
+        }
+      }
+    } catch (err) {
+      console.error('[LiveFeed] Failed to fetch RSVPs:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchResponses(true);
+    const interval = setInterval(() => fetchResponses(false), 8000);
+    return () => clearInterval(interval);
+  }, [latestSeenId, soundEnabled]);
+
+  return (
+    <MotionCard
+      variants={itemVariants}
+      className="md:col-span-3 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden group"
+    >
+      <CardHeader className="border-b border-white/5 pb-4 bg-black/20 flex flex-row items-center justify-between gap-4 flex-wrap">
+        <div>
+          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[#d4af37] flex items-center gap-2">
+            <Bell className="h-4 w-4 text-[#d4af37] animate-bounce" /> Live RSVP Feed &amp; Messages
+          </CardTitle>
+          <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Real-time RSVP responses and guest messages</p>
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          className={cn(
+            "rounded-full gap-2 text-xs transition-all border border-white/10",
+            soundEnabled 
+              ? "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40 hover:bg-[#d4af37]/25" 
+              : "bg-white/5 text-white/50 hover:bg-white/10"
+          )}
+        >
+          {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          {soundEnabled ? 'Chime ON' : 'Chime Muted'}
+        </Button>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        <div className="overflow-y-auto max-h-[380px] divide-y divide-white/5 scrollbar-thin">
+          {responses.length === 0 ? (
+            <div className="p-12 text-center text-white/40 italic text-sm">
+              No RSVPs recorded yet.
+            </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {responses.map((rsvp) => (
+                <motion.div
+                  key={rsvp.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="p-4 hover:bg-white/5 transition-colors flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white text-sm">{rsvp.guest_name}</span>
+                      
+                      {/* Guest Side Tag */}
+                      {rsvp.guest_id && (
+                        <span className={cn(
+                          "text-[9px] px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider",
+                          rsvp.guest_id.startsWith('household-') 
+                            ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                            : rsvp.guest_id.includes('bride') 
+                              ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" 
+                              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        )}>
+                          {rsvp.guest_id.startsWith('household-') ? 'Household' : rsvp.guest_id.includes('bride') ? 'Bride\'s' : 'Groom\'s'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-white/40">
+                        {new Date(rsvp.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
+                        rsvp.status === 'Accepted'
+                          ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
+                          : "bg-rose-950/40 text-rose-400 border-rose-500/30"
+                      )}>
+                        {rsvp.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Message Quote Bubble */}
+                  {rsvp.message && (
+                    <div className="mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-3 py-2 rounded-r-xl text-white/90 leading-relaxed">
+                      "{rsvp.message}"
+                    </div>
+                  )}
+
+                  {/* Dietary Badge */}
+                  {rsvp.dietary_restrictions && (
+                    <div className="flex gap-1.5 items-center mt-1">
+                      <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium leading-none">
+                        Dietary: {rsvp.dietary_restrictions}
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
+      </CardContent>
+    </MotionCard>
+  );
+};
+
 export function AnalyticsDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
@@ -415,6 +618,7 @@ export function AnalyticsDashboard() {
         />
         <LatestGift />
         <SeatingMiniMap />
+        <LiveRsvpFeed />
     </motion.div>
   )
 }
