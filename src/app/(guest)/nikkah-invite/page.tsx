@@ -250,8 +250,11 @@ export default function NikkahInvitePage() {
       cleaned = '27' + cleaned;
     }
     
-    // Construct public invitation URL
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://raziazaraaziq.co.za';
+    // Construct public invitation URL (use production domain for local testing fallbacks)
+    let baseUrl = 'https://raziazaraaziq.co.za';
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      baseUrl = window.location.origin;
+    }
     const inviteUrl = `${baseUrl}/nikkah-invite?theme=${activeTheme}`;
     
     const textMessage = `Assalamu Alaikum. You are warmly invited to our Nikaah ceremony. Please view the details and invitation card here: ${inviteUrl}`;
