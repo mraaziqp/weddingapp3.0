@@ -218,7 +218,7 @@ export function InvitationCard({
       />
 
       {/* Card content — vertically composed and centered with compact spacing */}
-      <div className="relative flex h-full flex-col items-center justify-center text-center z-20 c1-card-content">
+      <div className="relative flex h-full flex-col items-center justify-between text-center z-20 c1-card-content">
         
         {/* Arabic Calligraphy and Translation */}
         <motion.div variants={riseIn} className="flex flex-col items-center">

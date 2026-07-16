@@ -352,7 +352,7 @@
 }
 
 .invitation-aspect {
-  aspect-ratio: 5 / 7.6; /* Taller aspect ratio on mobile to allocate more vertical space for typography details */
+  aspect-ratio: 5 / 8.2; /* Taller aspect ratio on mobile to allocate more vertical space for typography details */
 }
 @media (min-width: 640px) {
   .invitation-aspect {
@@ -405,7 +405,7 @@
 }
 .c1-card-content {
   gap: 2.5vw;
-  padding: 5.5vw 8.5vw;
+  padding: 4vw 8.5vw;
 }
 .c1-bismillah-sub-container {
   max-width: 52vw;
@@ -456,7 +456,7 @@
   }
   .c1-card-content {
     gap: 2.5cqw;
-    padding: 5.5cqw 8.5cqw;
+    padding: 4cqw 8.5cqw;
   }
   .c1-bismillah-sub-container {
     max-width: 52cqw;
@@ -513,7 +513,7 @@
   height: 50vw;
 }
 .c2-card-content {
-  padding: 6vw 8.5vw;
+  padding: 4vw 8.5vw;
 }
 .c2-bismillah-margin {
   margin-top: 1vw;
@@ -553,7 +553,7 @@
     height: 50cqw;
   }
   .c2-card-content {
-    padding: 6cqw 8.5cqw;
+    padding: 4cqw 8.5cqw;
   }
   .c2-bismillah-margin {
     margin-top: 1cqw;
@@ -672,7 +672,7 @@
 /* Dynamic sizing for both styles of invitation card */
 .invitation-card-size {
   width: 95vw; /* Slightly wider on mobile for improved screen real estate */
-  width: calc(min(100vw - 12px, (100dvh - 90px) * 5 / 7.6));
+  width: calc(min(100vw - 12px, (100dvh - 90px) * 5 / 8.2));
 }
 @media (min-width: 640px) {
   .invitation-card-size {
