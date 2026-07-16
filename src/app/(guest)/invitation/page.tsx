@@ -764,7 +764,7 @@ export default function InvitationPage() {
         </motion.div>
       )}
 
-      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-0 sm:px-4 py-8">
+      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-0 sm:px-4 py-2 sm:py-8">
         <InvitationCard 
           config={config} 
           guestName={guestName || undefined} 
@@ -773,13 +773,13 @@ export default function InvitationPage() {
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
+          animate={{ opacity: 1, y: [0, 6, 0] }}
           transition={{ opacity: { delay: 2, duration: 1 }, y: { delay: 2, duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
-          className="mt-8 flex flex-col items-center gap-1 text-[#031207]/55 animate-bounce"
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 text-[#031207]/55 md:relative md:bottom-auto md:left-auto md:translate-x-0 md:mt-8 animate-bounce"
           data-print-hide
         >
-          <span className="font-body text-[10px] uppercase tracking-[0.3em]">Scroll for details</span>
-          <ChevronDown size={16} />
+          <span className="font-body text-[8px] uppercase tracking-[0.3em]">Scroll for details</span>
+          <ChevronDown size={12} />
         </motion.div>
       </section>
 
