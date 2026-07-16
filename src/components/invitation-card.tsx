@@ -232,8 +232,7 @@ export function InvitationCard({
             className="c1-bismillah-sub-margin c1-bismillah-sub font-bold uppercase tracking-[0.14em] text-[#2e3b32] c1-bismillah-sub-container leading-relaxed"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
-            In The Name of Allah, <br />
-            The Most Gracious, The Most Merciful
+            In The Name of Allah, The Most Gracious, The Most Merciful
           </p>
         </motion.div>
 
@@ -309,7 +308,7 @@ export function InvitationCard({
         <motion.div
           variants={riseIn}
           className={`w-full border-t border-b border-[#122217]/28 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
-          style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.8 * var(--cqw))', paddingBottom: 'calc(1.8 * var(--cqw))' }}
+          style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.2 * var(--cqw))', paddingBottom: 'calc(1.2 * var(--cqw))' }}
         >
           {/* Nikaah Column */}
           <div 
@@ -402,13 +401,7 @@ export function InvitationCard({
               className="c1-poem-header italic text-[#083d1c] font-bold"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              &ldquo;And We created you in pairs&rdquo;
-            </p>
-            <p
-              className="c1-poem-text text-[#455249] font-medium c1-poem-text-margin"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              (Surah 78, verse 8)
+              &ldquo;And We created you in pairs&rdquo; <span className="c1-poem-text text-[#455249] font-normal not-italic ml-1">(Surah 78, verse 8)</span>
             </p>
           </div>
         </motion.div>
