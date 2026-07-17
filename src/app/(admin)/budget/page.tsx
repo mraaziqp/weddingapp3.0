@@ -81,18 +81,18 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-headline text-3xl italic font-bold tracking-tight text-amber-50">💰 Budget Tracker</h1>
+          <h1 className="font-headline text-2xl italic font-bold tracking-tight text-amber-50 sm:text-3xl">💰 Budget Tracker</h1>
           <p className="text-white/50 text-sm mt-2">Monitor every rupee spent vs. budgeted</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={exportCSV} variant="outline" className="gap-2">
+          <Button onClick={exportCSV} variant="outline" className="gap-2 flex-1 sm:flex-none">
             <Download size={16} /> Export CSV
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-amber-500 hover:bg-amber-600">
+              <Button className="gap-2 bg-amber-500 hover:bg-amber-600 flex-1 sm:flex-none">
                 <Plus size={16} /> Add Expense
               </Button>
             </DialogTrigger>
