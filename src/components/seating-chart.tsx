@@ -10,7 +10,7 @@ import { motion, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { fetchHouseholds } from '@/lib/supabase';
-import type { Guest, Table, GuestTag } from '@/lib/types';
+import type { Guest, Table } from '@/lib/types';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
@@ -19,35 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const SEATING_LAYOUT_STORAGE_KEY = 'wedu-seating-layout-v1';
-
-const VENUE_SAMPLE_NAMES = [
-  'Test Guest 1',
-  'Test Guest 2',
-  'Test Guest 3',
-  'Test Guest 4',
-  'Test Guest 5',
-  'Test Guest 6',
-];
-
-const _VENUE_SAMPLE_GUESTS: Guest[] = VENUE_SAMPLE_NAMES.map((fullName, index) => {
-  const [firstName, ...rest] = fullName.split(' ');
-  const lastName = rest.join(' ') || `Guest ${index + 1}`;
-  const tags: GuestTag[] =
-    index < 2
-      ? ["Bride's Family"]
-      : index < 4
-      ? ["Groom's Family"]
-      : ["Bride's Friends"];
-
-  return {
-    id: `venue-guest-${index + 1}`,
-    householdId: `venue-household-${Math.floor(index / 2) + 1}`,
-    firstName,
-    lastName,
-    rsvpStatus: 'Confirmed',
-    tags,
-  };
-});
 
 const VENUE_LAYOUT_TABLES: Table[] = [
   {
