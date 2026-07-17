@@ -20,10 +20,14 @@ import {
   AnimatePresence,
   useAnimationControls,
 } from 'framer-motion';
-import QRCode from 'react-qr-code';
+import dynamic from 'next/dynamic';
 import { Volume2, VolumeX } from 'lucide-react';
 import { STICKERS } from '@/components/save-the-date/stickers';
 import type { DesignState, TextElement, ImageElement, QRElement, StickerElement } from '@/components/save-the-date/types';
+
+// Code-split out — not needed until the guest actually reaches the QR
+// element of the save-the-date card, and this file is guest-facing.
+const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
 
 // ── Default couple details (fallback when API is loading/fails) ───────────────
 const DEFAULTS = {

@@ -1,5 +1,3 @@
-import html2canvas from 'html2canvas-pro';
-
 /**
  * Rasterizes a DOM node to a downloadable PNG and triggers the browser's
  * save dialog. Shared by every "Download Card" button in the app.
@@ -90,6 +88,12 @@ export async function downloadElementAsImage(
   document.body.appendChild(clone);
 
   const rasterize = async () => {
+    // Dynamically imported: html2canvas-pro is a large canvas-rendering
+    // library only needed when a guest actually clicks "Download" — eagerly
+    // importing it at module scope would ship it in the initial JS bundle
+    // for every visit to the invitation pages, even the ~everyone who never
+    // downloads the card.
+    const { default: html2canvas } = await import('html2canvas-pro');
     const canvas = await html2canvas(clone, {
       backgroundColor: '#ffffff',
       useCORS: true,

@@ -1,5 +1,5 @@
 'use client';
-import QRCode from 'react-qr-code';
+import dynamic from 'next/dynamic';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Heart, Share2, MapPin, Calendar, Clock } from 'lucide-react';
@@ -11,8 +11,14 @@ import { fetchTimelineEvents } from '@/lib/supabase';
 import { DEFAULT_INVITATION_CONFIG, InvitationConfig } from '@/lib/invitation-config';
 import { useToast } from '@/hooks/use-toast';
 import type { TimelineEvent } from '@/lib/types';
+import { WellWishesWall } from '@/components/well-wishes-wall';
 
 interface GoldDustParticle { id: number; left: number; top: number; dur: number; dly: number }
+
+// Only needed once a guest actually reaches the confirmation pass — code
+// splitting it out keeps it off the initial bundle for the far more common
+// case (still deciding, hasn't RSVP'd yet).
+const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
 
 function directionsUrl(location: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
@@ -250,6 +256,11 @@ export function DigitalPass({ household, config: configProp }: { household: Hous
             </Button>
           </motion.div>
         </div>
+
+        {/* ── Well Wishes Wall — a reason to come back before the big day ── */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }}>
+          <WellWishesWall defaultName={household.name} />
+        </motion.div>
       </motion.div>
 
       {/* ── Timeline Modal ── */}
