@@ -1,11 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchHouseholds } from '@/lib/supabase';
+import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 
 /**
  * GET /api/export/guests
  * Returns a downloadable CSV with all guest data for venue coordinators.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAuthorizedAdminRequest(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const households = await fetchHouseholds().catch(() => []);
   const rows: string[] = [];
 

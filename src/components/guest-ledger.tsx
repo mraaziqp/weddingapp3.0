@@ -110,8 +110,8 @@ function AddGuestForm({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="glass-card-static border-white/10">
-                            <SelectItem value="groom">Groom's Side</SelectItem>
-                            <SelectItem value="bride">Bride's Side</SelectItem>
+                            <SelectItem value="groom">Groom&apos;s Side</SelectItem>
+                            <SelectItem value="bride">Bride&apos;s Side</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -153,7 +153,7 @@ function HouseholdForm({
 }: {
     defaultValues: HouseholdFormValues;
     defaultSide?: 'groom' | 'bride';
-    onSubmit: (data: any) => void;
+    onSubmit: (data: HouseholdFormValues) => void;
     submitLabel: string;
     /** 'single' hides the household name field and locks the form to one guest. */
     mode?: 'single' | 'multi';
@@ -202,8 +202,8 @@ function HouseholdForm({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="glass-card-static border-white/10">
-                            <SelectItem value="groom">Groom's Side</SelectItem>
-                            <SelectItem value="bride">Bride's Side</SelectItem>
+                            <SelectItem value="groom">Groom&apos;s Side</SelectItem>
+                            <SelectItem value="bride">Bride&apos;s Side</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -505,7 +505,7 @@ export function GuestLedger() {
                             : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    Groom's Side ({groomCount} Invites · {groomIndividuals} Guests)
+                    Groom&apos;s Side ({groomCount} Invites · {groomIndividuals} Guests)
                 </button>
                 <button
                     onClick={() => setActiveSideTab('bride')}
@@ -516,7 +516,7 @@ export function GuestLedger() {
                             : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                 >
-                    Bride's Side ({brideCount} Invites · {brideIndividuals} Guests)
+                    Bride&apos;s Side ({brideCount} Invites · {brideIndividuals} Guests)
                 </button>
             </div>
 

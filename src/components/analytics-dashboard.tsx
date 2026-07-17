@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell, MessageSquare, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,12 +306,12 @@ const GuestSideBreakdown = ({ groom, bride, total }: { groom: number; bride: num
 
                     <div className="grid grid-cols-2 gap-2.5">
                         <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Groom's Side</p>
+                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Groom&apos;s Side</p>
                             <p className="font-serif text-lg text-emerald-400 mt-0.5">{groom}</p>
                             <p className="text-[9px] text-white/50">{groomPercent}% of total</p>
                         </div>
                         <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Bride's Side</p>
+                            <p className="text-white/40 text-[9px] uppercase tracking-wider">Bride&apos;s Side</p>
                             <p className="font-serif text-lg text-indigo-400 mt-0.5">{bride}</p>
                             <p className="text-[9px] text-white/50">{bridePercent}% of total</p>
                         </div>
@@ -378,7 +378,7 @@ const SeatingMiniMap = () => (
 function playChime() {
   if (typeof window === 'undefined') return;
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     
@@ -434,7 +434,7 @@ const LiveRsvpFeed = () => {
   const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'groom' | 'bride' | 'messages'>('all');
   const { toast } = useToast();
 
-  const fetchResponses = async (isInitial = false) => {
+  const fetchResponses = useCallback(async (isInitial = false) => {
     try {
       const res = await fetch('/api/rsvp');
       if (!res.ok) return;
@@ -468,13 +468,13 @@ const LiveRsvpFeed = () => {
     } catch (err) {
       console.error('[LiveFeed] Failed to fetch RSVPs:', err);
     }
-  };
+  }, [latestSeenTime, soundEnabled, toast]);
 
   useEffect(() => {
     fetchResponses(true);
     const interval = setInterval(() => fetchResponses(false), 8000);
     return () => clearInterval(interval);
-  }, [latestSeenTime, soundEnabled]);
+  }, [fetchResponses]);
 
   const handleCopyMessage = (rsvp: RsvpResponse) => {
     if (!rsvp.message) return;
@@ -687,7 +687,7 @@ const LiveRsvpFeed = () => {
                     {rsvp.message && (
                       <div className="relative mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-4 py-2.5 rounded-r-xl text-white/95 leading-relaxed font-serif shadow-sm">
                         <span className="absolute top-1 left-2 text-[#d4af37]/10 font-serif text-3xl leading-none select-none">“</span>
-                        "{rsvp.message}"
+                        &quot;{rsvp.message}&quot;
                       </div>
                     )}
 

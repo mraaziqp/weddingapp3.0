@@ -4,10 +4,16 @@ import { useState, useEffect } from 'react';
 import { Download, X, Share, Smartphone, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Non-standard browser event (Chrome/Edge/Samsung Internet) — not in TS's DOM lib.
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function PwaInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIos, setIsIos] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     // 1. Guard for SSR
@@ -16,7 +22,7 @@ export function PwaInstallPrompt() {
     // 2. Check if already installed / running in standalone mode
     const isStandalone = 
       window.matchMedia('(display-mode: standalone)').matches || 
-      (window.navigator as any).standalone === true;
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     
     if (isStandalone) return;
 
@@ -36,7 +42,7 @@ export function PwaInstallPrompt() {
     // 5. Handle Android / Samsung / Honor / Huawei / Chrome install prompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Wait a short delay before showing to ensure page load is smooth
       setTimeout(() => setShowPrompt(true), 3500);
     };
@@ -103,7 +109,7 @@ export function PwaInstallPrompt() {
                 
                 {isIos ? (
                   <p className="text-xs text-white/85 mt-1 leading-relaxed">
-                    Tap the <strong className="text-[#f6e7b7] font-semibold">Share</strong> button in Safari, then select <strong className="text-[#f6e7b7] font-semibold">"Add to Home Screen"</strong> to install the Wedu App on your phone.
+                    Tap the <strong className="text-[#f6e7b7] font-semibold">Share</strong> button in Safari, then select <strong className="text-[#f6e7b7] font-semibold">&quot;Add to Home Screen&quot;</strong> to install R&amp;A&apos;s Wedding on your phone.
                   </p>
                 ) : (
                   <p className="text-xs text-white/85 mt-1 leading-relaxed">
@@ -117,7 +123,7 @@ export function PwaInstallPrompt() {
                     className="mt-3 w-full bg-[#d4af37] text-[#0f1d13] text-xs font-bold py-2 px-4 rounded-lg hover:bg-[#f6e7b7] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                   >
                     <Smartphone size={14} />
-                    Install Wedu App
+                    Install the App
                   </button>
                 )}
               </div>

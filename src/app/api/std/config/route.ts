@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 
 const DEFAULTS = {
   partner1Short: 'Abduraziq',
@@ -51,6 +52,10 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!isAuthorizedAdminRequest(req)) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { config: clientConfig, designState } = body;

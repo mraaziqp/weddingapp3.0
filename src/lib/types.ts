@@ -45,6 +45,8 @@ export type Gift = {
   storeUrl: string;
   isCrowdfund: boolean;
   fundedAmount: number;
+  /** Anonymous claim — set once any guest marks it bought, no identity stored. */
+  isPurchased: boolean;
 };
 
 export type Contribution = {

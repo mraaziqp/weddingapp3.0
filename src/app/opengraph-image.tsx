@@ -110,6 +110,7 @@ export default function Image() {
 
         {/* Bismillah Calligraphy (Using local base64 embedded PNG) */}
         {bismillahSrc && (
+          // eslint-disable-next-line @next/next/no-img-element -- next/og's ImageResponse (Satori) requires plain <img>, next/image doesn't render here
           <img
             src={bismillahSrc}
             style={{

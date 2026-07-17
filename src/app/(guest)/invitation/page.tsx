@@ -638,6 +638,7 @@ export default function InvitationPage() {
                 className="absolute bottom-[-48px] w-24 h-24 overflow-hidden z-40"
                 style={{ clipPath: 'inset(0 0 50% 0)' }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element -- tiny decorative SVG logo, next/image adds no benefit */}
                 <img
                   src="/RA-logo.svg"
                   alt=""
@@ -663,6 +664,7 @@ export default function InvitationPage() {
                 className="absolute top-[-48px] w-24 h-24 overflow-hidden z-40"
                 style={{ clipPath: 'inset(50% 0 0 0)' }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element -- tiny decorative SVG logo, next/image adds no benefit */}
                 <img
                   src="/RA-logo.svg"
                   alt=""

@@ -387,6 +387,7 @@ export function dbToGift(g: DbRow): Gift {
         storeUrl: g.store_url ?? '',
         isCrowdfund: g.is_crowdfund ?? false,
         fundedAmount: g.funded_amount ?? 0,
+        isPurchased: g.is_purchased ?? false,
     };
 }
 

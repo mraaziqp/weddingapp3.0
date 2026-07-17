@@ -1,41 +1,26 @@
 
 'use client';
 import { motion } from "framer-motion";
-import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
-import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState, useEffect } from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2, AlertCircle } from "lucide-react";
 import { fetchGifts } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-
-const mockGifts = [
-    { id: '1', name: "Le Creuset Dutch Oven", price: 3500, imageUrl: "https://picsum.photos/seed/dutch-oven/400/300", storeUrl: "#", isCrowdfund: true, fundedAmount: 2500 },
-    { id: '2', name: "Sonos One Speaker Set", price: 4000, imageUrl: "https://picsum.photos/seed/sonos/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 4000 },
-    { id: '3', name: "Parachute Linen Sheets", price: 2500, imageUrl: "https://picsum.photos/seed/sheets/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 0 },
-    { id: '4', name: "Honeymoon Airfare", price: 10000, imageUrl: "https://picsum.photos/seed/honeymoon/400/300", storeUrl: "#", isCrowdfund: true, fundedAmount: 8000 },
-    { id: '5', name: "Vitamix Blender", price: 5000, imageUrl: "https://picsum.photos/seed/blender/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 5000 },
-    { id: '6', name: "National Park Pass", price: 800, imageUrl: "https://picsum.photos/seed/park-pass/400/300", storeUrl: "#", isCrowdfund: false, fundedAmount: 0 },
-];
-
-type Gift = typeof mockGifts[0];
+import type { Gift } from "@/lib/types";
 
 const giftSchema = z.object({
     name: z.string().min(1, 'Item name is required'),
     price: z.number().min(1, 'Price must be greater than 0'),
     imageUrl: z.string().url('Must be a valid URL'),
     storeUrl: z.string().url('Must be a valid URL'),
-    store: z.enum(['Takealot', 'Yuppiechef', '@home', 'Woolworths', 'Custom']),
 });
 
 const containerVariants = {
@@ -47,32 +32,30 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { type: 'spring' } },
 };
 
-const GiftCard = ({ gift }: { gift: Gift }) => {
-    const fundedPercentage = gift.isCrowdfund ? (gift.fundedAmount / gift.price) * 100 : (gift.fundedAmount > 0 ? 100 : 0);
-    const isFunded = gift.isCrowdfund ? gift.fundedAmount >= gift.price : gift.fundedAmount > 0;
-
+const GiftCard = ({ gift, onDelete }: { gift: Gift; onDelete: (id: string) => void }) => {
     return (
         <motion.div variants={itemVariants}>
             <Card className="glass-card !p-0 !rounded-2xl overflow-hidden group">
                 <div className="relative">
-                    <Image src={gift.imageUrl} alt={gift.name} width={400} height={300} className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" />
-                    {isFunded && <Badge className="absolute top-2 right-2 bg-aurora-gold text-black">Funded</Badge>}
+                    {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external store URLs; next/image needs a fixed domain allow-list which can't cover every store */}
+                    <img src={gift.imageUrl} alt={gift.name} className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" />
+                    {gift.isPurchased && <Badge className="absolute top-2 right-2 bg-aurora-gold text-black">Purchased</Badge>}
+                    <button
+                        onClick={() => onDelete(gift.id)}
+                        aria-label={`Remove ${gift.name}`}
+                        className="absolute top-2 left-2 h-8 w-8 rounded-full bg-black/50 text-white/80 hover:bg-red-500/80 hover:text-white flex items-center justify-center transition-colors"
+                    >
+                        <Trash2 size={14} />
+                    </button>
                 </div>
                 <div className="p-4 space-y-3">
                     <h3 className="font-headline text-lg truncate text-aurora-soft-gold">{gift.name}</h3>
                     <p className="text-2xl font-bold text-white">R {gift.price.toLocaleString('en-ZA')}</p>
-                    {gift.isCrowdfund && (
-                         <div className="space-y-1">
-                            <Progress value={fundedPercentage} className="h-2 [&>div]:bg-gradient-to-r from-aurora-soft-gold to-aurora-gold"/>
-                            <p className="text-xs text-muted-foreground">R {gift.fundedAmount.toLocaleString('en-ZA')} of R {gift.price.toLocaleString('en-ZA')} funded</p>
-                        </div>
-                    )}
                     <div className="flex items-center justify-between pt-2">
-                         <div className="flex items-center space-x-2">
-                             <Switch id={`crowdfund-${gift.id}`} defaultChecked={gift.isCrowdfund} />
-                             <label htmlFor={`crowdfund-${gift.id}`} className="text-xs text-muted-foreground">Crowdfund</label>
-                         </div>
-                         <a href={gift.storeUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-aurora-gold hover:underline">View Store</a>
+                        <p className="text-xs text-muted-foreground">
+                            {gift.isPurchased ? '✓ A guest has claimed this' : 'Still available for guests'}
+                        </p>
+                        <a href={gift.storeUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-aurora-gold hover:underline">View Store</a>
                     </div>
                 </div>
             </Card>
@@ -80,19 +63,14 @@ const GiftCard = ({ gift }: { gift: Gift }) => {
     );
 };
 
-const AddGiftForm = ({ onAddGift, setOpen }: { onAddGift: (data: Gift) => void; setOpen: (open: boolean) => void }) => {
-    const { register, handleSubmit, control, formState: { errors } } = useForm({
+const AddGiftForm = ({ onAddGift, setOpen }: { onAddGift: (data: z.infer<typeof giftSchema>) => Promise<boolean>; setOpen: (open: boolean) => void }) => {
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(giftSchema),
     });
 
-    const onSubmit = (data: z.infer<typeof giftSchema>) => {
-        onAddGift({
-            ...data,
-            id: `gift-${Date.now()}`,
-            isCrowdfund: false,
-            fundedAmount: 0,
-        });
-        setOpen(false);
+    const onSubmit = async (data: z.infer<typeof giftSchema>) => {
+        const ok = await onAddGift(data);
+        if (ok) setOpen(false);
     };
 
     return (
@@ -117,76 +95,66 @@ const AddGiftForm = ({ onAddGift, setOpen }: { onAddGift: (data: Gift) => void; 
                 <Input id="storeUrl" {...register('storeUrl')} />
                 {errors.storeUrl && <p className="text-red-500 text-xs mt-1">{`${errors.storeUrl.message}`}</p>}
             </div>
-            <div>
-                 <Label>Store</Label>
-                 <Controller
-                    control={control}
-                    name="store"
-                    render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a store" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Takealot">Takealot</SelectItem>
-                                <SelectItem value="Yuppiechef">Yuppiechef</SelectItem>
-                                <SelectItem value="@home">@home</SelectItem>
-                                <SelectItem value="Woolworths">Woolworths</SelectItem>
-                                <SelectItem value="Custom">Custom</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-                 {errors.store && <p className="text-red-500 text-xs mt-1">{`${errors.store.message}`}</p>}
-            </div>
-            <Button type="submit" className="w-full">Add Gift</Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? 'Adding…' : 'Add Gift'}
+            </Button>
         </form>
     )
 }
 
-const CashFundCard = () => {
-    return (
-         <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-2">
-            <Card className="glass-card !p-0 !rounded-2xl overflow-hidden group h-full flex flex-col">
-                 <div className="relative">
-                    <Image src="https://picsum.photos/seed/cash-fund/400/150" alt="Honeymoon" width={400} height={150} className="w-full h-24 object-cover" data-ai-hint="honeymoon beach"/>
-                </div>
-                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 className="font-headline text-lg text-aurora-soft-gold">Honeymoon & Future Home Fund</h3>
-                        <p className="text-xs text-muted-foreground">Contribute any amount to our future adventures!</p>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                        <span className="font-bold text-lg">R</span>
-                        <Input type="number" placeholder="Enter custom amount" className="bg-white/5 border-white/10" />
-                        <Button className="bg-gradient-to-r from-[#d4af37] to-[#f6e7b7] text-black font-medium glossy-sweep">Contribute</Button>
-                    </div>
-                </div>
-            </Card>
-        </motion.div>
-    )
-}
-
-
 export default function RegistryPage() {
     const [gifts, setGifts] = useState<Gift[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const { toast } = useToast();
 
-    useEffect(() => {
+    const loadGifts = () => {
+        setLoading(true);
+        setLoadError(false);
         fetchGifts()
             .then(setGifts)
             .catch(err => {
                 console.error('Failed to load gifts:', err);
-                toast({ variant: 'destructive', title: 'Failed to load gifts' });
-                setGifts(mockGifts);
+                setLoadError(true);
+                toast({ variant: 'destructive', title: 'Failed to load gifts', description: 'Check your connection and try again.' });
             })
             .finally(() => setLoading(false));
-    }, [toast]);
+    };
 
-    const handleAddGift = (newGift: Gift) => {
-        setGifts(prevGifts => [newGift, ...prevGifts]);
+    useEffect(() => {
+        loadGifts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleAddGift = async (data: z.infer<typeof giftSchema>): Promise<boolean> => {
+        try {
+            const res = await fetch('/api/gifts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error('Request failed');
+            toast({ title: 'Gift added to the registry' });
+            loadGifts();
+            return true;
+        } catch {
+            toast({ variant: 'destructive', title: 'Could not add gift', description: 'Please try again.' });
+            return false;
+        }
+    };
+
+    const handleDeleteGift = async (id: string) => {
+        const previous = gifts;
+        setGifts(g => g.filter(x => x.id !== id));
+        try {
+            const res = await fetch(`/api/gifts?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Request failed');
+            toast({ title: 'Gift removed' });
+        } catch {
+            setGifts(previous);
+            toast({ variant: 'destructive', title: 'Could not remove gift', description: 'Please try again.' });
+        }
     };
 
   return (
@@ -194,7 +162,7 @@ export default function RegistryPage() {
       <div className="flex justify-between items-center">
         <div>
             <h1 className="font-headline text-3xl font-bold italic tracking-tight">Multi-Store Registry</h1>
-            <p className="text-muted-foreground tracking-wide">Curate your dream gift list from any store.</p>
+            <p className="text-muted-foreground tracking-wide">Curate your dream gift list from any store. Guests can anonymously mark an item as bought so nobody duplicates a gift.</p>
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
@@ -215,15 +183,26 @@ export default function RegistryPage() {
           <p>Loading gifts...</p>
         </div>
       )}
-      {!loading && (
+      {!loading && loadError && (
+        <div className="text-center py-12 text-white/40 space-y-3">
+          <AlertCircle className="mx-auto h-8 w-8 text-red-400" />
+          <p>Couldn&apos;t load the registry.</p>
+          <Button variant="outline" onClick={loadGifts}>Try again</Button>
+        </div>
+      )}
+      {!loading && !loadError && gifts.length === 0 && (
+        <div className="text-center py-12 text-white/40">
+          <p>No gifts yet — add your first item above.</p>
+        </div>
+      )}
+      {!loading && !loadError && gifts.length > 0 && (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <CashFundCard/>
-          {gifts.map(gift => <GiftCard key={gift.id} gift={gift} />)}
+          {gifts.map(gift => <GiftCard key={gift.id} gift={gift} onDelete={handleDeleteGift} />)}
         </motion.div>
       )}
     </div>
