@@ -30,8 +30,10 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     const declinedGuests = guestList.filter(g => g.rsvp_status === 'Regret').length;
     const checkedInCount = guestList.filter(g => g.checked_in_at).length;
 
-    const groomCount = guestList.filter(g => g.tags?.some((t: string) => t.includes("Groom's"))).length;
-    const brideCount = guestList.filter(g => g.tags?.some((t: string) => t.includes("Bride's"))).length;
+    // tags comes back from Supabase as a raw comma-separated string, not an
+    // array (dbToGuest() is what normally splits it) — split here too.
+    const groomCount = guestList.filter(g => g.tags?.split(',').some((t: string) => t.includes("Groom's"))).length;
+    const brideCount = guestList.filter(g => g.tags?.split(',').some((t: string) => t.includes("Bride's"))).length;
 
     // Dietary counts
     const vegetarianCount = guestList.filter(
