@@ -210,6 +210,7 @@ function directionsUrl(config: InvitationConfig) {
 /* ─── Main Page Component ─────────────────────────────────────────────── */
 export default function InvitationPage() {
   const [config, setConfig] = useState<InvitationConfig | null>(null);
+  const [guestSideTheme, setGuestSideTheme] = useState<'classic-botanical' | 'navy-royal' | null>(null);
   const [status, setStatus] = useState<'accepted' | 'declined' | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [guestName, setGuestName] = useState('');
@@ -354,16 +355,28 @@ export default function InvitationPage() {
               g.tags?.some(t => t.includes("Groom's"))
             );
 
-            // Override theme based on side (Bride: Invite 2/navy-royal, Groom: Invite 1/classic-botanical)
+            // Record the side-based theme (Bride: Invite 2/navy-royal, Groom:
+            // Invite 1/classic-botanical) — applied in the effect below, not
+            // here, since this fetch can resolve before or after the base
+            // config fetch and directly setConfig()-ing here raced it.
             if (isBrideSide) {
-              setConfig(prev => prev ? { ...prev, theme: 'navy-royal' } : prev);
+              setGuestSideTheme('navy-royal');
             } else if (isGroomSide) {
-              setConfig(prev => prev ? { ...prev, theme: 'classic-botanical' } : prev);
+              setGuestSideTheme('classic-botanical');
             }
           }
         }
       });
   }, [params]);
+
+  // Applies the guest's side-based theme once both the base config and the
+  // household lookup have resolved, whichever order they finish in — doing
+  // this inline in either fetch's own effect raced the other, so bride-side
+  // guests intermittently kept the groom's card layout depending on timing.
+  useEffect(() => {
+    if (!config || !guestSideTheme || config.theme === guestSideTheme) return;
+    setConfig(prev => (prev ? { ...prev, theme: guestSideTheme } : prev));
+  }, [config, guestSideTheme]);
 
   const handleOpenEnvelope = () => {
     // Guards against the video's onEnded firing after a tap already started
