@@ -59,8 +59,13 @@ export async function downloadElementAsImage(
   const clone = original.cloneNode(true) as HTMLElement;
   clone.removeAttribute('id'); // avoid a transient duplicate #invitation-print-card
   
-  // Strip layout class constraints so the clone sizes freely to target A5 pixels
-  clone.classList.remove('invitation-aspect');
+  // Strip layout class constraints so the clone sizes freely to target A5
+  // pixels. invitation-card-size sets `width: 98vw !important` — an
+  // !important class rule beats a plain (non-important) inline style, so
+  // leaving it in place silently overrode clone.style.width below with
+  // ~98% of whatever the real viewport happened to be, producing a wildly
+  // wrong (far too narrow) aspect ratio in the exported image.
+  clone.classList.remove('invitation-aspect', 'invitation-card-size');
   clone.style.position = 'fixed';
   clone.style.top = '0';
   clone.style.left = '-99999px';
