@@ -795,11 +795,11 @@ export function NavyRoyalCard({
               Kindly RSVP by the 14<sup>th</sup> of August
             </p>
             <div 
-              className="flex justify-center c2-rsvp-contact text-[#002855] font-semibold tracking-[0.08em] uppercase" 
+              className="flex justify-center c2-rsvp-contact text-[#002855] font-semibold tracking-[0.08em] uppercase"
               style={{ fontFamily: "'Cinzel', serif", gap: 'calc(3.5 * var(--cqw))' }}
             >
-              <span>Shanaaz Parker: 0718665122</span>
-              <span>Ayaaz Parker: 0718665123</span>
+              <span>Razia Shade: 068 678 1846</span>
+              <span>Samalika Shade: 073 733 9259</span>
             </div>
             <p
               className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#b59650] uppercase c2-rsvp-footnote-margin"
