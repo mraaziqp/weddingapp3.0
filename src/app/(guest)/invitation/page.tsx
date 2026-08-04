@@ -795,10 +795,10 @@ export default function InvitationPage() {
       {/* Floating Audio Button */}
       {musicAvailable && (
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1, duration: 0.8 }}
-          className="fixed bottom-6 right-6 z-40"
+          className="fixed top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] sm:top-6 sm:right-6 z-40"
           data-print-hide
         >
           <button
