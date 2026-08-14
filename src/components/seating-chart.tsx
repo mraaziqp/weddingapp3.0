@@ -9,7 +9,7 @@ import { GripVertical, X, Crown, Plus, Printer, Wand2, AlertTriangle, Users, Rot
 import { motion, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { fetchHouseholds } from '@/lib/supabase';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import type { Guest, Table } from '@/lib/types';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -51,7 +51,7 @@ const VENUE_DIMENSIONS = {
 };
 
 // Tag colour map for visual group badges
-const TAG_COLORS: Record<string, string> = {
+export const TAG_COLORS: Record<string, string> = {
   "Bride's Family":   '#ec4899',
   "Groom's Family":   '#10b981',
   "Bride's Friends":  '#f97316',
@@ -60,7 +60,7 @@ const TAG_COLORS: Record<string, string> = {
   'Do Not Sit Together': '#ef4444',
 };
 
-const TAG_LABELS: Record<string, string> = {
+export const TAG_LABELS: Record<string, string> = {
   "Bride's Family": 'Bride Fam',
   "Groom's Family": 'Groom Fam',
   "Bride's Friends": 'Bride Friends',
@@ -383,7 +383,7 @@ const TableDropzone = ({
     );
 };
 
-const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRef }: { table: Table; onPositionChange: (id: string, pos: { x: number; y: number }) => void; children: React.ReactNode; dragBoundsRef: React.RefObject<HTMLDivElement | null> }) => {
+const DraggableTableWrapper = React.memo(function DraggableTableWrapper({ table, onPositionChange, children, dragBoundsRef }: { table: Table; onPositionChange: (id: string, pos: { x: number; y: number }) => void; children: React.ReactNode; dragBoundsRef: React.RefObject<HTMLDivElement | null> }) {
   const x = useMotionValue(table.x);
   const y = useMotionValue(table.y);
 
@@ -409,17 +409,13 @@ const DraggableTableWrapper = ({ table, onPositionChange, children, dragBoundsRe
       {children}
     </motion.div>
   );
-};
+});
 
-export function SeatingChart() {
+export function SeatingChart({ onTablesChange }: { onTablesChange?: (tables: Table[]) => void } = {}) {
   const isMobile = useIsMobile();
   const canvasBoundsRef = useRef<HTMLDivElement>(null);
-  const [realGuests, setRealGuests] = useState<Guest[] | null>(null);
-  useEffect(() => {
-    fetchHouseholds()
-      .then(households => setRealGuests(households.flatMap(h => h.guests)))
-      .catch(() => setRealGuests([]));
-  }, []);
+  const { households, isLoading: householdsLoading, guests: realGuestsFromHook } = useRealGuests();
+  const realGuests = householdsLoading ? null : realGuestsFromHook;
   const usingVenuePreset = realGuests !== null && realGuests.length === 0;
   const guestPool = useMemo(
     () => (realGuests ?? []),
@@ -437,6 +433,9 @@ export function SeatingChart() {
   const [tables, setTables] = useState<Table[]>(() =>
     tablePreset.map((table) => ({ ...table, guests: [...table.guests] }))
   );
+  useEffect(() => {
+    onTablesChange?.(tables);
+  }, [tables, onTablesChange]);
   const [activeDrag, setActiveDrag] = useState<Active | null>(null);
   const [overContainer, setOverContainer] = useState<string | null>(null);
   const [justFilledTable, setJustFilledTable] = useState<string | null>(null);
@@ -951,7 +950,7 @@ export function SeatingChart() {
         ))}
       </div>
 
-      <div id="seating-print-area" className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         {(showUnseatedPanel || !isMobile) && (
           <Card className="glass-card lg:col-span-3 h-full flex flex-col min-h-0" data-print-hide>

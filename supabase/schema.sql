@@ -123,6 +123,36 @@ create table if not exists std_opens (
   created_at timestamptz default now()
 );
 
+-- ── vendors ─────────────────────────────────────────────────────────────
+create table if not exists vendors (
+  id            text primary key,
+  name          text not null,
+  category      text not null,
+  contact_name  text,
+  contact_email text,
+  contact_phone text,
+  price         real not null default 0,
+  status        text not null default 'Enquired', -- Enquired | Confirmed | Paid | Cancelled
+  deposit_paid  real not null default 0,
+  created_at    timestamptz not null default now()
+);
+
+-- ── budget_items ────────────────────────────────────────────────────────
+create table if not exists budget_items (
+  id         text primary key,
+  category   text not null,
+  name       text not null,
+  budgeted   real not null default 0,
+  actual     real not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- ── budget_settings (single row holding the overall budget figure) ─────
+create table if not exists budget_settings (
+  id           text primary key default 'main',
+  total_budget real not null default 0
+);
+
 -- ── Row Level Security ──────────────────────────────────────────────────
 -- This app has no Supabase Auth — guests use the anon key directly, and
 -- admin access is gated by a separate app-level key (see src/middleware.ts),
@@ -134,7 +164,8 @@ declare
 begin
   for t in select unnest(array[
     'households','tables','guests','menu_items','timeline_events',
-    'tracks','media','gifts','contributions','std_opens'
+    'tracks','media','gifts','contributions','std_opens',
+    'vendors','budget_items','budget_settings'
   ])
   loop
     execute format('alter table %I enable row level security;', t);

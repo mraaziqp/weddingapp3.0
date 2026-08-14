@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { fetchHouseholds, addHousehold, updateHousehold, deleteHousehold } from '@/lib/supabase';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import type { Household, GuestTag } from '@/lib/types';
 
 const intakeSchema = z.object({
@@ -96,6 +96,7 @@ function QuickAddPerson({ onDone, tag }: { onDone: () => void; tag: GuestTag }) 
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { addHousehold } = useRealGuests();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,25 +140,12 @@ function QuickAddPerson({ onDone, tag }: { onDone: () => void; tag: GuestTag }) 
 
 export function FamilyGuestIntake({ side }: { side: 'bride' | 'groom' }) {
   const config = SIDE_CONFIG[side];
-  const [households, setHouseholds] = useState<Household[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { households, isLoading, addHousehold, updateHousehold, deleteHousehold } = useRealGuests();
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const [mode, setMode] = useState<'household' | 'person'>('household');
   const [editingHousehold, setEditingHousehold] = useState<Household | null>(null);
   const [search, setSearch] = useState('');
   const { toast } = useToast();
-
-  const loadHouseholds = () => {
-    fetchHouseholds()
-      .then(setHouseholds)
-      .catch(() => toast({ variant: 'destructive', title: 'Could not load the guest list' }))
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(() => {
-    loadHouseholds();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const onAddHousehold = async (data: IntakeValues) => {
     try {
@@ -165,7 +153,6 @@ export function FamilyGuestIntake({ side }: { side: 'bride' | 'groom' }) {
         data.householdName,
         data.guests.map(g => ({ ...g, tags: [config.tag] }))
       );
-      setHouseholds(current => [newHousehold, ...current]);
       setJustAdded(newHousehold.name);
       toast({ title: 'Added!', description: `${data.householdName} is on the guest list.` });
       setTimeout(() => setJustAdded(null), 4000);
@@ -183,7 +170,6 @@ export function FamilyGuestIntake({ side }: { side: 'bride' | 'groom' }) {
         rsvpStatus: editingHousehold.guests[i]?.rsvpStatus ?? 'Pending',
       }));
       await updateHousehold(editingHousehold.id, data.householdName, guestsWithIds);
-      loadHouseholds();
       toast({ title: 'Saved', description: `${data.householdName} has been updated.` });
       setEditingHousehold(null);
     } catch {
@@ -195,7 +181,6 @@ export function FamilyGuestIntake({ side }: { side: 'bride' | 'groom' }) {
     if (!window.confirm(`Remove "${household.name}" and all ${household.guests.length} guest(s)?`)) return;
     try {
       await deleteHousehold(household.id);
-      setHouseholds(current => current.filter(h => h.id !== household.id));
     } catch {
       toast({ variant: 'destructive', title: 'Could not remove that household' });
     }
@@ -261,7 +246,7 @@ export function FamilyGuestIntake({ side }: { side: 'bride' | 'groom' }) {
                 submitLabel="Add to Guest List"
               />
             ) : (
-              <QuickAddPerson tag={config.tag} onDone={loadHouseholds} />
+              <QuickAddPerson tag={config.tag} onDone={() => {}} />
             )}
 
             {justAdded && (

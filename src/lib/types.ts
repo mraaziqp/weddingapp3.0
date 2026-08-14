@@ -118,3 +118,25 @@ export type TrackItem = {
   requestedBy?: string; // guest name
   sortOrder: number;
 };
+
+export type VendorStatus = 'Enquired' | 'Confirmed' | 'Paid' | 'Cancelled';
+
+export type Vendor = {
+  id: string;
+  name: string;
+  category: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  price: number;
+  status: VendorStatus;
+  depositPaid: number;
+};
+
+export type BudgetItem = {
+  id: string;
+  category: string;
+  name: string;
+  budgeted: number;
+  actual: number;
+};

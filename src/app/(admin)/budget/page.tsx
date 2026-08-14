@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { fetchBudgetItems, addBudgetItem, deleteBudgetItem as deleteBudgetItemRemote, fetchTotalBudget, updateTotalBudget } from '@/lib/supabase';
+import type { BudgetItem } from '@/lib/types';
 
 const CATEGORIES = ['Venue', 'Catering', 'Photography', 'Décor', 'Attire', 'Music', 'Transport', 'Stationery', 'Other'];
 
@@ -23,8 +25,6 @@ const budgetItemSchema = z.object({
   actual: z.number().nonnegative().optional().default(0),
 });
 
-type BudgetItem = z.infer<typeof budgetItemSchema> & { id: string };
-
 export default function BudgetPage() {
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [totalBudget, setTotalBudget] = useState(0);
@@ -32,34 +32,61 @@ export default function BudgetPage() {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(budgetItemSchema) });
+  const totalBudgetSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    fetchBudgetItems()
+      .then(setItems)
+      .catch(() => toast({ variant: 'destructive', title: 'Could not load budget items' }));
+    fetchTotalBudget()
+      .then(setTotalBudget)
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalBudgeted = items.reduce((sum, item) => sum + item.budgeted, 0);
   const totalActual = items.reduce((sum, item) => sum + item.actual, 0);
   const remaining = totalBudget - totalActual;
   const percentUsed = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
 
-  const chartData = CATEGORIES.map(cat => ({
+  const chartData = useMemo(() => CATEGORIES.map(cat => ({
     category: cat,
     budgeted: items.filter(i => i.category === cat).reduce((sum, i) => sum + i.budgeted, 0),
     actual: items.filter(i => i.category === cat).reduce((sum, i) => sum + i.actual, 0),
-  })).filter(d => d.budgeted > 0 || d.actual > 0);
+  })).filter(d => d.budgeted > 0 || d.actual > 0), [items]);
 
-  const onSubmit = (data: typeof budgetItemSchema._type) => {
-    startTransition(() => {
-      const newItem: BudgetItem = {
-        ...data,
-        id: `${Date.now()}`,
-      };
-      setItems([...items, newItem]);
-      reset();
-      setIsOpen(false);
+  const onSubmit = async (data: typeof budgetItemSchema._type) => {
+    try {
+      const newItem = await addBudgetItem(data);
+      startTransition(() => {
+        setItems(current => [newItem, ...current]);
+        reset();
+        setIsOpen(false);
+      });
       toast({ title: 'Expense added' });
-    });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to add expense' });
+    }
   };
 
-  const deleteItem = (id: string) => {
+  const deleteItem = async (id: string) => {
+    const previous = items;
     setItems(items.filter(i => i.id !== id));
-    toast({ title: 'Expense removed' });
+    try {
+      await deleteBudgetItemRemote(id);
+      toast({ title: 'Expense removed' });
+    } catch {
+      setItems(previous);
+      toast({ variant: 'destructive', title: 'Failed to remove expense' });
+    }
+  };
+
+  const handleTotalBudgetChange = (value: number) => {
+    setTotalBudget(value);
+    if (totalBudgetSaveTimeout.current) clearTimeout(totalBudgetSaveTimeout.current);
+    totalBudgetSaveTimeout.current = setTimeout(() => {
+      updateTotalBudget(value).catch(() => toast({ variant: 'destructive', title: 'Failed to save total budget' }));
+    }, 600);
   };
 
   const exportCSV = () => {
@@ -139,7 +166,7 @@ export default function BudgetPage() {
               type="number"
               value={totalBudget || ''}
               placeholder="0"
-              onChange={e => setTotalBudget(Number(e.target.value) || 0)}
+              onChange={e => handleTotalBudgetChange(Number(e.target.value) || 0)}
               className="mt-2 text-2xl font-bold text-blue-400 bg-transparent border-white/10 h-auto py-1"
             />
           </CardContent>

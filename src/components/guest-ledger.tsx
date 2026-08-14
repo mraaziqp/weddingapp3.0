@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, UserPlus, MoreHorizontal, Trash2, Download, Pencil, Link2, Copy, Send, Search } from 'lucide-react';
-import { fetchHouseholds, addHousehold, addGuestToHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } from '@/lib/supabase';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import type { Household, GuestTag } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,7 @@ function AddGuestForm({
     const [target, setTarget] = useState<string>('own');
     const [saving, setSaving] = useState(false);
     const { toast } = useToast();
+    const { addHousehold, addGuestToHousehold } = useRealGuests();
 
     // Reset selectedSide if activeSide changes
     useEffect(() => {
@@ -240,10 +241,9 @@ function HouseholdForm({
 }
 
 export function GuestLedger() {
-    const [households, setHouseholds] = useState<Household[]>([]);
+    const { households, isLoading: loading, addHousehold, updateHousehold, deleteHousehold, updateGuestRsvp } = useRealGuests();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSideTab, setActiveSideTab] = useState<'all' | 'groom' | 'bride'>('all');
-    const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addMode, setAddMode] = useState<'single' | 'multi'>('multi');
     const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
@@ -251,19 +251,9 @@ export function GuestLedger() {
     const [deletingHousehold, setDeletingHousehold] = useState<Household | null>(null);
     const { toast } = useToast();
 
-    // Load from Supabase on mount
-    useEffect(() => {
-        fetchHouseholds()
-            .then(setHouseholds)
-            .catch(() => toast({ variant: 'destructive', title: 'Could not load guests' }))
-            .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     const handleAddHousehold = async (data: HouseholdFormValues) => {
         try {
-            const newHousehold = await addHousehold(data.name, data.guests);
-            setHouseholds(current => [newHousehold, ...current]);
+            await addHousehold(data.name, data.guests);
             toast({ title: 'Household Added', description: `${data.name} has been added.` });
             setIsAddModalOpen(false);
         } catch {
@@ -280,9 +270,6 @@ export function GuestLedger() {
                 rsvpStatus: editingHousehold.guests[i]?.rsvpStatus ?? 'Pending',
             }));
             await updateHousehold(editingHousehold.id, data.name, guestsWithIds);
-            // Reload to get fresh state
-            const updated = await fetchHouseholds();
-            setHouseholds(updated);
             toast({ title: 'Household Updated', description: `${data.name} has been saved.` });
             setEditingHousehold(null);
         } catch {
@@ -293,7 +280,6 @@ export function GuestLedger() {
     const handleDeleteHousehold = async (household: Household) => {
         try {
             await deleteHousehold(household.id);
-            setHouseholds(current => current.filter(h => h.id !== household.id));
             toast({ title: 'Household Removed', description: `${household.name} has been deleted.` });
         } catch {
             toast({ variant: 'destructive', title: 'Failed to delete household' });
@@ -342,44 +328,28 @@ export function GuestLedger() {
     };
 
     const handleRsvpChange = async (guestId: string, newStatus: 'Confirmed' | 'Pending' | 'Regret') => {
-        // Optimistic update
-        setHouseholds(current =>
-            current.map(h => ({
-                ...h,
-                guests: h.guests.map(g => g.id === guestId ? { ...g, rsvpStatus: newStatus } : g),
-            }))
-        );
         try {
             await updateGuestRsvp(guestId, newStatus);
         } catch {
             toast({ variant: 'destructive', title: 'Failed to update RSVP' });
-            // Revert on error
-            const fresh = await fetchHouseholds();
-            setHouseholds(fresh);
         }
     };
 
-    const groomCount = households.filter(h =>
-        h.guests?.some(g => g.tags?.some(t => t.includes("Groom's")))
-    ).length;
+    const { groomCount, brideCount, totalIndividuals, groomIndividuals, brideIndividuals } = useMemo(() => ({
+        groomCount: households.filter(h => h.guests?.some(g => g.tags?.some(t => t.includes("Groom's")))).length,
+        brideCount: households.filter(h => h.guests?.some(g => g.tags?.some(t => t.includes("Bride's")))).length,
+        totalIndividuals: households.reduce((sum, h) => sum + (h.guests?.length || 0), 0),
+        groomIndividuals: households.reduce((sum, h) => {
+            const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Groom's"))) || [];
+            return sum + sideGuests.length;
+        }, 0),
+        brideIndividuals: households.reduce((sum, h) => {
+            const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Bride's"))) || [];
+            return sum + sideGuests.length;
+        }, 0),
+    }), [households]);
 
-    const brideCount = households.filter(h =>
-        h.guests?.some(g => g.tags?.some(t => t.includes("Bride's")))
-    ).length;
-
-    const totalIndividuals = households.reduce((sum, h) => sum + (h.guests?.length || 0), 0);
-
-    const groomIndividuals = households.reduce((sum, h) => {
-      const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Groom's"))) || [];
-      return sum + sideGuests.length;
-    }, 0);
-
-    const brideIndividuals = households.reduce((sum, h) => {
-      const sideGuests = h.guests?.filter(g => g.tags?.some(t => t.includes("Bride's"))) || [];
-      return sum + sideGuests.length;
-    }, 0);
-
-    const filteredHouseholds = households.filter(h => {
+    const filteredHouseholds = useMemo(() => households.filter(h => {
         // 1. Filter by Groom/Bride Side Segment Tab
         if (activeSideTab === 'groom') {
             const isGroom = h.guests?.some(g => g.tags?.some(t => t.includes("Groom's")));
@@ -393,11 +363,11 @@ export function GuestLedger() {
         const query = searchQuery.trim().toLowerCase();
         if (!query) return true;
         const nameMatch = h.name?.toLowerCase().includes(query);
-        const guestMatch = h.guests?.some(g => 
+        const guestMatch = h.guests?.some(g =>
             `${g.firstName || ''} ${g.lastName || ''}`.toLowerCase().includes(query)
         );
         return nameMatch || guestMatch;
-    });
+    }), [households, activeSideTab, searchQuery]);
 
     return (
         <motion.div
@@ -463,11 +433,7 @@ export function GuestLedger() {
                             <AddGuestForm
                                 households={households}
                                 activeSide={activeSideTab === 'bride' ? 'bride' : 'groom'}
-                                onDone={async () => {
-                                    setIsAddGuestOpen(false);
-                                    const fresh = await fetchHouseholds();
-                                    setHouseholds(fresh);
-                                }}
+                                onDone={() => setIsAddGuestOpen(false)}
                             />
                         </DialogContent>
                     </Dialog>

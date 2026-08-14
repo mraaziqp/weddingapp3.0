@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, Armchair, LayoutDashboard, Gift, Heart, Music, ChevronDown, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { fetchHouseholds } from '@/lib/supabase';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { Guest } from '@/lib/types';
@@ -115,16 +115,12 @@ export function AdminGlobalSearch() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rsvpOverrides, setRsvpOverrides] = useState<Record<string, RsvpStatus>>({});
   const [tableOverrides, setTableOverrides] = useState<Record<string, string>>({});
-  const [guestResults, setGuestResults] = useState<Result[]>([]);
+  const { households } = useRealGuests();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchHouseholds()
-      .then(households => setGuestResults(buildGuestIndex(households)))
-      .catch(() => setGuestResults([]));
-  }, []);
+  const guestResults = useMemo(() => buildGuestIndex(households), [households]);
 
   const allResults: Result[] = [...PAGES, ...guestResults];
 

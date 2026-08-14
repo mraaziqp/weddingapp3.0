@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { fetchVendors, addVendor, deleteVendor as deleteVendorRemote } from '@/lib/supabase';
+import type { Vendor } from '@/lib/types';
 
 const CATEGORIES = ['Venue', 'Catering', 'Photography', 'Flowers', 'Music', 'Transport', 'Stationery', 'Decor', 'Other'];
 const STATUSES = ['Enquired', 'Confirmed', 'Paid', 'Cancelled'];
@@ -28,32 +30,44 @@ const vendorSchema = z.object({
   depositPaid: z.number().nonnegative().optional().default(0),
 });
 
-type Vendor = z.infer<typeof vendorSchema> & { id: string };
-
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
-
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
   const { toast } = useToast();
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(vendorSchema), defaultValues: { status: 'Enquired' } });
 
-  const onSubmit = (data: typeof vendorSchema._type) => {
-    startTransition(() => {
-      const newVendor: Vendor = {
-        ...data,
-        id: `${Date.now()}`,
-      };
-      setVendors([...vendors, newVendor]);
-      reset();
-      setIsOpen(false);
+  useEffect(() => {
+    fetchVendors()
+      .then(setVendors)
+      .catch(() => toast({ variant: 'destructive', title: 'Could not load vendors' }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onSubmit = async (data: typeof vendorSchema._type) => {
+    try {
+      const newVendor = await addVendor(data);
+      startTransition(() => {
+        setVendors(current => [newVendor, ...current]);
+        reset();
+        setIsOpen(false);
+      });
       toast({ title: 'Vendor added' });
-    });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to add vendor' });
+    }
   };
 
-  const deleteVendor = (id: string) => {
+  const deleteVendor = async (id: string) => {
+    const previous = vendors;
     setVendors(vendors.filter(v => v.id !== id));
-    toast({ title: 'Vendor removed' });
+    try {
+      await deleteVendorRemote(id);
+      toast({ title: 'Vendor removed' });
+    } catch {
+      setVendors(previous);
+      toast({ variant: 'destructive', title: 'Failed to remove vendor' });
+    }
   };
 
   const statusColor = {

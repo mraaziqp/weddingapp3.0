@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Map, ListTodo } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Table } from "@/lib/types";
 
 export default function SeatingPage() {
   const [activeTab, setActiveTab] = useState<'visual' | 'manage'>('visual');
+  const [tables, setTables] = useState<Table[]>([]);
 
   return (
     <div className="relative h-screen flex flex-col p-4 md:p-6 overflow-hidden font-sans">
@@ -36,7 +38,7 @@ export default function SeatingPage() {
           <p className="text-muted-foreground tracking-wide text-xs max-w-2xl font-light">
             {activeTab === 'visual'
               ? 'Ballroom preset loaded for Tuscany Venue (300 guests capacity). Drag and drop guests to optimize the floor plan.'
-              : 'Manage table assignments, track guest placement, and organize seating arrangements with real-time analytics.'}
+              : 'A clean, paginated seating list built from the Visual Planner — the version worth printing or saving as a PDF.'}
           </p>
         </div>
 
@@ -67,8 +69,8 @@ export default function SeatingPage() {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="flex-1 min-h-0 flex flex-col mt-4"
       >
-        {activeTab === 'visual' && <SeatingChart />}
-        {activeTab === 'manage' && <SeatingManager />}
+        {activeTab === 'visual' && <SeatingChart onTablesChange={setTables} />}
+        <SeatingManager tables={tables} visible={activeTab === 'manage'} />
       </motion.div>
     </div>
   );

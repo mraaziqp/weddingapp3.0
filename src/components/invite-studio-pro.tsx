@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchHouseholds } from '@/lib/supabase';
+import { useRealGuests } from '@/hooks/use-real-guests';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,34 +42,36 @@ const itemVariants = {
 };
 
 export function InviteStudioPro() {
-  const [households, setHouseholds] = useState<Household[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { households, isLoading, error } = useRealGuests();
   const [inviteStatuses, setInviteStatuses] = useState<Record<string, InviteStatus>>({});
   const [_selectedHousehold, _setSelectedHousehold] = useState<Household | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | InviteStatus['status']>('all');
   const { toast } = useToast();
 
-  // Load real households and seed each as not-yet-sent — no fake demo status.
+  // Seed each newly-seen household as not-yet-sent — no fake demo status.
+  // Only adds missing entries so an in-session "sent" mark survives a cache refresh.
   useEffect(() => {
-    fetchHouseholds()
-      .then(data => {
-        setHouseholds(data);
-        const statuses: Record<string, InviteStatus> = {};
-        data.forEach(h => {
-          statuses[h.id] = {
+    setInviteStatuses(prev => {
+      const next = { ...prev };
+      let changed = false;
+      households.forEach(h => {
+        if (!next[h.id]) {
+          next[h.id] = {
             id: h.id,
             status: 'pending',
             rsvpStatus: h.guests[0]?.rsvpStatus,
             guestCount: h.guests.length,
           };
-        });
-        setInviteStatuses(statuses);
-      })
-      .catch(() => {
-        toast({ title: 'Could not load households', variant: 'destructive' });
-      })
-      .finally(() => setIsLoading(false));
-  }, [toast]);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [households]);
+
+  useEffect(() => {
+    if (error) toast({ title: 'Could not load households', variant: 'destructive' });
+  }, [error, toast]);
 
   const handleSendInvite = (household: Household) => {
     setInviteStatuses(prev => ({

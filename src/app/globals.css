@@ -250,50 +250,58 @@
     33% { transform: translate3d(16px, -18px, 0) scale(1.06); }
     66% { transform: translate3d(-18px, 14px, 0) scale(0.94); }
   }
+
+  @keyframes orbFloatReverse {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33% { transform: translate3d(-16px, 18px, 0) scale(0.96); }
+    66% { transform: translate3d(18px, -14px, 0) scale(1.04); }
+  }
 }
 
-/* ─── Print Styles for Seating Chart ─────────────────────────────────── */
+/* Ambient background blobs on admin pages — CSS-driven (compositor-only,
+   no per-frame JS) instead of framer-motion so they stay cheap while
+   running forever across every admin route. */
+.aurora-blob {
+  animation: orbFloat 18s ease-in-out infinite;
+}
+.aurora-blob-reverse {
+  animation: orbFloatReverse 20s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .aurora-blob-reverse {
+    animation: none;
+  }
+}
+
+/* ─── Print Styles for the Seating List ──────────────────────────────── */
+/* The seating floor-plan is an absolute-positioned drag canvas, which never
+   prints cleanly (wrong scale, clipped at page edges). Instead, when the
+   page contains #seating-list-print (the plain-document-flow list view —
+   see seating-manager.tsx), print ONLY that: same technique as the
+   invitation-card print block below, so it works regardless of which tab
+   is visually active on screen. */
 @media print {
-  /* Hide all admin chrome */
-  nav,
-  header,
-  [data-print-hide],
-  .fixed {
-    display: none !important;
+  body:has(#seating-list-print) * {
+    visibility: hidden !important;
   }
 
-  /* Reset dark backgrounds to white */
-  body,
-  .dark,
-  [class*="bg-"] {
-    background: white !important;
-    color: black !important;
+  body:has(#seating-list-print) #seating-list-print,
+  body:has(#seating-list-print) #seating-list-print * {
+    visibility: visible !important;
   }
 
-  /* Seating canvas: full-page, high-contrast */
-  #seating-print-area {
+  body:has(#seating-list-print) #seating-list-print {
     display: block !important;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    page-break-inside: avoid;
-  }
-
-  #seating-print-area * {
-    color: black !important;
-    border-color: #333 !important;
     background: white !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
+    color: black !important;
   }
 
-  /* Table circles should appear as outlined circles */
-  #seating-print-area .rounded-full {
-    border: 2px solid #333 !important;
-  }
-
-  /* Guest pills print as simple text lines */
-  #seating-print-area [class*="rounded-full"][class*="bg-"] {
-    border: 1px solid #999 !important;
-    padding: 2px 6px !important;
+  body:has(#seating-list-print) [data-print-hide] {
+    display: none !important;
   }
 
   @page {

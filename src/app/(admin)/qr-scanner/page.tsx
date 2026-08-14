@@ -20,6 +20,7 @@ type GuestData = {
 export default function BouncerPage() {
     const [scannedData, setScannedData] = useState<GuestData | null>(null);
     const [scanError, setScanError] = useState(false);
+    const [cameraError, setCameraError] = useState(false);
     const [isScanning, setIsScanning] = useState(true);
     const scannerRef = useRef<import('html5-qrcode').Html5Qrcode | null>(null);
     const scannerDivRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,8 @@ export default function BouncerPage() {
                 () => {}
             );
         } catch {
+            setCameraError(true);
+            setIsScanning(false);
             toast({
                 variant: 'destructive',
                 title: 'Camera Permission Required',
@@ -87,6 +90,7 @@ export default function BouncerPage() {
     const resetScanner = async () => {
         setScannedData(null);
         setScanError(false);
+        setCameraError(false);
         setIsScanning(true);
     };
 
@@ -145,17 +149,21 @@ export default function BouncerPage() {
                                         <XCircle className="h-28 w-28 text-red-500" />
                                     )}
                                     <p className="text-2xl font-bold">
-                                        {scannedData ? 'Welcome!' : 'Not Found'}
+                                        {scannedData ? 'Welcome!' : cameraError ? 'Camera Unavailable' : 'Not Found'}
                                     </p>
                                     <p className="text-muted-foreground text-center px-4">
-                                        {scannedData ? scannedData.name : 'This QR code is not on the guest list.'}
+                                        {scannedData
+                                            ? scannedData.name
+                                            : cameraError
+                                                ? 'Allow camera access in your browser, then try again.'
+                                                : 'This QR code is not on the guest list.'}
                                     </p>
                                     <Button
                                         onClick={resetScanner}
                                         variant="outline"
                                         className="mt-2 gap-2 border-white/20"
                                     >
-                                        <RefreshCw size={15} /> Scan Next Guest
+                                        <RefreshCw size={15} /> {cameraError ? 'Retry Camera' : 'Scan Next Guest'}
                                     </Button>
                                 </motion.div>
                             )}

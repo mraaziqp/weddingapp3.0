@@ -244,7 +244,7 @@ export default function PlannerPage() {
           ]}
         />
         <ModuleCard
-          href="/planner/music"
+          href="/playlist"
           icon={Music2}
           accent="#a78bfa"
           title="Vibe Controller"

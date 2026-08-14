@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Guest, GuestTag, Household, MenuItem, MenuCourse, DietaryFlag, TimelineEvent, TimelineCategory, TrackItem, TrackColumn, Gift } from './types';
+import type { Guest, GuestTag, Household, MenuItem, MenuCourse, DietaryFlag, TimelineEvent, TimelineCategory, TrackItem, TrackColumn, Gift, Vendor, VendorStatus, BudgetItem } from './types';
 
 // Raw rows come back from Supabase untyped; this alias is the single sanctioned
 // escape hatch at the query boundary — everything past the mappers is typed.
@@ -185,16 +185,16 @@ export async function updateHousehold(
     }
 
     // 4. Update existing guests (update only specific fields to avoid overwriting dietary/song details)
-    for (const g of toUpdate) {
-        const { error: updErr } = await supabase
-            .from('guests')
-            .update({
+    if (toUpdate.length > 0) {
+        const { error: updErr } = await supabase.from('guests').upsert(
+            toUpdate.map(g => ({
+                id: g.id,
                 first_name: g.first_name,
                 last_name: g.last_name,
                 rsvp_status: g.rsvp_status,
                 updated_at: new Date().toISOString(),
-            })
-            .eq('id', g.id);
+            }))
+        );
         if (updErr) throw updErr;
     }
 }
@@ -286,17 +286,10 @@ export async function deleteMenuItem(id: string): Promise<void> {
 }
 
 export async function updateMenuItemsOrder(items: MenuItem[]): Promise<void> {
-    const updates = items.map((item, idx) => ({
-        id: item.id,
-        sort_order: idx,
-    }));
-    for (const update of updates) {
-        const { error } = await supabase
-            .from('menu_items')
-            .update({ sort_order: update.sort_order })
-            .eq('id', update.id);
-        if (error) throw error;
-    }
+    const { error } = await supabase.from('menu_items').upsert(
+        items.map((item, idx) => ({ id: item.id, sort_order: idx }))
+    );
+    if (error) throw error;
 }
 
 // ── Timeline Events ───────────────────────────────────────────────────────────
@@ -324,13 +317,45 @@ export async function fetchTimelineEvents(): Promise<TimelineEvent[]> {
 }
 
 export async function updateTimelineEventsOrder(events: TimelineEvent[]): Promise<void> {
-    for (let i = 0; i < events.length; i++) {
-        const { error } = await supabase
-            .from('timeline_events')
-            .update({ sort_order: i })
-            .eq('id', events[i].id);
-        if (error) throw error;
-    }
+    const { error } = await supabase.from('timeline_events').upsert(
+        events.map((e, i) => ({ id: e.id, sort_order: i }))
+    );
+    if (error) throw error;
+}
+
+export async function createTimelineEvent(event: TimelineEvent): Promise<void> {
+    const { error } = await supabase.from('timeline_events').insert({
+        id: event.id,
+        time: event.time,
+        title: event.title,
+        description: event.description ?? null,
+        category: event.category,
+        is_public: event.isPublic,
+        duration: event.duration ?? null,
+        sort_order: event.sortOrder,
+    });
+    if (error) throw error;
+}
+
+export async function updateTimelineEvent(event: TimelineEvent): Promise<void> {
+    const { error } = await supabase
+        .from('timeline_events')
+        .update({
+            time: event.time,
+            title: event.title,
+            description: event.description ?? null,
+            category: event.category,
+            is_public: event.isPublic,
+            duration: event.duration ?? null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', event.id);
+    if (error) throw error;
+}
+
+export async function deleteTimelineEvent(id: string): Promise<void> {
+    const { error } = await supabase.from('timeline_events').delete().eq('id', id);
+    if (error) throw error;
 }
 
 // ── Tracks (Playlist) ─────────────────────────────────────────────────────────
@@ -367,13 +392,10 @@ export async function updateTrackColumn(
 }
 
 export async function updateTracksOrder(tracks: TrackItem[]): Promise<void> {
-    for (let i = 0; i < tracks.length; i++) {
-        const { error } = await supabase
-            .from('tracks')
-            .update({ sort_order: i })
-            .eq('id', tracks[i].id);
-        if (error) throw error;
-    }
+    const { error } = await supabase.from('tracks').upsert(
+        tracks.map((t, i) => ({ id: t.id, sort_order: i }))
+    );
+    if (error) throw error;
 }
 
 // ── Gifts ─────────────────────────────────────────────────────────────────────
@@ -398,4 +420,107 @@ export async function fetchGifts(): Promise<Gift[]> {
         .order('created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []).map(dbToGift);
+}
+
+// ── Vendors ───────────────────────────────────────────────────────────────────
+
+export function dbToVendor(v: DbRow): Vendor {
+    return {
+        id: v.id,
+        name: v.name,
+        category: v.category,
+        contactName: v.contact_name ?? undefined,
+        contactEmail: v.contact_email ?? undefined,
+        contactPhone: v.contact_phone ?? undefined,
+        price: v.price ?? 0,
+        status: v.status as VendorStatus,
+        depositPaid: v.deposit_paid ?? 0,
+    };
+}
+
+export async function fetchVendors(): Promise<Vendor[]> {
+    const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(dbToVendor);
+}
+
+export async function addVendor(vendor: Omit<Vendor, 'id'>): Promise<Vendor> {
+    const id = `vendor-${Date.now()}`;
+    const { error } = await supabase.from('vendors').insert({
+        id,
+        name: vendor.name,
+        category: vendor.category,
+        contact_name: vendor.contactName || null,
+        contact_email: vendor.contactEmail || null,
+        contact_phone: vendor.contactPhone || null,
+        price: vendor.price,
+        status: vendor.status,
+        deposit_paid: vendor.depositPaid || 0,
+    });
+    if (error) throw error;
+    return { ...vendor, id };
+}
+
+export async function deleteVendor(id: string): Promise<void> {
+    const { error } = await supabase.from('vendors').delete().eq('id', id);
+    if (error) throw error;
+}
+
+// ── Budget ────────────────────────────────────────────────────────────────────
+
+export function dbToBudgetItem(b: DbRow): BudgetItem {
+    return {
+        id: b.id,
+        category: b.category,
+        name: b.name,
+        budgeted: b.budgeted ?? 0,
+        actual: b.actual ?? 0,
+    };
+}
+
+export async function fetchBudgetItems(): Promise<BudgetItem[]> {
+    const { data, error } = await supabase
+        .from('budget_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(dbToBudgetItem);
+}
+
+export async function addBudgetItem(item: Omit<BudgetItem, 'id'>): Promise<BudgetItem> {
+    const id = `budget-${Date.now()}`;
+    const { error } = await supabase.from('budget_items').insert({
+        id,
+        category: item.category,
+        name: item.name,
+        budgeted: item.budgeted,
+        actual: item.actual || 0,
+    });
+    if (error) throw error;
+    return { ...item, id };
+}
+
+export async function deleteBudgetItem(id: string): Promise<void> {
+    const { error } = await supabase.from('budget_items').delete().eq('id', id);
+    if (error) throw error;
+}
+
+export async function fetchTotalBudget(): Promise<number> {
+    const { data, error } = await supabase
+        .from('budget_settings')
+        .select('total_budget')
+        .eq('id', 'main')
+        .maybeSingle();
+    if (error) throw error;
+    return data?.total_budget ?? 0;
+}
+
+export async function updateTotalBudget(totalBudget: number): Promise<void> {
+    const { error } = await supabase
+        .from('budget_settings')
+        .upsert({ id: 'main', total_budget: totalBudget });
+    if (error) throw error;
 }

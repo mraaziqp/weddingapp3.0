@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   Clock, GripVertical, Plus, Globe, Lock, ArrowLeft, Save, Eye,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchTimelineEvents, updateTimelineEventsOrder } from '@/lib/supabase';
+import { fetchTimelineEvents, updateTimelineEventsOrder, createTimelineEvent, updateTimelineEvent, deleteTimelineEvent } from '@/lib/supabase';
 import type { TimelineEvent, TimelineCategory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -158,6 +158,7 @@ export default function RunOfShowPage() {
   const [saved, setSaved] = useState(false);
   const [, startTransition] = useTransition();
   const { toast } = useToast();
+  const saveTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     fetchTimelineEvents()
@@ -175,29 +176,45 @@ export default function RunOfShowPage() {
     const nextHour = h + 1;
     const newTime = `${String(nextHour % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
+    const newEvent: TimelineEvent = {
+      id: `event-${Date.now()}`,
+      time: newTime,
+      title: '',
+      description: '',
+      category: 'other',
+      isPublic: false,
+      duration: 30,
+      sortOrder: events.length,
+    };
+
     startTransition(() => {
-      setEvents(prev => [
-        ...prev,
-        {
-          id: `ev-${Date.now()}`,
-          time: newTime,
-          title: '',
-          description: '',
-          category: 'other',
-          isPublic: false,
-          duration: 30,
-          sortOrder: prev.length,
-        } as TimelineEvent,
-      ]);
+      setEvents(prev => [...prev, newEvent]);
+    });
+    createTimelineEvent(newEvent).catch(err => {
+      console.error('Failed to save event:', err);
+      toast({ variant: 'destructive', title: 'Failed to save new event' });
     });
   };
 
   const updateEvent = (id: string, updated: TimelineEvent) => {
     startTransition(() => setEvents(prev => prev.map(e => e.id === id ? updated : e)));
+
+    if (saveTimeouts.current[id]) clearTimeout(saveTimeouts.current[id]);
+    saveTimeouts.current[id] = setTimeout(() => {
+      updateTimelineEvent(updated).catch(err => {
+        console.error('Failed to save event:', err);
+        toast({ variant: 'destructive', title: 'Failed to save event' });
+      });
+    }, 600);
   };
 
   const removeEvent = (id: string) => {
+    if (saveTimeouts.current[id]) clearTimeout(saveTimeouts.current[id]);
     startTransition(() => setEvents(prev => prev.filter(e => e.id !== id)));
+    deleteTimelineEvent(id).catch(err => {
+      console.error('Failed to delete event:', err);
+      toast({ variant: 'destructive', title: 'Failed to delete event' });
+    });
   };
 
   const saveToGuestProgram = () => {

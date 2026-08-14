@@ -472,7 +472,9 @@ const LiveRsvpFeed = () => {
 
   useEffect(() => {
     fetchResponses(true);
-    const interval = setInterval(() => fetchResponses(false), 8000);
+    // 15s keeps the live "new RSVP" chime feeling near-instant without
+    // doubling the request rate the previous 8s interval had.
+    const interval = setInterval(() => fetchResponses(false), 15000);
     return () => clearInterval(interval);
   }, [fetchResponses]);
 

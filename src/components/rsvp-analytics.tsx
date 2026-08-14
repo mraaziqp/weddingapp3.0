@@ -33,12 +33,14 @@ interface Analytics {
 export function RSVPAnalytics() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const { toast } = useToast();
 
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/rsvp');
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
       const responses = data.responses || [];
 
@@ -55,7 +57,9 @@ export function RSVPAnalytics() {
         withDietary,
         responses,
       });
+      setLoadFailed(false);
     } catch (_err) {
+      setLoadFailed(true);
       toast({ title: 'Failed to load analytics', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -97,12 +101,24 @@ export function RSVPAnalytics() {
     toast({ title: 'Exported successfully!', description: 'RSVP data downloaded' });
   };
 
-  if (loading || !analytics) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity }}>
           <RefreshCw size={32} className="text-amber-500" />
         </motion.div>
+      </div>
+    );
+  }
+
+  if (loadFailed || !analytics) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 min-h-96 text-center">
+        <p className="text-white/60">Couldn&apos;t load RSVP analytics.</p>
+        <Button onClick={fetchAnalytics} variant="outline" className="border-white/20">
+          <RefreshCw size={16} className="mr-2" />
+          Retry
+        </Button>
       </div>
     );
   }
