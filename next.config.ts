@@ -2,6 +2,19 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+
+  // Genkit is server-only (it's reached solely through the server actions in
+  // src/app/actions.ts). Letting webpack bundle it made it walk the whole
+  // OpenTelemetry SDK and try to resolve optional trace exporters that aren't
+  // installed — producing a build warning for a package that is never loaded
+  // at runtime. Keeping these external means Node requires them directly.
+  serverExternalPackages: [
+    'genkit',
+    '@genkit-ai/core',
+    '@genkit-ai/google-genai',
+    '@opentelemetry/sdk-node',
+  ],
+
   typescript: {
     ignoreBuildErrors: true,
   },

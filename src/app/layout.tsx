@@ -9,6 +9,7 @@ import { LuxuryToaster } from '@/components/luxury-toaster';
 import { SwRegistration } from '@/components/sw-registration';
 import { ExperienceSettingsSync } from '@/components/experience-settings-sync';
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
+import { PointerEventsGuard } from '@/components/pointer-events-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("font-body antialiased")}>
+        <PointerEventsGuard />
         <ExperienceSettingsSync />
         <AudioProvider>
           <TooltipProvider>
