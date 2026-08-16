@@ -736,7 +736,11 @@ export default function InvitationPage() {
                 rsvpStatus: 'Confirmed' as const
               }
             ],
-            qrCode: params?.get('id') || 'GUEST-' + Date.now()
+            // Fall back to the household id from the URL — the scanner
+            // resolves that too. Never invent a code (this used to emit
+            // `GUEST-<timestamp>`, which matches nothing, so the pass showed
+            // a QR that always failed at the door).
+            qrCode: params?.get('household') || params?.get('id') || ''
           };
       return <DigitalPass household={householdObj} config={config ?? undefined} />;
     }

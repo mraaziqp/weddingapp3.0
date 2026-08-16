@@ -233,14 +233,67 @@ export async function updateGuestRsvp(
     if (error) throw error;
 }
 
-export async function lookupHouseholdByQr(qrCode: string): Promise<Household | null> {
-    const { data, error } = await supabase
-        .from('households')
-        .select('*, guests(*)')
-        .eq('qr_code', qrCode)
-        .single();
-    if (error || !data) return null;
-    return dbToHousehold(data);
+/**
+ * Resolves a scanned QR payload to a household.
+ *
+ * The app hands out QR codes in more than one shape, so matching only on
+ * households.qr_code made Bouncer Mode reject perfectly valid guests with
+ * "QR Code Not Found". The formats actually in circulation:
+ *   - `WEDU-HH-…`          the qr_code column (guest's digital pass)
+ *   - a full invite URL    `…/invitation?id=household-…&household=household-…`
+ *     — what the admin QR manager renders and sends to guests
+ *   - a bare `household-…` id (the digital pass falls back to this when the
+ *     household row hasn't resolved yet)
+ *   - a bare `guest-…` id  (resolved via that guest's household)
+ *
+ * Tries each candidate in turn and returns the first real match.
+ */
+export async function lookupHouseholdByQr(scanned: string): Promise<Household | null> {
+    const raw = (scanned ?? '').trim();
+    if (!raw) return null;
+
+    const candidates: string[] = [raw];
+
+    // A scanned invite link carries the household in its query string (or, for
+    // /invite/<code> style links, in the last path segment).
+    if (/^https?:\/\//i.test(raw)) {
+        try {
+            const url = new URL(raw);
+            for (const key of ['household', 'id', 'qr', 'code']) {
+                const value = url.searchParams.get(key);
+                if (value) candidates.push(value.trim());
+            }
+            const lastSegment = url.pathname.split('/').filter(Boolean).pop();
+            if (lastSegment) candidates.push(decodeURIComponent(lastSegment));
+        } catch {
+            // Not a parseable URL — fall through and try it as a plain code.
+        }
+    }
+
+    const selectHousehold = () => supabase.from('households').select('*, guests(*)');
+
+    for (const value of Array.from(new Set(candidates))) {
+        // qr_code first — it's the canonical value and what the pass encodes.
+        const byQr = await selectHousehold().eq('qr_code', value).maybeSingle();
+        if (byQr.data) return dbToHousehold(byQr.data);
+
+        const byId = await selectHousehold().eq('id', value).maybeSingle();
+        if (byId.data) return dbToHousehold(byId.data);
+
+        if (value.startsWith('guest-')) {
+            const { data: guestRow } = await supabase
+                .from('guests')
+                .select('household_id')
+                .eq('id', value)
+                .maybeSingle();
+            if (guestRow?.household_id) {
+                const byGuest = await selectHousehold().eq('id', guestRow.household_id).maybeSingle();
+                if (byGuest.data) return dbToHousehold(byGuest.data);
+            }
+        }
+    }
+
+    return null;
 }
 
 // ── Menu Items ────────────────────────────────────────────────────────────────

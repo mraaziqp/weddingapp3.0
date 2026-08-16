@@ -414,7 +414,7 @@ const DraggableTableWrapper = React.memo(function DraggableTableWrapper({ table,
 export function SeatingChart({ onTablesChange }: { onTablesChange?: (tables: Table[]) => void } = {}) {
   const isMobile = useIsMobile();
   const canvasBoundsRef = useRef<HTMLDivElement>(null);
-  const { households, isLoading: householdsLoading, guests: realGuestsFromHook } = useRealGuests();
+  const { isLoading: householdsLoading, guests: realGuestsFromHook } = useRealGuests();
   const realGuests = householdsLoading ? null : realGuestsFromHook;
   const usingVenuePreset = realGuests !== null && realGuests.length === 0;
   const guestPool = useMemo(
