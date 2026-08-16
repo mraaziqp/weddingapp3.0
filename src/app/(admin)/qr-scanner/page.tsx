@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BoardingPass } from '@/components/boarding-pass';
@@ -53,6 +54,7 @@ export default function BouncerPage() {
     const [scanError, setScanError] = useState(false);
     const [cameraError, setCameraError] = useState(false);
     const [isScanning, setIsScanning] = useState(true);
+    const [manualCode, setManualCode] = useState('');
     const scannerRef = useRef<import('html5-qrcode').Html5Qrcode | null>(null);
     const scannerDivRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
@@ -190,6 +192,37 @@ export default function BouncerPage() {
                 <h1 className="font-headline text-3xl font-bold italic tracking-tight">Bouncer Mode</h1>
                 <p className="text-muted-foreground tracking-wide">Scan guest QR codes for instant check-in.</p>
             </div>
+
+            {/* Manual fallback — a device with no camera (or a scuffed QR, or a
+                guest whose phone is dead) shouldn't mean nobody can be checked
+                in. Runs the exact same lookup and check-in path as a scan. */}
+            <Card className="glass-card p-4">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const code = manualCode.trim();
+                        if (!code) return;
+                        setManualCode('');
+                        handleScanResult(code);
+                    }}
+                    className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                    <label htmlFor="manual-code" className="text-sm text-white/70 sm:whitespace-nowrap">
+                        No camera? Enter a code or paste their invite link:
+                    </label>
+                    <Input
+                        id="manual-code"
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        placeholder="WEDU-HH-… or an invite link"
+                        className="flex-1"
+                        autoComplete="off"
+                    />
+                    <Button type="submit" disabled={!manualCode.trim()} className="sm:w-auto">
+                        Check in
+                    </Button>
+                </form>
+            </Card>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 <Card className="glass-card aspect-video flex flex-col items-center justify-center p-0 overflow-hidden">
