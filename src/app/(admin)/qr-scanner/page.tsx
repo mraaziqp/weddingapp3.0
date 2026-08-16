@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { BoardingPass } from '@/components/boarding-pass';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,8 +18,38 @@ type GuestData = {
     qrCodeValue: string;
 };
 
+/**
+ * html5-qrcode's stop() throws *synchronously* when the scanner isn't
+ * currently running ("Cannot stop, scanner is not running or paused."), so
+ * `scanner.stop().catch(…)` never gets a chance to swallow it — the throw
+ * escapes before a promise exists.
+ *
+ * That mattered a lot here: a successful scan stops the scanner and flips
+ * isScanning to false, and the effect cleanup that runs on that state change
+ * then tried to stop it a second time. The synchronous throw landed in a
+ * React effect cleanup, uncaught, and took the whole page down to
+ * "Application error: a client-side exception has occurred" — so every
+ * successful scan killed the page until it was reloaded.
+ */
+async function stopScannerSafely(scanner: import('html5-qrcode').Html5Qrcode | null) {
+    if (!scanner) return;
+    try {
+        await scanner.stop();
+    } catch {
+        // Already stopped, or never started — nothing to clean up.
+    }
+}
+
+/** Outcome of writing the scan to guests.checked_in_at. */
+type CheckInState =
+    | { status: 'saving' }
+    | { status: 'done'; newlyCheckedIn: number; total: number }
+    | { status: 'repeat'; alreadyCheckedIn: number; total: number; previouslySeenAt: string | null }
+    | { status: 'failed'; message: string };
+
 export default function BouncerPage() {
     const [scannedData, setScannedData] = useState<GuestData | null>(null);
+    const [checkIn, setCheckIn] = useState<CheckInState | null>(null);
     const [scanError, setScanError] = useState(false);
     const [cameraError, setCameraError] = useState(false);
     const [isScanning, setIsScanning] = useState(true);
@@ -26,11 +57,64 @@ export default function BouncerPage() {
     const scannerDivRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
+    /**
+     * Writes the arrival to the guest rows. Celebrate only on a genuine first
+     * scan — a repeat means this QR has already come through the door, which
+     * the person working the door needs to see, not a second burst of confetti.
+     */
+    const recordCheckIn = async (householdId: string, householdName: string) => {
+        setCheckIn({ status: 'saving' });
+        try {
+            const res = await fetch('/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ householdId }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || 'Check-in failed');
+
+            if (json.firstScan) {
+                setCheckIn({ status: 'done', newlyCheckedIn: json.newlyCheckedIn, total: json.total });
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#d4af37', '#f6e7b7', '#ffffff'],
+                });
+            } else {
+                setCheckIn({
+                    status: 'repeat',
+                    alreadyCheckedIn: json.alreadyCheckedIn,
+                    total: json.total,
+                    previouslySeenAt: json.previouslySeenAt ?? null,
+                });
+                toast({
+                    variant: 'destructive',
+                    title: 'Already checked in',
+                    description: `${householdName} was scanned before${
+                        json.previouslySeenAt
+                            ? ` at ${new Date(json.previouslySeenAt).toLocaleTimeString()}`
+                            : ''
+                    }.`,
+                });
+            }
+        } catch (err) {
+            console.error('[Bouncer] Check-in failed:', err);
+            setCheckIn({
+                status: 'failed',
+                message: err instanceof Error ? err.message : 'Check-in failed',
+            });
+            toast({
+                variant: 'destructive',
+                title: 'Check-in not saved',
+                description: 'The guest is on the list, but their arrival was not recorded. Try scanning again.',
+            });
+        }
+    };
+
     const handleScanResult = async (result: string) => {
         setIsScanning(false);
-        if (scannerRef.current) {
-            scannerRef.current.stop().catch(() => {});
-        }
+        await stopScannerSafely(scannerRef.current);
 
         const hh = await lookupHouseholdByQr(result.trim());
         if (hh) {
@@ -39,12 +123,7 @@ export default function BouncerPage() {
                 : null;
             setScannedData({ name: hh.name, tableNumber: 0, plusOne, qrCodeValue: hh.qrCode });
             setScanError(false);
-            confetti({
-                particleCount: 150,
-                spread: 80,
-                origin: { y: 0.6 },
-                colors: ['#d4af37', '#f6e7b7', '#ffffff'],
-            });
+            await recordCheckIn(hh.id, hh.name);
         } else {
             setScanError(true);
             setScannedData(null);
@@ -57,17 +136,15 @@ export default function BouncerPage() {
     };
 
     const startScanner = async () => {
-        const { Html5Qrcode } = await import('html5-qrcode');
-        if (!scannerDivRef.current) return;
-
-        if (scannerRef.current) {
-            try { await scannerRef.current.stop(); } catch {}
-        }
-
-        const scanner = new Html5Qrcode('qr-reader');
-        scannerRef.current = scanner;
-
         try {
+            const { Html5Qrcode } = await import('html5-qrcode');
+            if (!scannerDivRef.current) return;
+
+            await stopScannerSafely(scannerRef.current);
+
+            const scanner = new Html5Qrcode('qr-reader');
+            scannerRef.current = scanner;
+
             await scanner.start(
                 { facingMode: 'environment' },
                 { fps: 10, qrbox: { width: 220, height: 220 } },
@@ -77,11 +154,12 @@ export default function BouncerPage() {
                 () => {}
             );
         } catch {
+            // No camera, permission denied, or the library failed to load.
             setCameraError(true);
             setIsScanning(false);
             toast({
                 variant: 'destructive',
-                title: 'Camera Permission Required',
+                title: 'Camera Unavailable',
                 description: 'Allow camera access and try again.',
             });
         }
@@ -89,6 +167,7 @@ export default function BouncerPage() {
 
     const resetScanner = async () => {
         setScannedData(null);
+        setCheckIn(null);
         setScanError(false);
         setCameraError(false);
         setIsScanning(true);
@@ -96,12 +175,11 @@ export default function BouncerPage() {
 
     useEffect(() => {
         if (isScanning) {
-            startScanner();
+            // Fire-and-forget, but never let a rejection escape unhandled.
+            startScanner().catch(() => {});
         }
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current.stop().catch(() => {});
-            }
+            void stopScannerSafely(scannerRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isScanning]);
@@ -144,12 +222,18 @@ export default function BouncerPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 gap-3"
                                 >
                                     {scannedData ? (
-                                        <CheckCircle2 className="h-28 w-28 text-green-400" />
+                                        checkIn?.status === 'repeat' ? (
+                                            <AlertTriangle className="h-28 w-28 text-amber-400" />
+                                        ) : (
+                                            <CheckCircle2 className="h-28 w-28 text-green-400" />
+                                        )
                                     ) : (
                                         <XCircle className="h-28 w-28 text-red-500" />
                                     )}
                                     <p className="text-2xl font-bold">
-                                        {scannedData ? 'Welcome!' : cameraError ? 'Camera Unavailable' : 'Not Found'}
+                                        {scannedData
+                                            ? checkIn?.status === 'repeat' ? 'Already Checked In' : 'Welcome!'
+                                            : cameraError ? 'Camera Unavailable' : 'Not Found'}
                                     </p>
                                     <p className="text-muted-foreground text-center px-4">
                                         {scannedData
@@ -158,6 +242,30 @@ export default function BouncerPage() {
                                                 ? 'Allow camera access in your browser, then try again.'
                                                 : 'This QR code is not on the guest list.'}
                                     </p>
+
+                                    {/* Arrival record — the scan is only real once it's saved. */}
+                                    {scannedData && checkIn && (
+                                        <p
+                                            className={cn(
+                                                'px-4 text-center text-sm font-medium',
+                                                checkIn.status === 'done' && 'text-green-400',
+                                                checkIn.status === 'repeat' && 'text-amber-400',
+                                                checkIn.status === 'failed' && 'text-red-400',
+                                                checkIn.status === 'saving' && 'text-white/60'
+                                            )}
+                                        >
+                                            {checkIn.status === 'saving' && 'Recording arrival…'}
+                                            {checkIn.status === 'done' &&
+                                                `Checked in ${checkIn.newlyCheckedIn} of ${checkIn.total} ${checkIn.total === 1 ? 'guest' : 'guests'}`}
+                                            {checkIn.status === 'repeat' &&
+                                                `This QR was already used — ${checkIn.alreadyCheckedIn} of ${checkIn.total} already through${
+                                                    checkIn.previouslySeenAt
+                                                        ? ` at ${new Date(checkIn.previouslySeenAt).toLocaleTimeString()}`
+                                                        : ''
+                                                }`}
+                                            {checkIn.status === 'failed' && 'Arrival NOT saved — scan again'}
+                                        </p>
+                                    )}
                                     <Button
                                         onClick={resetScanner}
                                         variant="outline"
