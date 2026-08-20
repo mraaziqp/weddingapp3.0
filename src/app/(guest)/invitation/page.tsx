@@ -96,16 +96,21 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="h-full w-full bg-[linear-gradient(150deg,var(--aurora-midnight)_0%,var(--aurora-emerald-deep)_45%,#03040a_100%)]" />
+          <div 
+            className="h-full w-full"
+            style={{
+              background: 'radial-gradient(ellipse at 50% 25%, #ffffff 0%, #faf6ee 45%, #f4ede0 100%)',
+            }}
+          />
         )}
       </motion.div>
 
       {/* Cinematic grading overlays (only for classic botanical style) */}
       {!isNavyRoyal && (
         <>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
-          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.7)_0%,rgba(250,248,245,0.85)_65%,rgba(245,240,230,0.95)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-transparent to-[#faf8f5]" />
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.12)_0%,transparent_55%)]" />
         </>
       )}
     </div>

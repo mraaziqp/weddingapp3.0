@@ -177,15 +177,19 @@ export function InvitationCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.25)]`}
+      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_20px_70px_rgba(0,0,0,0.1)] bg-[#faf8f5] border border-[#d4af37]/25`}
       style={{
-        backgroundImage: 'url("/villa-courtyard.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: 'radial-gradient(circle at 50% 25%, #ffffff 0%, #faf8f5 65%, #f4efe4 100%)',
       }}
     >
-      {/* Light elegant overlay to soften the watercolor sketch and make text pop */}
-      <div className="absolute inset-0 bg-[#faf8f5]/82 z-0 pointer-events-none" />
+      {/* Subtly textured elegant luxury paper grain overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" 
+        style={{
+          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
+          backgroundSize: '4px 4px'
+        }}
+      />
 
       {/* Decorative Wedding Flowers in the corners (framing the card) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
