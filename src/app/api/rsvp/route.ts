@@ -135,11 +135,10 @@ export async function GET(req: NextRequest) {
       console.warn('[RSVP GET] Neon query failed, message comments will be omitted:', sqlErr);
     }
 
-    // 2. Fetch all guests who have responded from Supabase
+    // 2. Fetch all guests from Supabase
     const { data: guests, error } = await supabaseAdmin
       .from('guests')
       .select('id, first_name, last_name, rsvp_status, dietary_restrictions, song_request, tags, updated_at')
-      .neq('rsvp_status', 'Pending')
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -154,11 +153,15 @@ export async function GET(req: NextRequest) {
         message = `🎵 Song Request: ${g.song_request}`;
       }
 
+      let status = 'Pending';
+      if (g.rsvp_status === 'Confirmed') status = 'Accepted';
+      else if (g.rsvp_status === 'Regret') status = 'Declined';
+
       return {
         id: g.id,
         guest_id: isBride ? 'guest-bride' : 'guest-groom',
-        guest_name: `${g.first_name} ${g.last_name}`,
-        status: g.rsvp_status === 'Confirmed' ? 'Accepted' : 'Declined',
+        guest_name: `${g.first_name || ''} ${g.last_name || ''}`.trim(),
+        status,
         dietary_restrictions: g.dietary_restrictions || undefined,
         message: message,
         responded_at: g.updated_at || new Date().toISOString()

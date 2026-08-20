@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useState, useEffect, useCallback } from 'react';
-import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell, MessageSquare, Copy } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Gift, QrCode, UserPlus, Map, Flame, LayoutTemplate, Sparkles, Volume2, VolumeX, Bell, MessageSquare, Copy, Search, X, Check, ArrowUpRight, CheckCircle2, XCircle, Clock, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -211,17 +211,47 @@ const MusicWidget = () => (
     </MotionCard>
 );
 
-const RSVPStatus = ({ confirmed, pending, declined, total }: { confirmed: number; pending: number; declined: number; total: number }) => {
+const RSVPStatus = ({
+    confirmed,
+    pending,
+    declined,
+    total,
+    onFilterSelect,
+    activeFilter
+}: {
+    confirmed: number;
+    pending: number;
+    declined: number;
+    total: number;
+    onFilterSelect?: (filter: 'all' | 'accepted' | 'declined' | 'pending') => void;
+    activeFilter?: string;
+}) => {
     const percentage = total > 0 ? Math.round((confirmed / total) * 100) : 0;
     const [offset, setOffset] = useState(251);
 
     useEffect(() => setOffset(251 - (percentage / 100) * 251), [percentage]);
 
+    const handleRowClick = (statusFilter: 'all' | 'accepted' | 'declined' | 'pending') => {
+        if (onFilterSelect) {
+            onFilterSelect(statusFilter);
+        }
+        const feedElement = document.getElementById('live-rsvp-feed-section');
+        if (feedElement) {
+            feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <MotionCard variants={itemVariants} whileHover={{ y: -4 }} className="bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl group relative overflow-hidden">
              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-0">
+            <CardHeader className="pb-0 flex flex-row items-center justify-between">
                  <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">RSVP Summary</CardTitle>
+                 <button
+                    onClick={() => handleRowClick('all')}
+                    className="text-[9px] text-white/50 hover:text-amber-300 transition-colors flex items-center gap-1 uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded-full border border-white/10"
+                 >
+                    View Names <ArrowUpRight size={10} />
+                 </button>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-5">
                 <div className="relative w-24 h-24 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">
@@ -250,18 +280,62 @@ const RSVPStatus = ({ confirmed, pending, declined, total }: { confirmed: number
                 </div>
                 
                 <div className="w-full mt-4 space-y-1.5 text-[11px] text-white/80">
-                    <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Accepted</span>
-                        <span className="font-semibold">{confirmed}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Declined</span>
-                        <span className="font-semibold">{declined}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-zinc-500" /> Pending</span>
-                        <span className="font-semibold">{pending}</span>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => handleRowClick('accepted')}
+                        className={cn(
+                            "w-full flex justify-between items-center px-2.5 py-1.5 rounded-xl border transition-all text-left group/btn",
+                            activeFilter === 'accepted'
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-white shadow-sm"
+                                : "border-white/5 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30"
+                        )}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="group-hover/btn:text-emerald-300 transition-colors">Accepted (Confirmed)</span>
+                        </span>
+                        <span className="font-semibold text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10 text-xs">
+                            {confirmed}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => handleRowClick('declined')}
+                        className={cn(
+                            "w-full flex justify-between items-center px-2.5 py-1.5 rounded-xl border transition-all text-left group/btn",
+                            activeFilter === 'declined'
+                                ? "bg-rose-500/20 border-rose-500/50 text-white shadow-sm"
+                                : "border-white/5 bg-white/5 hover:bg-rose-500/10 hover:border-rose-500/30"
+                        )}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                            <span className="group-hover/btn:text-rose-300 transition-colors">Rejected (Declined)</span>
+                        </span>
+                        <span className="font-semibold text-rose-400 px-1.5 py-0.5 rounded bg-rose-500/10 text-xs">
+                            {declined}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => handleRowClick('pending')}
+                        className={cn(
+                            "w-full flex justify-between items-center px-2.5 py-1.5 rounded-xl border transition-all text-left group/btn",
+                            activeFilter === 'pending'
+                                ? "bg-amber-500/20 border-amber-500/50 text-white shadow-sm"
+                                : "border-white/5 bg-white/5 hover:bg-amber-500/10 hover:border-amber-500/30"
+                        )}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                            <span className="group-hover/btn:text-amber-300 transition-colors">Pending Response</span>
+                        </span>
+                        <span className="font-semibold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 text-xs">
+                            {pending}
+                        </span>
+                    </button>
                 </div>
             </CardContent>
         </MotionCard>
@@ -417,7 +491,7 @@ function playChime() {
 }
 
 interface RsvpResponse {
-  id: number;
+  id: number | string;
   guest_id: string;
   household_id?: string;
   guest_name: string;
@@ -427,15 +501,36 @@ interface RsvpResponse {
   responded_at: string;
 }
 
-const LiveRsvpFeed = () => {
+type FilterType = 'all' | 'accepted' | 'declined' | 'pending' | 'groom' | 'bride' | 'messages';
+
+const LiveRsvpFeed = ({
+  activeFilter = 'all',
+  onFilterChange
+}: {
+  activeFilter?: FilterType;
+  onFilterChange?: (filter: FilterType) => void;
+}) => {
   const [responses, setResponses] = useState<RsvpResponse[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [latestSeenTime, setLatestSeenTime] = useState<number | null>(null);
-  const [filter, setFilter] = useState<'all' | 'accepted' | 'declined' | 'groom' | 'bride' | 'messages'>('all');
+  const [filter, setFilter] = useState<FilterType>(activeFilter);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setFilter(activeFilter);
+  }, [activeFilter]);
+
+  const handleFilterSelect = (newFilter: FilterType) => {
+    setFilter(newFilter);
+    if (onFilterChange) onFilterChange(newFilter);
+  };
 
   const fetchResponses = useCallback(async (isInitial = false) => {
     try {
+      if (isInitial) setIsLoading(true);
       const res = await fetch('/api/rsvp');
       if (!res.ok) return;
       const data = await res.json();
@@ -467,6 +562,8 @@ const LiveRsvpFeed = () => {
       }
     } catch (err) {
       console.error('[LiveFeed] Failed to fetch RSVPs:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, [latestSeenTime, soundEnabled, toast]);
 
@@ -479,230 +576,372 @@ const LiveRsvpFeed = () => {
   }, [fetchResponses]);
 
   const handleCopyMessage = (rsvp: RsvpResponse) => {
-    if (!rsvp.message) return;
-    navigator.clipboard.writeText(`"${rsvp.message}" - ${rsvp.guest_name}`).then(() => {
-      toast({ title: 'Message Copied!', description: 'Guest message copied to clipboard.' });
+    const textToCopy = rsvp.message 
+      ? `"${rsvp.message}" — ${rsvp.guest_name} (${rsvp.status})` 
+      : `${rsvp.guest_name} — ${rsvp.status}`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      toast({ title: 'Copied!', description: 'Guest details copied to clipboard.' });
     });
   };
 
   const handleWhatsAppReply = (rsvp: RsvpResponse) => {
-    const textMessage = rsvp.status === 'Accepted'
-      ? `Hi ${rsvp.guest_name}! Thank you so much for accepting our wedding invitation. We can't wait to celebrate with you! 🥂`
-      : `Hi ${rsvp.guest_name}! We're so sorry to hear you won't be able to make it to our wedding, but thank you for letting us know. You will be missed! ❤️`;
+    let textMessage = '';
+    if (rsvp.status === 'Accepted') {
+      textMessage = `Hi ${rsvp.guest_name}! Thank you so much for accepting our wedding invitation. We can't wait to celebrate with you! 🥂`;
+    } else if (rsvp.status === 'Declined') {
+      textMessage = `Hi ${rsvp.guest_name}! We're so sorry you won't be able to make it to our wedding, but thank you for letting us know. You will be dearly missed! ❤️`;
+    } else {
+      textMessage = `Hi ${rsvp.guest_name}! We are finalizing our guest list for the wedding and wanted to check if you'll be able to join us. Please let us know when you can! 💍`;
+    }
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
     window.open(url, '_blank');
   };
 
+  const acceptedResponses = responses.filter(r => r.status === 'Accepted');
+  const declinedResponses = responses.filter(r => r.status === 'Declined');
+  const pendingResponses = responses.filter(r => r.status === 'Pending');
   const groomResponses = responses.filter(r => r.guest_id === 'guest-groom');
   const brideResponses = responses.filter(r => r.guest_id === 'guest-bride');
-  const groomAcceptedCount = groomResponses.filter(r => r.status === 'Accepted').length;
-  const brideAcceptedCount = brideResponses.filter(r => r.status === 'Accepted').length;
+  const messageResponses = responses.filter(r => !!r.message);
 
   const filteredResponses = responses.filter(r => {
-    if (filter === 'accepted') return r.status === 'Accepted';
-    if (filter === 'declined') return r.status === 'Declined';
-    if (filter === 'groom') return r.guest_id === 'guest-groom';
-    if (filter === 'bride') return r.guest_id === 'guest-bride';
-    if (filter === 'messages') return !!r.message;
+    // 1. Status/category filter
+    if (filter === 'accepted' && r.status !== 'Accepted') return false;
+    if (filter === 'declined' && r.status !== 'Declined') return false;
+    if (filter === 'pending' && r.status !== 'Pending') return false;
+    if (filter === 'groom' && r.guest_id !== 'guest-groom') return false;
+    if (filter === 'bride' && r.guest_id !== 'guest-bride') return false;
+    if (filter === 'messages' && !r.message) return false;
+
+    // 2. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = r.guest_name.toLowerCase().includes(q);
+      const matchMsg = r.message ? r.message.toLowerCase().includes(q) : false;
+      const matchDiet = r.dietary_restrictions ? r.dietary_restrictions.toLowerCase().includes(q) : false;
+      const matchStatus = r.status.toLowerCase().includes(q);
+      const sideText = r.guest_id?.includes('groom') ? 'groom' : r.guest_id?.includes('bride') ? 'bride' : 'household';
+      const matchSide = sideText.includes(q);
+      return matchName || matchMsg || matchDiet || matchStatus || matchSide;
+    }
+
     return true;
   });
 
   return (
     <MotionCard
+      id="live-rsvp-feed-section"
       variants={itemVariants}
-      className="md:col-span-3 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden group"
+      className="md:col-span-3 bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden group scroll-mt-6"
     >
-      <CardHeader className="border-b border-white/5 pb-4 bg-black/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[#d4af37] flex items-center gap-2">
-            <Bell className="h-4 w-4 text-[#d4af37] animate-bounce" /> Live RSVP Feed &amp; Messages
-          </CardTitle>
-          <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1 leading-normal">
-            Real-time RSVPs · Groom: {groomAcceptedCount} Accepted / {groomResponses.length} Responded · Bride: {brideAcceptedCount} Accepted / {brideResponses.length} Responded
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Segment Filter Switcher */}
-          <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 gap-1 shrink-0 flex-wrap">
-            <button
-              onClick={() => setFilter('all')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'all' 
-                  ? "bg-[#d4af37] text-black shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              All ({responses.length})
-            </button>
-            <button
-              onClick={() => setFilter('accepted')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'accepted' 
-                  ? "bg-emerald-500 text-black shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              Accepted ({responses.filter(r => r.status === 'Accepted').length})
-            </button>
-            <button
-              onClick={() => setFilter('declined')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'declined' 
-                  ? "bg-rose-500 text-black shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              Declined ({responses.filter(r => r.status === 'Declined').length})
-            </button>
-            <button
-              onClick={() => setFilter('groom')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'groom' 
-                  ? "bg-[#10b981] text-black shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              Groom ({groomResponses.length})
-            </button>
-            <button
-              onClick={() => setFilter('bride')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'bride' 
-                  ? "bg-[#ec4899] text-white shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              Bride ({brideResponses.length})
-            </button>
-            <button
-              onClick={() => setFilter('messages')}
-              className={cn(
-                "px-3 py-1 text-[10px] font-semibold rounded-md transition-all",
-                filter === 'messages' 
-                  ? "bg-amber-500 text-black shadow-sm font-bold" 
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              Messages ({responses.filter(r => !!r.message).length})
-            </button>
+      <CardHeader className="border-b border-white/5 pb-4 bg-black/20 flex flex-col gap-4">
+        {/* Top bar: Title & Quick Actions */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[#d4af37] flex items-center gap-2">
+              <Bell className="h-4 w-4 text-[#d4af37] animate-bounce" /> Guest RSVP Responses &amp; Names
+            </CardTitle>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mt-1 leading-normal">
+              {responses.length} Total Guests · {acceptedResponses.length} Accepted · {declinedResponses.length} Rejected · {pendingResponses.length} Pending
+            </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Search Input Tab */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#d4af37]/70 pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search guest by name..."
+                className="w-full pl-8 pr-7 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-[#d4af37]/60 focus:bg-white/10 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={cn(
+                "rounded-full gap-1.5 text-xs transition-all border border-white/10 shrink-0 h-8 px-3",
+                soundEnabled 
+                  ? "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40 hover:bg-[#d4af37]/25" 
+                  : "bg-white/5 text-white/50 hover:bg-white/10"
+              )}
+            >
+              {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              {soundEnabled ? 'Chime ON' : 'Chime Muted'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Tabs Switcher */}
+        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => handleFilterSelect('all')}
             className={cn(
-              "rounded-full gap-2 text-xs transition-all border border-white/10 shrink-0",
-              soundEnabled 
-                ? "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40 hover:bg-[#d4af37]/25" 
-                : "bg-white/5 text-white/50 hover:bg-white/10"
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              filter === 'all' 
+                ? "bg-[#d4af37] text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-white hover:bg-white/5"
             )}
           >
-            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            {soundEnabled ? 'Chime ON' : 'Chime Muted'}
-          </Button>
+            <Users size={12} /> All ({responses.length})
+          </button>
+          
+          <button
+            onClick={() => handleFilterSelect('accepted')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              filter === 'accepted' 
+                ? "bg-emerald-500 text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-emerald-400 hover:bg-white/5"
+            )}
+          >
+            <CheckCircle2 size={12} className={filter === 'accepted' ? 'text-black' : 'text-emerald-400'} />
+            Accepted ({acceptedResponses.length})
+          </button>
+
+          <button
+            onClick={() => handleFilterSelect('declined')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              filter === 'declined' 
+                ? "bg-rose-500 text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-rose-400 hover:bg-white/5"
+            )}
+          >
+            <XCircle size={12} className={filter === 'declined' ? 'text-black' : 'text-rose-400'} />
+            Rejected ({declinedResponses.length})
+          </button>
+
+          <button
+            onClick={() => handleFilterSelect('pending')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+              filter === 'pending' 
+                ? "bg-amber-400 text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-amber-400 hover:bg-white/5"
+            )}
+          >
+            <Clock size={12} className={filter === 'pending' ? 'text-black' : 'text-amber-400'} />
+            Pending ({pendingResponses.length})
+          </button>
+
+          <button
+            onClick={() => handleFilterSelect('groom')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all shrink-0",
+              filter === 'groom' 
+                ? "bg-[#10b981] text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            )}
+          >
+            Groom&apos;s ({groomResponses.length})
+          </button>
+
+          <button
+            onClick={() => handleFilterSelect('bride')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all shrink-0",
+              filter === 'bride' 
+                ? "bg-[#ec4899] text-white shadow-md font-bold" 
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            )}
+          >
+            Bride&apos;s ({brideResponses.length})
+          </button>
+
+          <button
+            onClick={() => handleFilterSelect('messages')}
+            className={cn(
+              "px-3 py-1.5 text-[10px] font-semibold rounded-lg transition-all shrink-0",
+              filter === 'messages' 
+                ? "bg-amber-500 text-black shadow-md font-bold" 
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            )}
+          >
+            Messages ({messageResponses.length})
+          </button>
         </div>
+
+        {/* Search & Filter status summary bar */}
+        {(searchQuery || filter !== 'all') && (
+          <div className="flex items-center justify-between text-xs text-white/60 px-1 pt-1 border-t border-white/5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span>Showing <strong className="text-white">{filteredResponses.length}</strong> of {responses.length} guests</span>
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1 bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/30 px-2 py-0.5 rounded-full text-[10px]">
+                  Matching: &ldquo;{searchQuery}&rdquo;
+                  <button onClick={() => setSearchQuery('')} className="hover:text-white ml-0.5">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {filter !== 'all' && (
+                <span className="inline-flex items-center gap-1 bg-white/10 text-white/80 border border-white/15 px-2 py-0.5 rounded-full text-[10px] capitalize">
+                  Filter: {filter === 'declined' ? 'Rejected' : filter}
+                  <button onClick={() => handleFilterSelect('all')} className="hover:text-white ml-0.5">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+            </div>
+            {(searchQuery || filter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  handleFilterSelect('all');
+                }}
+                className="text-[10px] text-[#d4af37] hover:underline cursor-pointer"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+        )}
       </CardHeader>
       
       <CardContent className="p-0">
-        <div className="overflow-y-auto max-h-[400px] divide-y divide-white/5 scrollbar-thin">
-          {filteredResponses.length === 0 ? (
-            <div className="p-12 text-center text-white/40 italic text-sm">
-              No matching RSVP responses found.
+        <div className="overflow-y-auto max-h-[460px] divide-y divide-white/5 scrollbar-thin">
+          {isLoading ? (
+            <div className="p-12 text-center text-amber-300/60 italic text-sm">
+              Loading guest responses...
+            </div>
+          ) : filteredResponses.length === 0 ? (
+            <div className="p-12 text-center text-white/40 italic text-sm flex flex-col items-center justify-center gap-3">
+              <p>No matching guests found{searchQuery ? ` for "${searchQuery}"` : ''}.</p>
+              {(searchQuery || filter !== 'all') && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('');
+                    handleFilterSelect('all');
+                  }}
+                  className="rounded-full text-xs border-white/20 bg-white/5 hover:bg-white/10 text-white"
+                >
+                  Clear search &amp; filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col">
               <AnimatePresence initial={false}>
-                {filteredResponses.map((rsvp) => (
-                  <motion.div
-                    key={rsvp.id}
-                    layout="position"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className="p-4 hover:bg-white/5 transition-colors flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white text-sm">{rsvp.guest_name}</span>
-                        
-                        {/* Guest Side Tag */}
-                        {rsvp.guest_id && (
-                          <span className={cn(
-                            "text-[9px] px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider",
-                            rsvp.guest_id.startsWith('household-') 
-                              ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
-                              : rsvp.guest_id.includes('bride') 
-                                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" 
-                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                          )}>
-                            {rsvp.guest_id.startsWith('household-') ? 'Household' : rsvp.guest_id.includes('bride') ? 'Bride\'s' : 'Groom\'s'}
+                {filteredResponses.map((rsvp) => {
+                  const isAccepted = rsvp.status === 'Accepted';
+                  const isDeclined = rsvp.status === 'Declined';
+                  const isPending = rsvp.status === 'Pending';
+
+                  return (
+                    <motion.div
+                      key={rsvp.id}
+                      layout="position"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                      className="p-4 hover:bg-white/5 transition-colors flex flex-col gap-2 group/row"
+                    >
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        {/* Left: Guest Name & Tags */}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/15 to-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-amber-200">
+                            {rsvp.guest_name.charAt(0).toUpperCase() || 'G'}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-white text-sm md:text-base tracking-tight">
+                              {rsvp.guest_name}
+                            </span>
+                          </div>
+                          
+                          {/* Guest Side Tag */}
+                          {rsvp.guest_id && (
+                            <span className={cn(
+                              "text-[9px] px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider",
+                              rsvp.guest_id.startsWith('household-') 
+                                ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                                : rsvp.guest_id.includes('bride') 
+                                  ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" 
+                                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            )}>
+                              {rsvp.guest_id.startsWith('household-') ? 'Household' : rsvp.guest_id.includes('bride') ? 'Bride\'s' : 'Groom\'s'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Right: Status Badge & Actions */}
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[10px] text-white/40">
+                            {new Date(rsvp.responded_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
+                            {new Date(rsvp.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                        )}
-                      </div>
+                          
+                          {/* Dynamic Status Badge */}
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1",
+                            isAccepted && "bg-emerald-950/50 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.15)]",
+                            isDeclined && "bg-rose-950/50 text-rose-300 border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.15)]",
+                            isPending && "bg-amber-950/50 text-amber-300 border-amber-500/40"
+                          )}>
+                            {isAccepted && <Check size={11} className="text-emerald-400" />}
+                            {isDeclined && <X size={11} className="text-rose-400" />}
+                            {isPending && <Clock size={11} className="text-amber-400" />}
+                            {isAccepted ? 'Accepted' : isDeclined ? 'Rejected' : 'Pending'}
+                          </span>
 
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] text-white/40">
-                          {new Date(rsvp.responded_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
-                          {new Date(rsvp.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        
-                        <span className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
-                          rsvp.status === 'Accepted'
-                            ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
-                            : "bg-rose-950/40 text-rose-400 border-rose-500/30"
-                        )}>
-                          {rsvp.status}
-                        </span>
-
-                        {/* Quick Direct Actions */}
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleWhatsAppReply(rsvp)}
-                            title="Reply via WhatsApp"
-                            className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:text-white transition-all"
-                          >
-                            <MessageSquare size={12} />
-                          </button>
-                          {rsvp.message && (
+                          {/* Quick Direct Actions */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleWhatsAppReply(rsvp)}
+                              title="Message via WhatsApp"
+                              className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 hover:text-white transition-all"
+                            >
+                              <MessageSquare size={12} />
+                            </button>
                             <button
                               onClick={() => handleCopyMessage(rsvp)}
-                              title="Copy Message"
-                              className="p-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-white transition-all"
+                              title="Copy Info"
+                              className="p-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/25 hover:text-white transition-all"
                             >
                               <Copy size={12} />
                             </button>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Message Quote Bubble */}
-                    {rsvp.message && (
-                      <div className="relative mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-4 py-2.5 rounded-r-xl text-white/95 leading-relaxed font-serif shadow-sm">
-                        <span className="absolute top-1 left-2 text-[#d4af37]/10 font-serif text-3xl leading-none select-none">“</span>
-                        &quot;{rsvp.message}&quot;
-                      </div>
-                    )}
+                      {/* Message Quote Bubble */}
+                      {rsvp.message && (
+                        <div className="relative mt-1 text-xs italic bg-white/5 border-l-2 border-[#d4af37] px-4 py-2.5 rounded-r-xl text-white/95 leading-relaxed font-serif shadow-sm">
+                          <span className="absolute top-1 left-2 text-[#d4af37]/10 font-serif text-3xl leading-none select-none">“</span>
+                          &quot;{rsvp.message}&quot;
+                        </div>
+                      )}
 
-                    {/* Dietary Badge */}
-                    {rsvp.dietary_restrictions && (
-                      <div className="flex gap-1.5 items-center">
-                        <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium leading-none">
-                          Dietary: {rsvp.dietary_restrictions}
-                        </span>
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
+                      {/* Dietary Badge */}
+                      {rsvp.dietary_restrictions && (
+                        <div className="flex gap-1.5 items-center mt-0.5">
+                          <span className="text-[9px] bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded px-2 py-0.5 font-medium leading-none flex items-center gap-1">
+                            <span>🍽️</span> Dietary: {rsvp.dietary_restrictions}
+                          </span>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           )}
@@ -714,6 +953,7 @@ const LiveRsvpFeed = () => {
 
 export function AnalyticsDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activeRsvpFilter, setActiveRsvpFilter] = useState<FilterType>('all');
 
   useEffect(() => {
     fetchDashboardStats()
@@ -744,6 +984,8 @@ export function AnalyticsDashboard() {
           pending={stats.pendingGuests}
           declined={stats.declinedGuests}
           total={stats.totalGuests}
+          onFilterSelect={(f) => setActiveRsvpFilter(f as FilterType)}
+          activeFilter={activeRsvpFilter}
         />
         <GuestSideBreakdown 
           groom={stats.groomCount}
@@ -752,7 +994,10 @@ export function AnalyticsDashboard() {
         />
         <LatestGift />
         <SeatingMiniMap />
-        <LiveRsvpFeed />
+        <LiveRsvpFeed 
+          activeFilter={activeRsvpFilter}
+          onFilterChange={setActiveRsvpFilter}
+        />
     </motion.div>
-  )
+  );
 }

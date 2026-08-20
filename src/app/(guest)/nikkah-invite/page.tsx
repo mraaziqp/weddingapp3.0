@@ -16,7 +16,7 @@ const staticGoldSpeckles = Array.from({ length: 80 }).map((_, i) => {
   return { x, y, size, opacity };
 });
 
-/* ─── Cinematic backdrop: video > image > aurora, with parallax ───────── */
+/* ─── Cinematic backdrop: video > image > radiant luxury canvas, with parallax ───────── */
 function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: MotionValue<string> }) {
   const isNavyRoyal = config.theme === 'navy-royal';
 
@@ -27,25 +27,25 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
           <div 
             className="h-full w-full relative"
             style={{
-              backgroundColor: '#000307',
+              backgroundColor: '#07152b',
               backgroundImage: `
-                radial-gradient(circle at 20% 30%, rgba(6, 22, 54, 0.4) 0%, transparent 50%),
-                radial-gradient(circle at 80% 40%, rgba(11, 2, 38, 0.4) 0%, transparent 60%),
-                radial-gradient(circle at 50% 50%, rgba(0, 32, 69, 0.3) 0%, transparent 70%),
+                radial-gradient(circle at 20% 30%, rgba(12, 38, 79, 0.6) 0%, transparent 50%),
+                radial-gradient(circle at 80% 40%, rgba(18, 5, 58, 0.5) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(3, 40, 85, 0.4) 0%, transparent 70%),
                 url("/navy-stars.jpg")
               `,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
-            {/* Deep navy/black color overlay to keep it dark and rich */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#000307]/50 via-transparent to-[#000307]/75 z-0 pointer-events-none" />
+            {/* Soft royal navy color overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#07152b]/40 via-transparent to-[#07152b]/60 z-0 pointer-events-none" />
 
             {/* Gold radial shimmer to make the stars look like gold speckles on the page background */}
             <div 
               className="absolute inset-0 z-0 pointer-events-none opacity-[0.9]" 
               style={{
-                background: 'radial-gradient(circle at center, rgba(212,175,55,0.42) 0%, rgba(0,3,10,0.96) 100%)',
+                background: 'radial-gradient(circle at center, rgba(212,175,55,0.42) 0%, rgba(7,21,43,0.92) 100%)',
                 mixBlendMode: 'color-dodge'
               }}
             />
@@ -87,16 +87,21 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="h-full w-full bg-[linear-gradient(150deg,var(--aurora-midnight)_0%,var(--aurora-emerald-deep)_45%,#03040a_100%)]" />
+          <div 
+            className="h-full w-full"
+            style={{
+              background: 'radial-gradient(ellipse at 50% 25%, #ffffff 0%, #faf6ee 45%, #f4ede0 100%)',
+            }}
+          />
         )}
       </motion.div>
 
       {/* Cinematic grading overlays (only for classic botanical style) */}
       {!isNavyRoyal && (
         <>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(250,248,245,0.15)_65%,rgba(250,248,245,0.55)_100%)]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/10 to-[#faf8f5]/85" />
-          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.08)_0%,transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.7)_0%,rgba(250,248,245,0.85)_65%,rgba(245,240,230,0.95)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-transparent to-[#faf8f5]" />
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.12)_0%,transparent_55%)]" />
         </>
       )}
     </div>
@@ -265,7 +270,7 @@ export default function NikkahInvitePage() {
 
   if (!config || !activeTheme) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#04070a]">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8f5]">
         <motion.div
           className="h-14 w-14 rounded-full border border-[#d4af37]/20 border-t-[#d4af37]"
           animate={{ rotate: 360 }}
@@ -283,7 +288,7 @@ export default function NikkahInvitePage() {
     return (
       <div 
         onClick={handleOpenEnvelope}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none cursor-pointer"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none cursor-pointer bg-[#faf8f5]"
       >
         {/* Living theme backdrop behind the video */}
         <div className="absolute inset-0 z-0">
@@ -301,7 +306,7 @@ export default function NikkahInvitePage() {
             muted
             playsInline
             onEnded={handleOpenEnvelope}
-            className={`w-[calc(min(100vw-32px,(100dvh-160px)*9/16))] aspect-[9/16] max-h-[80vh] rounded-2xl border border-[#d4af37]/30 shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100'}`}
+            className={`w-[calc(min(100vw-32px,(100dvh-160px)*9/16))] aspect-[9/16] max-h-[80vh] rounded-2xl border border-[#d4af37]/30 shadow-[0_20px_50px_rgba(0,0,0,0.15)] object-cover transition-all duration-700 ease-out ${isOpening ? 'opacity-0 scale-110 blur-md' : 'opacity-100 scale-100'}`}
           />
           
           <motion.div
@@ -319,8 +324,8 @@ export default function NikkahInvitePage() {
           </motion.div>
         </div>
 
-        {/* Cinematic Vignette Overlay to darken the background slightly */}
-        <div className="absolute inset-0 bg-black/25 z-0 pointer-events-none" />
+        {/* Soft Vignette Overlay */}
+        <div className="absolute inset-0 bg-[#faf8f5]/15 z-0 pointer-events-none" />
 
         {/* Falling wedding bells & flowers particles */}
         {particles.map(p => (

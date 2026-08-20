@@ -422,8 +422,21 @@ export function InvitationCard({
           </motion.div>
         )}
 
-        {/* RSVP Section */}
-        {!nikkahOnly && (
+        {/* RSVP or Blessing Section */}
+        {nikkahOnly ? (
+          <motion.div variants={riseIn} className="flex flex-col items-center w-full" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
+            <span className="flex items-center" style={{ gap: 'calc(1.6 * var(--cqw))', marginBottom: 'calc(0.3 * var(--cqw))' }}>
+              <FlowerSprig className="text-[#8a6f1f]/55 scale-x-[-1] rotate-180" style={{ height: 'calc(2 * var(--cqw))', width: 'calc(3.4 * var(--cqw))' }} />
+              <FlowerSprig className="text-[#8a6f1f]/55 rotate-180" style={{ height: 'calc(2 * var(--cqw))', width: 'calc(3.4 * var(--cqw))' }} />
+            </span>
+            <p
+              className="c1-rsvp-footnote font-bold tracking-[0.14em] text-[#083d1c] uppercase c1-rsvp-footnote-margin"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Your presence &amp; Duas will be our greatest blessing
+            </p>
+          </motion.div>
+        ) : (
           <motion.div variants={riseIn} className="flex flex-col items-center w-full" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
             <span className="flex items-center" style={{ gap: 'calc(1.6 * var(--cqw))', marginBottom: 'calc(0.3 * var(--cqw))' }}>
               <FlowerSprig className="text-[#8a6f1f]/55 scale-x-[-1] rotate-180" style={{ height: 'calc(2 * var(--cqw))', width: 'calc(3.4 * var(--cqw))' }} />
@@ -785,8 +798,17 @@ export function NavyRoyalCard({
           </motion.div>
         )}
 
-        {/* RSVP Section */}
-        {!nikkahOnly && (
+        {/* RSVP or Blessing Section */}
+        {nikkahOnly ? (
+          <motion.div variants={riseIn} className="flex flex-col items-center w-full c2-rsvp-margin" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
+            <p
+              className="c2-rsvp-footnote font-bold tracking-[0.18em] text-[#b59650] uppercase c2-rsvp-footnote-margin"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Your presence &amp; Duas will be our greatest blessing
+            </p>
+          </motion.div>
+        ) : (
           <motion.div variants={riseIn} className="flex flex-col items-center w-full c2-rsvp-margin" style={{ gap: 'calc(0.5 * var(--cqw))' }}>
             <p
               className="c2-rsvp-header font-bold tracking-[0.16em] text-[#556b82] uppercase"

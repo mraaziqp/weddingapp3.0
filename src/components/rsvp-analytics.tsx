@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, RefreshCw, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle, XCircle, Users, Search, X, Clock, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface RSVPResponse {
-  id: number;
+  id: number | string;
   guest_id: string;
-  household_id: string;
+  household_id?: string;
   guest_name: string;
   status: string;
   dietary_restrictions: string | null;
@@ -34,6 +35,8 @@ export function RSVPAnalytics() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'accepted' | 'declined' | 'pending'>('all');
   const { toast } = useToast();
 
   const fetchAnalytics = async () => {
@@ -136,7 +139,29 @@ export function RSVPAnalytics() {
     { label: 'Dietary Needs', value: analytics.withDietary, icon: Users, color: 'text-amber-500' },
   ];
 
-  const recentRSVPs = [...analytics.responses].slice(0, 5);
+  const acceptedCount = useMemo(() => analytics.responses.filter(r => r.status === 'Accepted').length, [analytics.responses]);
+  const declinedCount = useMemo(() => analytics.responses.filter(r => r.status === 'Declined').length, [analytics.responses]);
+  const pendingCount = useMemo(() => analytics.responses.filter(r => r.status === 'Pending').length, [analytics.responses]);
+
+  const filteredResponses = useMemo(() => {
+    return analytics.responses.filter(r => {
+      // 1. Status filter
+      if (statusFilter === 'accepted' && r.status !== 'Accepted') return false;
+      if (statusFilter === 'declined' && r.status !== 'Declined') return false;
+      if (statusFilter === 'pending' && r.status !== 'Pending') return false;
+
+      // 2. Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchName = r.guest_name.toLowerCase().includes(q);
+        const matchMsg = r.message ? r.message.toLowerCase().includes(q) : false;
+        const matchDiet = r.dietary_restrictions ? r.dietary_restrictions.toLowerCase().includes(q) : false;
+        const matchStatus = r.status.toLowerCase().includes(q);
+        return matchName || matchMsg || matchDiet || matchStatus;
+      }
+      return true;
+    });
+  }, [analytics.responses, statusFilter, searchQuery]);
 
   return (
     <div className="space-y-8">
@@ -295,47 +320,161 @@ export function RSVPAnalytics() {
         </Card>
       </motion.div>
 
-      {/* Recent RSVPs */}
+      {/* Guest Responses & Search */}
       <Card className="glass-card">
-        <CardHeader>
-          <CardTitle>Recent Responses</CardTitle>
-          <CardDescription>Latest guest RSVPs</CardDescription>
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div>
+            <CardTitle className="text-xl text-white flex items-center gap-2">
+              <Users className="text-[#d4af37]" size={20} /> Guest RSVP Responses &amp; Names
+            </CardTitle>
+            <CardDescription className="text-white/60 mt-1">
+              Search and filter guests by status to see who accepted, rejected, or is pending
+            </CardDescription>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Search Input Tab */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search guest by name..."
+                className="w-full pl-8 pr-7 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-[#d4af37]/60 focus:bg-white/10 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentRSVPs.length > 0 ? (
-              recentRSVPs.map((rsvp, i) => (
+
+        <CardContent className="pt-4 space-y-4">
+          {/* Status Tabs */}
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1 overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+                statusFilter === 'all' 
+                  ? "bg-[#d4af37] text-black shadow-md font-bold" 
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Users size={12} /> All ({analytics.total})
+            </button>
+            <button
+              onClick={() => setStatusFilter('accepted')}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+                statusFilter === 'accepted' 
+                  ? "bg-emerald-500 text-black shadow-md font-bold" 
+                  : "text-white/60 hover:text-emerald-400 hover:bg-white/5"
+              )}
+            >
+              <Check size={12} /> Accepted ({acceptedCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter('declined')}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+                statusFilter === 'declined' 
+                  ? "bg-rose-500 text-black shadow-md font-bold" 
+                  : "text-white/60 hover:text-rose-400 hover:bg-white/5"
+              )}
+            >
+              <X size={12} /> Rejected ({declinedCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter('pending')}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shrink-0",
+                statusFilter === 'pending' 
+                  ? "bg-amber-400 text-black shadow-md font-bold" 
+                  : "text-white/60 hover:text-amber-400 hover:bg-white/5"
+              )}
+            >
+              <Clock size={12} /> Pending ({pendingCount})
+            </button>
+          </div>
+
+          {/* Results Summary Bar */}
+          <div className="flex items-center justify-between text-xs text-white/50 px-1">
+            <span>Showing <strong className="text-white">{filteredResponses.length}</strong> of {analytics.total} guests</span>
+            {(searchQuery || statusFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                }}
+                className="text-xs text-[#d4af37] hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {/* Guest List */}
+          <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin">
+            {filteredResponses.length > 0 ? (
+              filteredResponses.map((rsvp, i) => (
                 <motion.div
                   key={rsvp.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  className="flex flex-col md:flex-row md:items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors gap-2"
                 >
-                  <div className="flex-1">
-                    <p className="font-semibold text-white">{rsvp.guest_name}</p>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-white/20 to-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-amber-300">
+                        {rsvp.guest_name.charAt(0).toUpperCase() || 'G'}
+                      </div>
+                      <p className="font-semibold text-white text-sm">{rsvp.guest_name}</p>
+                    </div>
+
+                    {rsvp.message && (
+                      <p className="text-xs italic text-white/80 pl-9 font-serif">
+                        &quot;{rsvp.message}&quot;
+                      </p>
+                    )}
+
                     {rsvp.dietary_restrictions && (
-                      <p className="text-xs text-white/60">🍽️ {rsvp.dietary_restrictions}</p>
+                      <p className="text-xs text-amber-300/90 pl-9 flex items-center gap-1">
+                        <span>🍽️</span> Dietary: {rsvp.dietary_restrictions}
+                      </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      className={
-                        rsvp.status === 'Accepted'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }
-                    >
-                      {rsvp.status}
-                    </Badge>
-                    <span className="text-xs text-white/60">
-                      {new Date(rsvp.responded_at).toLocaleDateString()}
+
+                  <div className="flex items-center gap-3 self-end md:self-center pl-9 md:pl-0">
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border flex items-center gap-1",
+                      rsvp.status === 'Accepted' && "bg-emerald-950/50 text-emerald-400 border-emerald-500/30",
+                      rsvp.status === 'Declined' && "bg-rose-950/50 text-rose-400 border-rose-500/30",
+                      rsvp.status === 'Pending' && "bg-amber-950/50 text-amber-400 border-amber-500/30"
+                    )}>
+                      {rsvp.status === 'Accepted' && <Check size={11} />}
+                      {rsvp.status === 'Declined' && <X size={11} />}
+                      {rsvp.status === 'Pending' && <Clock size={11} />}
+                      {rsvp.status === 'Accepted' ? 'Accepted' : rsvp.status === 'Declined' ? 'Rejected' : 'Pending'}
+                    </span>
+
+                    <span className="text-xs text-white/40">
+                      {new Date(rsvp.responded_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                 </motion.div>
               ))
             ) : (
-              <p className="text-white/60 text-center py-8">No responses yet</p>
+              <p className="text-white/40 text-center py-8 italic text-sm">
+                No matching responses found{searchQuery ? ` for "${searchQuery}"` : ''}
+              </p>
             )}
           </div>
         </CardContent>
