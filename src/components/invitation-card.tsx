@@ -177,19 +177,15 @@ export function InvitationCard({
       initial="hidden"
       animate="show"
       id={id || (printId ? 'invitation-print-card' : undefined)}
-      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_20px_70px_rgba(0,0,0,0.1)] bg-[#faf8f5] border border-[#d4af37]/25`}
+      className={`relative mx-auto invitation-aspect ${widthClass} [container-type:inline-size] invitation-container overflow-hidden c1-card-radius shadow-[0_30px_90px_rgba(0,0,0,0.18)]`}
       style={{
-        background: 'radial-gradient(circle at 50% 25%, #ffffff 0%, #faf8f5 65%, #f4efe4 100%)',
+        backgroundImage: 'url("/villa-courtyard.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
-      {/* Subtly textured elegant luxury paper grain overlay */}
-      <div 
-        className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay z-0" 
-        style={{
-          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
-          backgroundSize: '4px 4px'
-        }}
-      />
+      {/* Light elegant overlay to soften the watercolor sketch and make text pop with crystal clarity */}
+      <div className="absolute inset-0 bg-[#faf8f5]/82 z-0 pointer-events-none" />
 
       {/* Decorative Wedding Flowers in the corners (framing the card) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -241,7 +237,7 @@ export function InvitationCard({
         </motion.div>
 
         {/* Divider */}
-        <motion.div variants={drawLine} className="h-px bg-gradient-to-r from-transparent via-[#122217]/28 to-transparent c1-divider" />
+        <motion.div variants={drawLine} className="h-px bg-gradient-to-r from-transparent via-[#d4af37]/45 to-transparent c1-divider" />
 
         {/* Families Invitation Header */}
         <motion.p
@@ -311,7 +307,7 @@ export function InvitationCard({
             Nikaah alone (centered, full width) for the generic share card */}
         <motion.div
           variants={riseIn}
-          className={`w-full border-t border-b border-[#122217]/28 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
+          className={`w-full ${nikkahOnly ? 'flex justify-center' : 'border-t border-b border-[#d4af37]/35 grid grid-cols-2'}`}
           style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.6 * var(--cqw))', paddingBottom: 'calc(1.6 * var(--cqw))' }}
         >
           {/* Nikaah Column */}
@@ -320,7 +316,7 @@ export function InvitationCard({
             style={{ 
               gap: 'calc(1 * var(--cqw))',
               paddingRight: nikkahOnly ? 0 : 'calc(1.5 * var(--cqw))',
-              borderRight: nikkahOnly ? 'none' : '1px solid rgba(18, 34, 23, 0.28)'
+              borderRight: nikkahOnly ? 'none' : '1px solid rgba(212, 175, 55, 0.35)'
             }}
           >
             <h3
@@ -329,7 +325,7 @@ export function InvitationCard({
             >
               NIKAAH
             </h3>
-            <div className="h-px bg-[#122217]/28" style={{ width: 'calc(10 * var(--cqw))' }} />
+            <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
             <p
               className="c1-col-text font-bold text-[#122217]"
               style={{ fontFamily: "'Playfair Display', serif" }}
@@ -342,7 +338,7 @@ export function InvitationCard({
             >
               10h00
             </p>
-            <div className="h-px bg-[#122217]/28" style={{ width: 'calc(10 * var(--cqw))' }} />
+            <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
             <p
               className="c1-col-sub text-[#2e3b32] font-semibold italic leading-snug"
               style={{ fontFamily: "'Playfair Display', serif" }}
@@ -367,7 +363,7 @@ export function InvitationCard({
               >
                 RECEPTION
               </h3>
-              <div className="h-px bg-[#122217]/28" style={{ width: 'calc(10 * var(--cqw))' }} />
+              <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
               <p
                 className="c1-col-text font-bold text-[#122217]"
                 style={{ fontFamily: "'Playfair Display', serif" }}
@@ -380,7 +376,7 @@ export function InvitationCard({
               >
                 5:00 PM for 5:30 PM
               </p>
-              <div className="h-px bg-[#122217]/28" style={{ width: 'calc(10 * var(--cqw))' }} />
+              <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
               <p
                 className="c1-col-sub text-[#2e3b32] font-semibold italic leading-snug"
                 style={{ fontFamily: "'Playfair Display', serif" }}
@@ -725,7 +721,7 @@ export function NavyRoyalCard({
         {/* Details Grid */}
         <motion.div
           variants={riseIn}
-          className={`w-full border-t border-b border-[#556b82]/20 ${nikkahOnly ? 'flex justify-center' : 'grid grid-cols-2'}`}
+          className={`w-full ${nikkahOnly ? 'flex justify-center' : 'border-t border-b border-[#556b82]/20 grid grid-cols-2'}`}
           style={{ gap: 'calc(3.5 * var(--cqw))', paddingTop: 'calc(1.8 * var(--cqw))', paddingBottom: 'calc(1.8 * var(--cqw))' }}
         >
           {/* Nikaah Column */}
@@ -743,7 +739,7 @@ export function NavyRoyalCard({
             >
               Nikaah
             </h3>
-            <div className="h-px bg-[#556b82]/20" style={{ width: 'calc(10 * var(--cqw))' }} />
+            <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
             <p
               className="c2-col-text font-bold text-[#002855] tracking-[0.14em]"
               style={{ fontFamily: "'Cinzel', serif" }}
@@ -773,7 +769,7 @@ export function NavyRoyalCard({
               >
                 Reception
               </h3>
-              <div className="h-px bg-[#556b82]/20" style={{ width: 'calc(10 * var(--cqw))' }} />
+              <div className="h-px bg-[#d4af37]/35" style={{ width: 'calc(10 * var(--cqw))' }} />
               <p
                 className="c2-col-text font-bold text-[#002855] tracking-[0.14em]"
                 style={{ fontFamily: "'Cinzel', serif" }}
