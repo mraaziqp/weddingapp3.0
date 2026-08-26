@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
+import { fetchRecentConfirmedGuests } from '@/lib/data';
 import { Camera, UserCheck, Clock } from 'lucide-react';
 
 export interface ActivityItem {
@@ -32,21 +32,16 @@ export function ActivityFeed() {
           : [];
 
         // Fetch recent RSVPs
-        const { data: guests } = await supabase
-          .from('guests')
-          .select('id, first_name, rsvp_status, updated_at')
-          .eq('rsvp_status', 'Confirmed')
-          .order('updated_at', { ascending: false })
-          .limit(3);
+        const guests = await fetchRecentConfirmedGuests(3);
 
         const items: ActivityItem[] = [];
 
-        guests?.forEach(guest => {
+        guests.forEach(guest => {
           items.push({
             id: `rsvp-${guest.id}`,
             type: 'rsvp',
-            message: `${guest.first_name} confirmed attendance`,
-            timestamp: new Date(guest.updated_at),
+            message: `${guest.firstName} confirmed attendance`,
+            timestamp: guest.updatedAt ? new Date(guest.updatedAt) : new Date(0),
             icon: <UserCheck size={16} className="text-green-400" />,
           });
         });

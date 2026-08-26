@@ -1,6 +1,6 @@
 /**
  * Single source of truth for the invitation config shape.
- * Stored as one JSONB row in Neon (`invitation_config`, id = 'main'),
+ * Stored as one Firestore document (`invitation_config/main`),
  * so extending this type requires no SQL migration.
  *
  * Media field mapping (kept for back-compat with the upload flow):

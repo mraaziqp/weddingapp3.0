@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchHouseholds } from '@/lib/supabase';
+import { fetchHouseholds } from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 import { toCsv } from '@/lib/csv';
 

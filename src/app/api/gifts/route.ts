@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { addGift, deleteGift, claimGift } from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 
 /**
@@ -28,22 +28,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name and a positive price are required' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('gifts')
-      .insert({
-        name,
-        price,
-        image_url: typeof imageUrl === 'string' ? imageUrl : '',
-        store_url: typeof storeUrl === 'string' ? storeUrl : '',
-        is_crowdfund: false,
-        funded_amount: 0,
-        is_purchased: false,
-      })
-      .select()
-      .single();
+    const gift = await addGift({
+      name,
+      price,
+      imageUrl: typeof imageUrl === 'string' ? imageUrl : '',
+      storeUrl: typeof storeUrl === 'string' ? storeUrl : '',
+    });
 
-    if (error) throw error;
-    return NextResponse.json({ ok: true, gift: data });
+    return NextResponse.json({ ok: true, gift });
   } catch (err) {
     console.error('[Gifts] POST error:', err);
     return NextResponse.json({ error: 'Could not add gift' }, { status: 500 });
@@ -64,8 +56,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { error } = await supabaseAdmin.from('gifts').delete().eq('id', id);
-    if (error) throw error;
+    await deleteGift(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[Gifts] DELETE error:', err);
@@ -91,22 +82,14 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('gifts')
-      .update({ is_purchased: true, purchased_at: new Date().toISOString() })
-      .eq('id', id)
-      .eq('is_purchased', false)
-      .select()
-      .maybeSingle();
+    const gift = await claimGift(id);
 
-    if (error) throw error;
-
-    if (!data) {
+    if (!gift) {
       // Either it was already claimed by someone else, or the id doesn't exist.
       return NextResponse.json({ ok: false, alreadyClaimed: true }, { status: 409 });
     }
 
-    return NextResponse.json({ ok: true, gift: data });
+    return NextResponse.json({ ok: true, gift });
   } catch (err) {
     console.error('[Gifts] PATCH error:', err);
     return NextResponse.json({ error: 'Could not update gift' }, { status: 500 });

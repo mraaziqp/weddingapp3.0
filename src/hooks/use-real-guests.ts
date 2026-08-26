@@ -1,14 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
-import {
-  fetchHouseholds,
-  addHousehold as addHouseholdRemote,
-  updateHousehold as updateHouseholdRemote,
-  deleteHousehold as deleteHouseholdRemote,
-  addGuestToHousehold as addGuestToHouseholdRemote,
-  updateGuestRsvp as updateGuestRsvpRemote,
-} from '@/lib/supabase';
+import { fetchHouseholds, addHousehold as addHouseholdRemote, updateHousehold as updateHouseholdRemote, deleteHousehold as deleteHouseholdRemote, addGuestToHousehold as addGuestToHouseholdRemote, updateGuestRsvp as updateGuestRsvpRemote } from '@/lib/data';
 import type { GuestTag, Household } from '@/lib/types';
 
 /**

@@ -49,3 +49,10 @@ firestore-debug.log
 
 # Env template is safe to commit; real secrets are not.
 !.env.example
+
+# Service account keys — never commit. These grant full admin access to the
+# Firebase project (read/write every collection, bypassing security rules).
+*service-account*.json
+*serviceAccount*.json
+firebase-adminsdk-*.json
+/secrets/

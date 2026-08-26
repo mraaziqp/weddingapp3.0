@@ -7,7 +7,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchTimelineEvents, updateTimelineEventsOrder, createTimelineEvent, updateTimelineEvent, deleteTimelineEvent } from '@/lib/supabase';
+import { fetchTimelineEvents, updateTimelineEventsOrder, createTimelineEvent, updateTimelineEvent, deleteTimelineEvent } from '@/lib/data';
 import type { TimelineEvent, TimelineCategory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

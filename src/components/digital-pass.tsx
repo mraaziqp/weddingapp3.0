@@ -7,7 +7,7 @@ import type { Household } from '@/lib/types';
 import { motion, useAnimationControls } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { fetchTimelineEvents } from '@/lib/supabase';
+import { fetchTimelineEvents } from '@/lib/data';
 import { DEFAULT_INVITATION_CONFIG, InvitationConfig } from '@/lib/invitation-config';
 import { useToast } from '@/hooks/use-toast';
 import type { TimelineEvent } from '@/lib/types';

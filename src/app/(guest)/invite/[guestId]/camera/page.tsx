@@ -1,7 +1,7 @@
 'use client';
 
 import { DisposableCameraUI } from '@/components/disposable-camera-ui';
-import { lookupHouseholdByQr } from '@/lib/supabase';
+import { lookupHouseholdByQr } from '@/lib/data';
 import type { Household } from '@/lib/types';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';

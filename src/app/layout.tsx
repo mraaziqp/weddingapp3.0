@@ -51,16 +51,6 @@ export default function RootLayout({
 }>) {
   return (
       <html lang="en" suppressHydrationWarning className={`dark ${GeistSans.variable}`}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.__SUPABASE_CONFIG__ = {
-              supabaseUrl: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '')},
-              supabaseAnonKey: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '')}
-            };`,
-          }}
-        />
-      </head>
       <body className={cn("font-body antialiased")}>
         <PointerEventsGuard />
         <ExperienceSettingsSync />

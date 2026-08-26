@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { fetchTracks, updateTrackColumn } from "@/lib/supabase";
+import { fetchTracks, updateTrackColumn } from '@/lib/data';
 import type { TrackItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 

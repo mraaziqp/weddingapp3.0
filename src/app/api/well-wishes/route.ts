@@ -1,34 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { fetchWellWishes, addWellWish, deleteWellWish } from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 /**
- * A guestbook-style wall guests can post to any time between RSVP-ing and
- * the wedding day — not just at the venue — so there's a reason to come
- * back and see what's new before then. Needs a table in Supabase, run
- * once in the SQL editor:
+ * The guestbook wall — guests can post any time between RSVP-ing and the
+ * wedding, so there's a reason to come back and see what's new.
  *
- *   create table if not exists well_wishes (
- *     id uuid primary key default gen_random_uuid(),
- *     name text,
- *     message text not null,
- *     created_at timestamptz not null default now()
- *   );
+ * Now backed by the `well_wishes` Firestore collection. On Supabase this was
+ * silently broken in production: the table had row-level security enabled but
+ * no insert policy, so every guest POST failed with 42501 while reads
+ * succeeded — the wall looked fine and stayed permanently empty.
  */
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const MAX_NAME_LEN = 60;
 const MAX_MESSAGE_LEN = 500;
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('well_wishes')
-      .select('id, name, message, created_at')
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    if (error) throw error;
-    return NextResponse.json({ wishes: data ?? [] });
+    return NextResponse.json({ wishes: await fetchWellWishes(200) });
   } catch (err) {
     console.error('[Well Wishes] GET error:', err);
     return NextResponse.json({ wishes: [] });
@@ -36,32 +29,35 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Public, unauthenticated write on a wall everyone can see — worth a limit
+  // so one person can't flood it.
+  const limit = rateLimit(`well-wishes:${clientIp(req)}`, 10, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'That is a lot of love. Give it a moment and try again.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const name = typeof body.name === 'string' ? body.name.trim().slice(0, MAX_NAME_LEN) : '';
-    const message = typeof body.message === 'string' ? body.message.trim().slice(0, MAX_MESSAGE_LEN) : '';
+    const message =
+      typeof body.message === 'string' ? body.message.trim().slice(0, MAX_MESSAGE_LEN) : '';
 
     if (!message) {
       return NextResponse.json({ error: 'A message is required' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('well_wishes')
-      .insert({ name: name || null, message })
-      .select('id, name, message, created_at')
-      .single();
-
-    if (error) throw error;
-    return NextResponse.json({ ok: true, wish: data });
+    const wish = await addWellWish(name || null, message);
+    return NextResponse.json({ ok: true, wish });
   } catch (err) {
     console.error('[Well Wishes] POST error:', err);
     return NextResponse.json({ error: 'Could not post your message' }, { status: 500 });
   }
 }
 
-/**
- * DELETE /api/well-wishes?id=xxx — admin-only moderation removal.
- */
+/** DELETE /api/well-wishes?id=xxx — admin-only moderation removal. */
 export async function DELETE(req: NextRequest) {
   if (!isAuthorizedAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -73,8 +69,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { error } = await supabaseAdmin.from('well_wishes').delete().eq('id', id);
-    if (error) throw error;
+    await deleteWellWish(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[Well Wishes] DELETE error:', err);

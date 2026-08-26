@@ -415,32 +415,21 @@ export function SaveTheDateEditor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    toast({ title: 'Uploading image...', description: 'Sending image to Supabase storage...' });
+    toast({ title: 'Uploading image...', description: 'Sending image to storage...' });
 
     try {
-      const { supabase } = await import('@/lib/supabase');
       const compressedFile = await compressImageFile(file, { maxDimension: 1800, quality: 0.85 });
-      const filename = `${Date.now()}-${compressedFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const bucketName = 'wedding-assets';
 
-      const { error } = await withTimeout(
-        supabase.storage
-          .from(bucketName)
-          .upload(`save-the-date/${filename}`, compressedFile, {
-            cacheControl: '3600',
-            upsert: false
-          }),
-        30000
-      );
+      // Stored in the couple's Google Drive via the admin asset route; this
+      // used to upload straight to a Supabase Storage bucket from the browser.
+      const body = new FormData();
+      body.append('file', compressedFile);
+      body.append('folder', 'save-the-date');
 
-      if (error) {
-        throw error;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(`save-the-date/${filename}`);
+      const res = await withTimeout(fetch('/api/assets/upload', { method: 'POST', body }), 30000);
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error ?? `Upload failed (${res.status})`);
+      const publicUrl: string = result.url;
 
       const el: ImageElement = {
         id: uid(), type: 'image',
@@ -451,7 +440,7 @@ export function SaveTheDateEditor() {
 
       dispatch({ type: 'ADD_ELEMENT', element: el });
       setSelectedId(el.id);
-      toast({ title: 'Upload Complete!', description: 'Image successfully published to Supabase storage.' });
+      toast({ title: 'Upload Complete!', description: 'Image saved to your Google Drive.' });
     } catch (err) {
       console.warn('[Upload to Supabase failed]', err);
       toast({

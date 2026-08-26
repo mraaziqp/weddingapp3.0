@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadMedia, isDriveConfigured, type MediaVisibility } from '@/lib/google-drive';
-import { supabaseAdmin } from '@/lib/supabase';
+import { resolveDisplayName } from '@/lib/firestore-server';
 
 /**
  * Guest photo upload — the only write path into the media store.
@@ -108,29 +108,7 @@ function sanitizeName(name: string): string {
 async function resolveGuestName(id: string | null): Promise<string | null> {
   if (!id) return null;
   try {
-    const guest = await supabaseAdmin
-      .from('guests')
-      .select('first_name, last_name')
-      .eq('id', id)
-      .maybeSingle();
-    if (guest.data) {
-      const name = [guest.data.first_name, guest.data.last_name].filter(Boolean).join(' ').trim();
-      if (name) return name;
-    }
-
-    // Two eq() queries rather than one or() filter: PostgREST's or() takes a
-    // raw filter string, and the id comes from a URL, so interpolating it there
-    // would let a crafted invite link inject filter syntax.
-    for (const column of ['id', 'qr_code'] as const) {
-      const household = await supabaseAdmin
-        .from('households')
-        .select('name')
-        .eq(column, id)
-        .maybeSingle();
-      const name = household.data?.name?.trim();
-      if (name) return name;
-    }
-    return null;
+    return await resolveDisplayName(id);
   } catch {
     // A name is a nicety; never fail an upload over it.
     return null;

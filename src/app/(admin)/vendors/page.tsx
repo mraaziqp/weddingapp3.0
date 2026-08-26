@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { fetchVendors, addVendor, deleteVendor as deleteVendorRemote } from '@/lib/supabase';
+import { fetchVendors, addVendor, deleteVendor as deleteVendorRemote } from '@/lib/data';
 import type { Vendor } from '@/lib/types';
 
 const CATEGORIES = ['Venue', 'Catering', 'Photography', 'Flowers', 'Music', 'Transport', 'Stationery', 'Decor', 'Other'];

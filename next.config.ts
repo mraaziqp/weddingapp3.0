@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   // installed — producing a build warning for a package that is never loaded
   // at runtime. Keeping these external means Node requires them directly.
   serverExternalPackages: [
+    // Node-only; must not be bundled for the browser.
+    'firebase-admin',
     'genkit',
     '@genkit-ai/core',
     '@genkit-ai/google-genai',

@@ -17,25 +17,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { trackStdOpen, fetchStdCounts } from '@/lib/firestore-server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as { event?: string };
     const { event } = body;
 
-    if (!event || !['view', 'opened'].includes(event)) {
+    // Compared against the literals directly so TypeScript narrows `event` to
+    // the union the store expects — Array.includes() only returns a boolean.
+    if (event !== 'view' && event !== 'opened') {
       return NextResponse.json({ error: 'Invalid event' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin.from('std_opens').insert({
-      event_type: event,
-      user_agent: req.headers.get('user-agent')?.slice(0, 255) ?? null,
-    });
-
-    if (error) {
-      // Table may not exist yet — fail silently so guest experience is unaffected
-      console.warn('[STD track] Supabase insert failed:', error.message);
+    try {
+      await trackStdOpen(event, req.headers.get('user-agent')?.slice(0, 255) ?? null);
+    } catch (writeErr) {
+      // Analytics must never break the guest experience.
+      console.warn('[STD track] write failed:', writeErr);
     }
 
     return NextResponse.json({ ok: true });
@@ -46,18 +45,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const [{ count: views }, { count: opens }] = await Promise.all([
-      supabaseAdmin
-        .from('std_opens')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_type', 'view'),
-      supabaseAdmin
-        .from('std_opens')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_type', 'opened'),
-    ]);
-
-    return NextResponse.json({ views: views ?? 0, opens: opens ?? 0 });
+    return NextResponse.json(await fetchStdCounts());
   } catch {
     return NextResponse.json({ views: 0, opens: 0 });
   }

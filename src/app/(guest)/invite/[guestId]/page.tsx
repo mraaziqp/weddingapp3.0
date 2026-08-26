@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { LuxuryLoader } from '@/components/luxury-loader';
-import { lookupHouseholdByQr } from '@/lib/supabase';
+import { lookupHouseholdByQr } from '@/lib/data';
 
 /**
  * Personal QR / "Copy Link" entry point. Resolves the household behind this

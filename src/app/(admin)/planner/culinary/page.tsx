@@ -15,7 +15,7 @@ import {
   FlameKindling, Nut, ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchMenuItems, addMenuItem, deleteMenuItem, updateMenuItemsOrder } from '@/lib/supabase';
+import { fetchMenuItems, addMenuItem, deleteMenuItem, updateMenuItemsOrder } from '@/lib/data';
 import { useRealGuests } from '@/hooks/use-real-guests';
 import type { Guest } from '@/lib/types';
 import type { MenuItem, MenuCourse, DietaryFlag } from '@/lib/types';

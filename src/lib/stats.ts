@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { fetchGuestRows } from './data';
 
 export interface DashboardStats {
   totalGuests: number;
@@ -17,20 +17,14 @@ export interface DashboardStats {
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
     // Fetch guests with RSVP counts
-    const { data: guests, error: guestErr } = await supabase
-      .from('guests')
-      .select('id, rsvp_status, dietary_restrictions, checked_in_at, tags');
-
-    if (guestErr) throw guestErr;
-
-    const guestList = guests ?? [];
+    const guestList = await fetchGuestRows();
     const totalGuests = guestList.length;
     const confirmedGuests = guestList.filter(g => g.rsvp_status === 'Confirmed').length;
     const pendingGuests = guestList.filter(g => g.rsvp_status === 'Pending').length;
     const declinedGuests = guestList.filter(g => g.rsvp_status === 'Regret').length;
     const checkedInCount = guestList.filter(g => g.checked_in_at).length;
 
-    // tags comes back from Supabase as a raw comma-separated string, not an
+    // tags is stored as a raw comma-separated string, not an
     // array (dbToGuest() is what normally splits it) — split here too.
     const groomCount = guestList.filter(g => g.tags?.split(',').some((t: string) => t.includes("Groom's"))).length;
     const brideCount = guestList.filter(g => g.tags?.split(',').some((t: string) => t.includes("Bride's"))).length;

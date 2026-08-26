@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { readConfigDoc, writeConfigDoc } from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 
 const DEFAULTS = {
@@ -16,32 +16,14 @@ const DEFAULTS = {
   redirectToStd: true,
 };
 
-function getDb() {
-  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_PRISMA_URL;
-  if (!url) throw new Error('DATABASE_URL not set');
-  return neon(url);
-}
-
-/** Create the config table if it doesn't exist yet. */
-async function ensureTable() {
-  const sql = getDb();
-  await sql`
-    CREATE TABLE IF NOT EXISTS std_config (
-      id   TEXT PRIMARY KEY,
-      config JSONB NOT NULL
-    )
-  `;
-}
+const COLLECTION = 'std_config';
 
 export async function GET() {
   try {
-    const sql = getDb();
-    await ensureTable();
-    const rows = await sql`SELECT config FROM std_config WHERE id = 'main'`;
-    if (!rows.length || !rows[0].config) {
+    const stored = await readConfigDoc<Record<string, unknown>>(COLLECTION);
+    if (!stored) {
       return NextResponse.json({ config: DEFAULTS, designState: null });
     }
-    const stored = rows[0].config as Record<string, unknown>;
     const { designState, ...rest } = stored;
     const config = { ...DEFAULTS, ...rest };
     return NextResponse.json({ config, designState: designState ?? null });
@@ -60,15 +42,12 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { config: clientConfig, designState } = body;
 
-    const sql = getDb();
-    await ensureTable();
-
-    // Read existing to merge safely
+    // Read existing to merge safely — a partial save must never drop fields
+    // the editor didn't send.
     let existingConfig: Record<string, unknown> = {};
     let existingDesignState: unknown = null;
-    const rows = await sql`SELECT config FROM std_config WHERE id = 'main'`;
-    if (rows.length && rows[0].config) {
-      const stored = rows[0].config as Record<string, unknown>;
+    const stored = await readConfigDoc<Record<string, unknown>>(COLLECTION);
+    if (stored) {
       const { designState: oldDs, ...oldCfg } = stored;
       existingConfig = oldCfg;
       existingDesignState = oldDs ?? null;
@@ -80,11 +59,7 @@ export async function PUT(req: NextRequest) {
       designState: designState ?? existingDesignState ?? null,
     };
 
-    await sql`
-      INSERT INTO std_config (id, config)
-      VALUES ('main', ${JSON.stringify(payload)})
-      ON CONFLICT (id) DO UPDATE SET config = EXCLUDED.config
-    `;
+    await writeConfigDoc(COLLECTION, payload);
 
     return NextResponse.json({
       ok: true,
@@ -92,8 +67,13 @@ export async function PUT(req: NextRequest) {
       designState: payload.designState,
     });
   } catch (err) {
+    // Log the detail, return a generic message — String(err) leaked raw
+    // database errors to the caller.
     console.error('[STD config] PUT error:', err);
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'Could not save the save-the-date settings.' },
+      { status: 500 }
+    );
   }
 }
 

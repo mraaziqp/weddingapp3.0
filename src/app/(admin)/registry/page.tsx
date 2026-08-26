@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState, useEffect } from "react";
 import { PlusCircle, Trash2, AlertCircle } from "lucide-react";
-import { fetchGifts } from "@/lib/supabase";
+import { fetchGifts } from '@/lib/data';
 import { useToast } from "@/hooks/use-toast";
 import type { Gift } from "@/lib/types";
 

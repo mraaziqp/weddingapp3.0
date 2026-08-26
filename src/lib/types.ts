@@ -140,3 +140,11 @@ export type BudgetItem = {
   budgeted: number;
   actual: number;
 };
+
+/** A guestbook message on the well-wishes wall. */
+export type WellWish = {
+  id: string;
+  name: string | null;
+  message: string;
+  created_at: string | null;
+};

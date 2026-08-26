@@ -1,19 +1,14 @@
 import { redirect } from 'next/navigation';
-import { supabaseAdmin } from '@/lib/supabase';
+import { readConfigDoc } from '@/lib/firestore-server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   let redirectToStd = true; // default: redirect to Save the Date
   try {
-    const { data } = await supabaseAdmin
-      .from('std_config')
-      .select('config')
-      .eq('id', 'main')
-      .single();
-
-    if (data?.config && typeof data.config === 'object' && 'redirectToStd' in data.config) {
-      redirectToStd = (data.config as { redirectToStd: boolean }).redirectToStd;
+    const config = await readConfigDoc<{ redirectToStd?: boolean }>('std_config');
+    if (config && typeof config === 'object' && 'redirectToStd' in config) {
+      redirectToStd = Boolean(config.redirectToStd);
     }
   } catch (err) {
     console.error('[Root redirect] failed to fetch config, defaulting to STD:', err);

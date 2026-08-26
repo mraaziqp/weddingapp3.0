@@ -10,7 +10,7 @@ import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-co
 import { InvitationCard, GiftingCard, GoldDust, PetalDrift, WeddingBells, FlowerSprig, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
 import { useToast } from '@/hooks/use-toast';
-import { supabase, dbToHousehold } from '@/lib/supabase';
+import { fetchHouseholdById } from '@/lib/data';
 import { downloadElementAsImage } from '@/lib/download-card';
 import type { Household } from '@/lib/types';
 
@@ -318,14 +318,9 @@ export default function InvitationPage() {
 
     // Fetch the REAL household row — its actual qr_code (not the raw DB id
     // in the URL) is what the digital pass and Memories link must use.
-    supabase
-      .from('households')
-      .select('*, guests(*)')
-      .eq('id', householdId)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          const hh = dbToHousehold(data);
+    fetchHouseholdById(householdId)
+      .then((hh) => {
+        if (hh) {
           setResolvedHousehold(hh);
 
           // Pull autofill from Household Name directly as requested

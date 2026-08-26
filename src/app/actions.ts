@@ -1,6 +1,6 @@
 'use server';
 
-import { supabaseAdmin } from "@/lib/supabase";
+import { submitHouseholdRsvp } from "@/lib/firestore-server";
 import { autoDraftWhatsAppMessage, type AutoDraftWhatsAppMessageInput } from "@/ai/flows/auto-draft-whatsapp-message";
 import { generateSaveDateCopy, generateSaveDateGradient, type CopyInput, type GradientInput } from "@/ai/flows/save-the-date-ai";
 import { z } from "zod";
@@ -76,21 +76,7 @@ export async function submitRsvpAction(input: {
   song: string;
 }) {
   try {
-    const { error } = await supabaseAdmin
-      .from('guests')
-      .update({
-        rsvp_status: input.rsvpStatus,
-        dietary_restrictions: input.dietary || null,
-        song_request: input.song || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('household_id', input.householdId);
-
-    if (error) {
-      console.error('[RSVP Action] DB error:', error);
-      return { success: false, error: error.message };
-    }
-
+    await submitHouseholdRsvp(input);
     return { success: true };
   } catch (error) {
     console.error('[RSVP Action] server error:', error);

@@ -13,7 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { fetchBudgetItems, addBudgetItem, deleteBudgetItem as deleteBudgetItemRemote, fetchTotalBudget, updateTotalBudget } from '@/lib/supabase';
+import { fetchBudgetItems, addBudgetItem, deleteBudgetItem as deleteBudgetItemRemote, fetchTotalBudget, updateTotalBudget } from '@/lib/data';
 import type { BudgetItem } from '@/lib/types';
 import { toCsv, downloadCsv } from '@/lib/csv';
 

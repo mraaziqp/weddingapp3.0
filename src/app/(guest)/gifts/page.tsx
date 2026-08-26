@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Gift as GiftIcon, Plane, Heart, Loader2, AlertCircle } from 'lucide-react';
 import { HoneymoonFund } from '@/components/honeymoon-fund';
-import { fetchGifts } from '@/lib/supabase';
+import { fetchGifts } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { Gift } from '@/lib/types';
 

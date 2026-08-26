@@ -7,7 +7,7 @@ import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 
 import { GuestEventHub } from '@/components/guest-event-hub';
 import { LuxuryLoader } from '@/components/luxury-loader';
-import { lookupHouseholdByQr } from '@/lib/supabase';
+import { lookupHouseholdByQr } from '@/lib/data';
 import type { Household } from '@/lib/types';
 import { useAudio } from '@/lib/audio-context';
 import {

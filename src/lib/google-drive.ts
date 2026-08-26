@@ -164,7 +164,9 @@ async function driveJson<T>(url: string, init?: RequestInit): Promise<T> {
 // ── Folder ────────────────────────────────────────────────────────────────
 
 const FOLDER_NAME = process.env.GDRIVE_MEDIA_FOLDER_NAME || 'Wedding Media';
+const ASSET_FOLDER_NAME = process.env.GDRIVE_ASSET_FOLDER_NAME || 'Wedding Assets';
 let cachedFolderId: string | null = null;
+let cachedAssetFolderId: string | null = null;
 
 /**
  * Resolves the Drive folder all media lives in, creating it on first use.
@@ -175,36 +177,47 @@ let cachedFolderId: string | null = null;
  * Drive and can be renamed or moved without breaking anything, because it is
  * tracked by id rather than by path.
  */
-export async function getMediaFolderId(): Promise<string> {
-  if (process.env.GDRIVE_MEDIA_FOLDER_ID) return process.env.GDRIVE_MEDIA_FOLDER_ID;
-  if (cachedFolderId) return cachedFolderId;
-
+async function resolveFolder(name: string): Promise<string> {
   const q = [
     "mimeType = 'application/vnd.google-apps.folder'",
-    `name = '${escapeQ(FOLDER_NAME)}'`,
+    `name = '${escapeQ(name)}'`,
     'trashed = false',
   ].join(' and ');
 
   const found = await driveJson<{ files: { id: string }[] }>(
     `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`
   );
-
-  if (found.files?.length) {
-    cachedFolderId = found.files[0].id;
-    return cachedFolderId;
-  }
+  if (found.files?.length) return found.files[0].id;
 
   const created = await driveJson<{ id: string }>(`${DRIVE_API}/files?fields=id`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: FOLDER_NAME,
-      mimeType: 'application/vnd.google-apps.folder',
-    }),
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder' }),
   });
+  return created.id;
+}
 
-  cachedFolderId = created.id;
+export async function getMediaFolderId(): Promise<string> {
+  if (process.env.GDRIVE_MEDIA_FOLDER_ID) return process.env.GDRIVE_MEDIA_FOLDER_ID;
+  if (cachedFolderId) return cachedFolderId;
+  cachedFolderId = await resolveFolder(FOLDER_NAME);
   return cachedFolderId;
+}
+
+/**
+ * Folder for the couple's design assets — invitation and save-the-date
+ * background images.
+ *
+ * Deliberately a *separate* folder rather than a flag on the file. Every wall
+ * query scopes itself with `'<folder>' in parents`, so a different parent
+ * excludes assets automatically — including from `visibility=all`, which omits
+ * the visibility filter entirely and would otherwise show them.
+ */
+export async function getAssetFolderId(): Promise<string> {
+  if (process.env.GDRIVE_ASSET_FOLDER_ID) return process.env.GDRIVE_ASSET_FOLDER_ID;
+  if (cachedAssetFolderId) return cachedAssetFolderId;
+  cachedAssetFolderId = await resolveFolder(ASSET_FOLDER_NAME);
+  return cachedAssetFolderId;
 }
 
 // ── Mapping ───────────────────────────────────────────────────────────────
@@ -303,6 +316,26 @@ async function uploadToFolder(input: UploadMediaInput, folderId: string): Promis
 
   invalidateListCache();
   return toDriveMedia(file);
+}
+
+/**
+ * Stores one of the couple's design assets. Same Drive account, different
+ * folder, so it never appears on the Live Wall or in the Vault.
+ */
+export async function uploadAsset(input: {
+  bytes: ArrayBuffer | Uint8Array;
+  filename: string;
+  mimeType: string;
+}): Promise<DriveMedia> {
+  return uploadToFolder(
+    {
+      bytes: input.bytes,
+      filename: input.filename,
+      mimeType: input.mimeType,
+      visibility: 'public',
+    },
+    await getAssetFolderId()
+  );
 }
 
 function clampProp(value: string): string {

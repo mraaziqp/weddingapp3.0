@@ -64,12 +64,12 @@ Set `GDRIVE_MEDIA_FOLDER_ID` to pin a specific folder instead.
 Deleting a photo from the admin Vault moves it to the Drive trash (recoverable
 for 30 days) rather than destroying it.
 
-### Still on Supabase
+### Admin design assets
 
-Everything that isn't guest media: guests, households, RSVPs, seating, timeline,
-playlist, registry, budget, vendors, well wishes. The save-the-date and
-invitation editors also still upload their background images to the Supabase
-`wedding-assets` bucket — those are admin-authored assets, not guest media.
+The invitation and save-the-date editors upload their background images through
+`/api/assets/upload` into a **separate** Drive folder (`Wedding Assets`). A
+different parent folder is what keeps them out of the Live Wall and the Vault,
+whose queries all scope themselves by folder.
 
 ### Testing the media pipeline without Google credentials
 
@@ -98,6 +98,53 @@ both a household id and a QR code, size/type/empty validation, public-vs-vault
 isolation, admin gating on every privileged route, byte-identical image
 round-trip through the proxy, the guard that refuses to serve any Drive file
 the app did not create, and the full moderation path.
+
+## Database — Firestore
+
+Everything that isn't a guest photo lives in Firestore: guests, households,
+RSVPs, seating, timeline, playlist, registry, budget, vendors, well wishes,
+the save-the-date and invitation config documents, and the RSVP audit log.
+
+**Nothing reaches Firestore from a browser.** `firestore.rules` denies all
+client access outright; every read and write goes through `/api/data`, which
+authorises the operation and then runs it with the Admin SDK. A guest can
+resolve their own invite code and post a well wish; only a request carrying the
+admin cookie can read the guest list.
+
+That is a real improvement on the Supabase setup it replaced, where the anon
+key sitting in the page source could read all 261 guest records, their dietary
+requirements and their check-in times.
+
+    browser  →  POST /api/data { op, args }  →  authorise  →  Admin SDK  →  Firestore
+    server   →  lib/firestore-server.ts directly (no HTTP round trip)
+
+Client components import `@/lib/data`; server code imports
+`@/lib/firestore-server`. Keeping those separate is what stops `firebase-admin`
+and the service-account credentials being pulled into the browser bundle.
+
+### Setup
+
+1. Firebase Console → Project settings → Service accounts → Generate new
+   private key.
+2. Base64 it into `FIREBASE_SERVICE_ACCOUNT_B64` (see `.env.example`).
+3. Publish the rules: `npm run firebase:rules`.
+
+### Local development
+
+    npm run firebase:emulator     # Firestore emulator on 127.0.0.1:8099
+
+Then uncomment `FIRESTORE_EMULATOR_HOST` in `.env.local`. The Admin SDK needs
+no real credentials against the emulator, so the whole data layer can be
+exercised without touching the live project.
+
+### Migrating from Supabase
+
+    npm run migrate:firestore -- --dry-run   # inspect
+    npm run migrate:firestore                # write, then verify counts
+
+Documents keep the app's own string ids (`household-…`, `guest-…`), so the
+script is safe to re-run and every guest↔household reference survives. It reads
+Supabase and never deletes from it.
 
 ## Maintenance notes
 
@@ -135,10 +182,6 @@ guest.
 - Day-of content tables are empty: `tables`, `timeline_events`, `tracks`,
   `menu_items`, and no guest has a `table_id`. Seating, schedule, playlist and
   menu will render blank until they are filled in.
-- `SUPABASE_SERVICE_ROLE_KEY` is unset, so `supabaseAdmin` runs with anon
-  privileges and the app depends entirely on the permissive RLS policies in
-  `supabase/schema.sql`. The server logs a warning on boot.
-- `DATABASE_URL` (Neon — a second database used only for RSVP message comments
-  and save-the-date config) is unset. Both paths degrade gracefully, but RSVP
-  free-text comments are silently dropped.
-- `supabase/002_well_wishes_rls.sql` still needs running.
+- Nothing outstanding on the database side: Supabase and Neon are both gone,
+  well wishes work, and RSVP free-text comments are captured for the first time
+  (the Neon database that was supposed to hold them was never configured).

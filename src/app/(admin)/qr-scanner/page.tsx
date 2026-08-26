@@ -10,7 +10,7 @@ import { BoardingPass } from '@/components/boarding-pass';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { lookupHouseholdByQr } from '@/lib/supabase';
+import { lookupHouseholdByQr } from '@/lib/data';
 
 type GuestData = {
     name: string;

@@ -11,21 +11,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, Image as ImageIcon, Eye, Save, Loader, Music, Video, X, Play, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout } from '@/lib/image-utils';
-import { supabase } from '@/lib/supabase';
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard } from '@/components/invitation-card';
 
-const BUCKET = 'wedding-assets';
-
+/**
+ * Uploads a background image through the admin asset route, which stores it in
+ * the couple's Google Drive. Previously went straight to a Supabase Storage
+ * bucket from the browser.
+ */
 async function uploadToStorage(file: File, folder: string): Promise<string> {
-  const path = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-  const { data, error } = await withTimeout(
-    supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false }),
-    30000
-  );
-  if (error) throw error;
-  const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
-  return publicUrl;
+  const body = new FormData();
+  body.append('file', file);
+  body.append('folder', folder);
+
+  const res = await withTimeout(fetch('/api/assets/upload', { method: 'POST', body }), 30000);
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(result.error ?? `Upload failed (${res.status})`);
+  return result.url as string;
 }
 
 export function InvitationEditor() {

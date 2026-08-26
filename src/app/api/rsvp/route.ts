@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
-import { supabaseAdmin } from '@/lib/supabase';
+import {
+  setGuestRsvp,
+  setHouseholdRsvp,
+  fetchGuestRows,
+  recordRsvpResponse,
+  fetchRsvpMessages,
+} from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
-
-function getDb() {
-  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_PRISMA_URL;
-  if (!url) throw new Error('DATABASE_URL not set');
-  return neon(url);
-}
 
 // The invitation form submits Accepted/Declined; the guests table (shared
 // with the admin Guest Ledger and seating chart) uses these instead.
@@ -72,50 +71,15 @@ async function syncGuestRecord(params: {
 
   if (targetResolvedGuestId) {
     // We know exactly which guest responded — update just that row.
-    const update: Record<string, string> = { rsvp_status: rsvpStatus };
-    if (dietaryRestrictions) update.dietary_restrictions = dietaryRestrictions;
-    const { error } = await supabaseAdmin.from('guests').update(update).eq('id', targetResolvedGuestId);
-    if (error) throw error;
+    await setGuestRsvp(targetResolvedGuestId, rsvpStatus, dietaryRestrictions);
     return;
   }
 
   if (targetHouseholdId) {
     // No specific guest identified (e.g. a shared household link) — the
     // whole household's RSVP applies to everyone in it.
-    const { error } = await supabaseAdmin.from('guests').update({ rsvp_status: rsvpStatus }).eq('household_id', targetHouseholdId);
-    if (error) throw error;
+    await setHouseholdRsvp(targetHouseholdId, rsvpStatus);
   }
-}
-
-// The table only ever needs creating once. This used to issue a CREATE TABLE
-// IF NOT EXISTS on every single RSVP, adding a database round trip to each
-// submission for a statement that is a no-op after the first one. Cached per
-// process, and reset on failure so a transient error doesn't permanently
-// convince this instance the table exists.
-let tableReady: Promise<void> | null = null;
-
-async function ensureTable() {
-  if (!tableReady) {
-    tableReady = (async () => {
-      const sql = getDb();
-      await sql`
-        CREATE TABLE IF NOT EXISTS rsvp_responses (
-          id SERIAL PRIMARY KEY,
-          guest_id TEXT,
-          household_id TEXT,
-          guest_name TEXT,
-          status TEXT,
-          dietary_restrictions TEXT,
-          message TEXT,
-          responded_at TIMESTAMP DEFAULT NOW()
-        )
-      `;
-    })().catch(err => {
-      tableReady = null;
-      throw err;
-    });
-  }
-  return tableReady;
 }
 
 export async function POST(req: NextRequest) {
@@ -152,16 +116,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Neon SQL write - wrapped in try/catch to make it completely non-blocking
+    // Audit log write — non-blocking, so a failure here never costs the guest
+    // their RSVP. The guest record sync below is the one that matters.
     try {
-      const sql = getDb();
-      await ensureTable();
-      await sql`
-        INSERT INTO rsvp_responses (guest_id, household_id, guest_name, status, dietary_restrictions, message)
-        VALUES (${guestId}, ${householdId ?? null}, ${guestName ?? null}, ${status}, ${dietaryRestrictions ?? null}, ${message ?? null})
-      `;
-    } catch (sqlErr) {
-      console.error('[RSVP] Neon SQL insert failed (non-blocking):', sqlErr);
+      await recordRsvpResponse({
+        guestId,
+        householdId,
+        guestName,
+        status,
+        dietaryRestrictions,
+        message,
+      });
+    } catch (logErr) {
+      console.error('[RSVP] audit log write failed (non-blocking):', logErr);
     }
 
     // Keep the real guest record in sync. This must never fail the request —
@@ -195,34 +162,27 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 1. Fetch any custom messages/comments from Neon (non-blocking)
-    const messagesMap: Record<string, string> = {};
+    // 1. Guest comments from the audit log (non-blocking)
+    let messages: { byGuest: Record<string, string>; byHousehold: Record<string, string> } = {
+      byGuest: {},
+      byHousehold: {},
+    };
     try {
-      const sql = getDb();
-      const rsvpRows = await sql`SELECT guest_id, message FROM rsvp_responses WHERE message IS NOT NULL AND message != ''`;
-      rsvpRows.forEach(row => {
-        if (row.guest_id) {
-          messagesMap[row.guest_id] = row.message;
-        }
-      });
-    } catch (sqlErr) {
-      console.warn('[RSVP GET] Neon query failed, message comments will be omitted:', sqlErr);
+      messages = await fetchRsvpMessages();
+    } catch (logErr) {
+      console.warn('[RSVP GET] message lookup failed, comments omitted:', logErr);
     }
 
-    // 2. Fetch all guests from Supabase
-    const { data: guests, error } = await supabaseAdmin
-      .from('guests')
-      .select('id, first_name, last_name, rsvp_status, dietary_restrictions, song_request, tags, updated_at')
-      .order('updated_at', { ascending: false });
-
-    if (error) throw error;
+    // 2. Fetch all guests from Firestore
+    const guests = await fetchGuestRows();
 
     // 3. Map to RsvpResponse format expected by the client
-    const responses = (guests || []).map(g => {
+    const responses = guests.map(g => {
       const isBride = g.tags?.includes("Bride's") || g.tags?.includes("Bride's Family") || g.tags?.includes("Bride's Friends");
       
-      // Try to find custom message, fallback to song request
-      let message = messagesMap[g.id] || undefined;
+      // A message may be filed under this guest, or under their household
+      // when it came from a shared invite link.
+      let message = messages.byGuest[g.id] || messages.byHousehold[g.household_id] || undefined;
       if (!message && g.song_request) {
         message = `🎵 Song Request: ${g.song_request}`;
       }
