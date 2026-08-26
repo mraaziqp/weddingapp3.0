@@ -36,8 +36,12 @@ export const viewport: Viewport = {
   themeColor: '#d4af37',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled. This was maximumScale: 1 / userScalable: false,
+  // which is a WCAG 1.4.4 failure and a real problem for this guest list in
+  // particular — older relatives reading an invitation, a seating chart and a
+  // menu on a phone need to be able to zoom in. The usual reason to disable it
+  // is iOS auto-zooming on focused inputs, which is better fixed by keeping
+  // input font-size at 16px than by locking everyone out of zooming.
 };
 
 export default function RootLayout({

@@ -149,6 +149,11 @@ export default function VaultPage() {
                       src={item.media_url}
                       alt="Guest photo"
                       fill
+                      // Matches the grid below (2 / 3 / 4 columns). Without
+                      // this next/image assumes the image is full-viewport
+                      // width and ships a far larger file than the thumbnail
+                      // slot needs.
+                      sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                   </div>
@@ -205,6 +210,7 @@ export default function VaultPage() {
               alt="Full photo"
               width={600}
               height={600}
+              sizes="(min-width: 768px) 672px, 100vw"
               className="w-full rounded-lg"
             />
             <button

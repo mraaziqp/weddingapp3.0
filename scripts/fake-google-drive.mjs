@@ -27,6 +27,7 @@ const ACCESS_TOKEN = 'fake-access-token';
 
 /** id -> { id, name, mimeType, size, createdTime, appProperties, parents, trashed, bytes } */
 const files = new Map();
+let listCallCount = 0;
 let seq = 0;
 
 const newId = () => `fakeid${String(++seq).padStart(4, '0')}${randomBytes(6).toString('hex')}`;
@@ -46,7 +47,8 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    if (path === '/reset') { files.clear(); seq = 0; return json(res, 200, { ok: true }); }
+    if (path === '/reset') { files.clear(); seq = 0; listCallCount = 0; return json(res, 200, { ok: true }); }
+    if (path === '/stats') return json(res, 200, { listCallCount });
     if (path === '/upload/drive/v3/files' && req.method === 'POST') return handleUpload(req, res, url);
     if (path === '/drive/v3/files' && req.method === 'GET') return handleList(res, url);
     if (path === '/drive/v3/files' && req.method === 'POST') return handleCreate(req, res);
@@ -156,6 +158,7 @@ async function handleUpload(req, res, url) {
 }
 
 function handleList(res, url) {
+  listCallCount++;
   const q = url.searchParams.get('q') ?? '';
   let result = [...files.values()];
 

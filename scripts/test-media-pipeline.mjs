@@ -201,6 +201,32 @@ check('trashed photo leaves the vault', (await list('private', '', true)).body.i
 const trashedRaw = await fetch(`${APP}/api/media/${id}/raw`);
 check('trashed photo stops being served', trashedRaw.status === 404);
 
+section('list caching');
+// On the night, every guest's gallery polls every 20s and the venue screen
+// every 10s. Without a server-side cache that is hundreds of Drive
+// files.list calls a minute against one project's rate limit.
+async function driveListCalls() {
+  const res = await fetch(`${FAKE}/stats`, { headers: { Authorization: 'Bearer fake-access-token' } });
+  return (await res.json()).listCallCount;
+}
+
+await list('public'); // prime
+const callsBefore = await driveListCalls();
+await Promise.all(Array.from({ length: 25 }, () => list('public')));
+const callsAfter = await driveListCalls();
+check(
+  '25 concurrent guest polls collapse to at most 1 Drive call',
+  callsAfter - callsBefore <= 1,
+  `made ${callsAfter - callsBefore}`
+);
+
+// Staleness is only acceptable if a guest still sees their own photo appear.
+const beforeUpload = (await list('public')).body.items.length;
+await upload(makeJpeg(400, 300), 'cache-bust.jpg', { visibility: 'public' });
+const afterUpload = (await list('public')).body.items.length;
+check('a new upload is visible immediately, not after the TTL',
+  afterUpload === beforeUpload + 1, `${beforeUpload} -> ${afterUpload}`);
+
 // ── report ────────────────────────────────────────────────────────────────
 
 console.log(`\n${'═'.repeat(62)}`);

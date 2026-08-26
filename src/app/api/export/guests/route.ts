@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchHouseholds } from '@/lib/supabase';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { toCsv } from '@/lib/csv';
 
 /**
  * GET /api/export/guests
@@ -12,17 +13,17 @@ export async function GET(req: NextRequest) {
   }
 
   const households = await fetchHouseholds().catch(() => []);
-  const rows: string[] = [];
 
-  // Header row
-  rows.push([
-    'Household Name',
-    'Guest First Name',
-    'Guest Last Name',
-    'RSVP Status',
-    'Dietary Requirements',
-    'Table',
-  ].map(escapeCsvField).join(','));
+  const rows: unknown[][] = [
+    [
+      'Household Name',
+      'Guest First Name',
+      'Guest Last Name',
+      'RSVP Status',
+      'Dietary Requirements',
+      'Table',
+    ],
+  ];
 
   for (const household of households) {
     for (const guest of household.guests) {
@@ -33,11 +34,11 @@ export async function GET(req: NextRequest) {
         guest.rsvpStatus,
         guest.dietaryRestrictions ?? '',
         '', // Table assignment — populated when seating is finalised
-      ].map(escapeCsvField).join(','));
+      ]);
     }
   }
 
-  const csv = rows.join('\r\n');
+  const csv = toCsv(rows);
 
   return new NextResponse(csv, {
     status: 200,
@@ -47,12 +48,4 @@ export async function GET(req: NextRequest) {
       'Cache-Control': 'no-store',
     },
   });
-}
-
-function escapeCsvField(value: string): string {
-  // Wrap in quotes if the value contains a comma, quote, or newline
-  if (/[",\r\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }

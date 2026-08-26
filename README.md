@@ -98,3 +98,47 @@ both a household id and a QR code, size/type/empty validation, public-vs-vault
 isolation, admin gating on every privileged route, byte-identical image
 round-trip through the proxy, the guard that refuses to serve any Drive file
 the app did not create, and the full moderation path.
+
+## Maintenance notes
+
+### Tests
+
+    npm test          # typecheck + lint + pure-function unit tests
+    npm run test:lib  # CSV escaping, rate limiter (24 assertions)
+    npm run test:media # full Drive pipeline against the fake (37 assertions)
+
+### Dependency upgrades deliberately deferred
+
+Minor and patch updates are applied. These majors are **not**, because they
+carry breaking-change risk that is not worth taking close to the wedding.
+Revisit afterwards:
+
+| Package | Current | Latest | Note |
+|---|---|---|---|
+| next | 15.x | 16.x | Also clears the nested `postcss` advisories |
+| framer-motion | 11.x | 13.x | Used on nearly every screen |
+| lucide-react | 0.475 | 1.x | Icon renames |
+| eslint | 8.x | 10.x | Flat-config migration |
+| date-fns | 3.x | 4.x | |
+| @hookform/resolvers | 4.x | 5.x | |
+| @dnd-kit/sortable | 8.x | 10.x | Seating chart + culinary planner |
+
+`npm audit` reports vulnerabilities that all sit in the Genkit dependency tree
+(`genkit` → `@genkit-ai/firebase` → Google Cloud telemetry → OpenTelemetry).
+Genkit is used only by the AI secretary and the save-the-date copy generator,
+and that telemetry path never executes here. The remaining `postcss`
+advisories are build-time and need Next 16. None are reachable at runtime by a
+guest.
+
+### Known gaps, not code problems
+
+- Day-of content tables are empty: `tables`, `timeline_events`, `tracks`,
+  `menu_items`, and no guest has a `table_id`. Seating, schedule, playlist and
+  menu will render blank until they are filled in.
+- `SUPABASE_SERVICE_ROLE_KEY` is unset, so `supabaseAdmin` runs with anon
+  privileges and the app depends entirely on the permissive RLS policies in
+  `supabase/schema.sql`. The server logs a warning on boot.
+- `DATABASE_URL` (Neon — a second database used only for RSVP message comments
+  and save-the-date config) is unset. Both paths degrade gracefully, but RSVP
+  free-text comments are silently dropped.
+- `supabase/002_well_wishes_rls.sql` still needs running.

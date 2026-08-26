@@ -301,6 +301,7 @@ async function uploadToFolder(input: UploadMediaInput, folderId: string): Promis
     }
   );
 
+  invalidateListCache();
   return toDriveMedia(file);
 }
 
@@ -340,8 +341,46 @@ export type ListMediaOptions = {
   pageToken?: string;
 };
 
+/**
+ * Short-lived cache in front of Drive's file listing.
+ *
+ * Every guest's gallery polls every 20 seconds and the venue screen every 10.
+ * With ~150 guests on the dance floor that is several hundred `files.list`
+ * calls a minute against a single Drive project — enough to run into Google's
+ * per-project rate limits on the one night it must not fail, and each call
+ * adds its round trip to the guest's page load.
+ *
+ * A few seconds of staleness is invisible on a photo wall, so identical
+ * queries inside the window share one Drive call. Writes invalidate
+ * immediately, so a guest still sees their own photo appear right after
+ * uploading it rather than waiting out the TTL.
+ */
+const LIST_CACHE_TTL_MS = 8_000;
+const listCache = new Map<string, { at: number; value: { items: DriveMedia[]; nextPageToken: string | null } }>();
+
+/** Called after any write so the next read reflects it immediately. */
+function invalidateListCache() {
+  listCache.clear();
+}
+
 export async function listMedia(
   options: ListMediaOptions = {}
+): Promise<{ items: DriveMedia[]; nextPageToken: string | null }> {
+  const cacheKey = JSON.stringify(options);
+  const hit = listCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < LIST_CACHE_TTL_MS) return hit.value;
+
+  const value = await listMediaUncached(options);
+
+  // Bound the map: distinct queries are few (a handful of visibility/quest
+  // combinations), but a crafted questTag could otherwise grow it forever.
+  if (listCache.size > 64) listCache.clear();
+  listCache.set(cacheKey, { at: Date.now(), value });
+  return value;
+}
+
+async function listMediaUncached(
+  options: ListMediaOptions
 ): Promise<{ items: DriveMedia[]; nextPageToken: string | null }> {
   const { visibility = 'public', questTag, guestId, limit = 60, pageToken } = options;
   const folderId = await getMediaFolderId();
@@ -448,6 +487,7 @@ export async function trashMedia(fileId: string): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ trashed: true }),
   });
+  invalidateListCache();
 }
 
 /** Flips a photo between the Live Wall and the private Vault. */
@@ -460,4 +500,5 @@ export async function setMediaVisibility(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ appProperties: { visibility } }),
   });
+  invalidateListCache();
 }

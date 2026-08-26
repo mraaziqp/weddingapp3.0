@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 function getDb() {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_PRISMA_URL;
@@ -11,8 +12,36 @@ function getDb() {
 
 // The invitation form submits Accepted/Declined; the guests table (shared
 // with the admin Guest Ledger and seating chart) uses these instead.
-function toGuestRsvpStatus(status: string): 'Confirmed' | 'Regret' {
+function toGuestRsvpStatus(status: RsvpStatus): 'Confirmed' | 'Regret' {
   return status === 'Accepted' ? 'Confirmed' : 'Regret';
+}
+
+type RsvpStatus = 'Accepted' | 'Declined';
+
+/**
+ * Only these two values may reach the database.
+ *
+ * The mapping above is `status === 'Accepted' ? Confirmed : Regret`, so
+ * anything unrecognised — a casing slip like "accepted", a client sending
+ * "confirmed", a truncated field — silently recorded the guest as *not
+ * coming*. That is the worst possible direction for this to fail, so an
+ * unknown status is now rejected outright rather than quietly downgraded.
+ */
+function parseStatus(value: unknown): RsvpStatus | null {
+  if (value === 'Accepted' || value === 'Declined') return value;
+  return null;
+}
+
+/** Free-text fields are guest-supplied and land in the database; bound them. */
+const MAX_NAME_LEN = 120;
+const MAX_DIETARY_LEN = 500;
+const MAX_MESSAGE_LEN = 1000;
+const MAX_ID_LEN = 120;
+
+function clean(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : undefined;
 }
 
 /**
@@ -24,7 +53,7 @@ async function syncGuestRecord(params: {
   guestId?: string;
   resolvedGuestId?: string;
   householdId?: string;
-  status: string;
+  status: RsvpStatus;
   dietaryRestrictions?: string;
 }) {
   const { guestId, resolvedGuestId, householdId, status, dietaryRestrictions } = params;
@@ -58,29 +87,69 @@ async function syncGuestRecord(params: {
   }
 }
 
+// The table only ever needs creating once. This used to issue a CREATE TABLE
+// IF NOT EXISTS on every single RSVP, adding a database round trip to each
+// submission for a statement that is a no-op after the first one. Cached per
+// process, and reset on failure so a transient error doesn't permanently
+// convince this instance the table exists.
+let tableReady: Promise<void> | null = null;
+
 async function ensureTable() {
-  const sql = getDb();
-  await sql`
-    CREATE TABLE IF NOT EXISTS rsvp_responses (
-      id SERIAL PRIMARY KEY,
-      guest_id TEXT,
-      household_id TEXT,
-      guest_name TEXT,
-      status TEXT,
-      dietary_restrictions TEXT,
-      message TEXT,
-      responded_at TIMESTAMP DEFAULT NOW()
-    )
-  `;
+  if (!tableReady) {
+    tableReady = (async () => {
+      const sql = getDb();
+      await sql`
+        CREATE TABLE IF NOT EXISTS rsvp_responses (
+          id SERIAL PRIMARY KEY,
+          guest_id TEXT,
+          household_id TEXT,
+          guest_name TEXT,
+          status TEXT,
+          dietary_restrictions TEXT,
+          message TEXT,
+          responded_at TIMESTAMP DEFAULT NOW()
+        )
+      `;
+    })().catch(err => {
+      tableReady = null;
+      throw err;
+    });
+  }
+  return tableReady;
 }
 
 export async function POST(req: NextRequest) {
+  // An RSVP is an unauthenticated write that flips a real guest's attendance,
+  // and household ids are millisecond timestamps — guessable enough to
+  // enumerate. This won't stop a determined attacker who already knows an id,
+  // but it does stop someone walking the id space and mass-setting Regret.
+  const limit = rateLimit(`rsvp:${clientIp(req)}`, 20, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many submissions. Please wait a moment.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
-    const { guestId, householdId, resolvedGuestId, guestName, status, dietaryRestrictions, message } = body;
 
-    if (!guestId || !status) {
+    const guestId = clean(body.guestId, MAX_ID_LEN);
+    const householdId = clean(body.householdId, MAX_ID_LEN);
+    const resolvedGuestId = clean(body.resolvedGuestId, MAX_ID_LEN);
+    const guestName = clean(body.guestName, MAX_NAME_LEN);
+    const dietaryRestrictions = clean(body.dietaryRestrictions, MAX_DIETARY_LEN);
+    const message = clean(body.message, MAX_MESSAGE_LEN);
+    const status = parseStatus(body.status);
+
+    if (!guestId) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    if (!status) {
+      return NextResponse.json(
+        { ok: false, error: 'Status must be "Accepted" or "Declined".' },
+        { status: 400 }
+      );
     }
 
     // Neon SQL write - wrapped in try/catch to make it completely non-blocking
@@ -89,7 +158,7 @@ export async function POST(req: NextRequest) {
       await ensureTable();
       await sql`
         INSERT INTO rsvp_responses (guest_id, household_id, guest_name, status, dietary_restrictions, message)
-        VALUES (${guestId}, ${householdId}, ${guestName}, ${status}, ${dietaryRestrictions || null}, ${message || null})
+        VALUES (${guestId}, ${householdId ?? null}, ${guestName ?? null}, ${status}, ${dietaryRestrictions ?? null}, ${message ?? null})
       `;
     } catch (sqlErr) {
       console.error('[RSVP] Neon SQL insert failed (non-blocking):', sqlErr);
@@ -108,8 +177,13 @@ export async function POST(req: NextRequest) {
       message: `RSVP recorded: ${guestName} - ${status}`,
     });
   } catch (err) {
+    // Log the detail, return a generic message — String(err) here handed the
+    // caller raw database/driver errors, which is free reconnaissance.
     console.error('[RSVP] POST error:', err);
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'Could not record your RSVP. Please try again.' },
+      { status: 500 }
+    );
   }
 }
 

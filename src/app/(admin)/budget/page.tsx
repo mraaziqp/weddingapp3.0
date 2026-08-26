@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { fetchBudgetItems, addBudgetItem, deleteBudgetItem as deleteBudgetItemRemote, fetchTotalBudget, updateTotalBudget } from '@/lib/supabase';
 import type { BudgetItem } from '@/lib/types';
+import { toCsv, downloadCsv } from '@/lib/csv';
 
 const CATEGORIES = ['Venue', 'Catering', 'Photography', 'Décor', 'Attire', 'Music', 'Transport', 'Stationery', 'Other'];
 
@@ -90,19 +91,15 @@ export default function BudgetPage() {
   };
 
   const exportCSV = () => {
-    const csv = [
+    // Was a bare row.join(',') — any vendor or category containing a comma
+    // ("Flowers, ceremony") silently shifted every column after it.
+    const csv = toCsv([
       ['Category', 'Item', 'Budgeted', 'Actual', 'Variance'],
       ...items.map(i => [i.category, i.name, i.budgeted, i.actual, i.actual - i.budgeted]),
       ['', 'TOTAL', totalBudgeted, totalActual, totalActual - totalBudgeted],
-    ].map(row => row.join(',')).join('\n');
+    ]);
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'budget.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv('budget.csv', csv);
     toast({ title: 'Budget exported as CSV' });
   };
 

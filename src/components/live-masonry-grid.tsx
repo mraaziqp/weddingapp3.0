@@ -47,6 +47,11 @@ const Polaroid = ({ item, className }: { item: WallItem; className?: string }) =
                 // the whole column once they load.
                 width={item.width ?? 500}
                 height={item.height ?? 500}
+                // The grid is 2 columns on phones, 3 from `sm` up. Without
+                // this next/image picks a candidate from the intrinsic width
+                // (up to 1600px), so a guest on venue cellular downloaded a
+                // full-size photo for a half-screen-wide polaroid.
+                sizes="(min-width: 640px) 33vw, 50vw"
                 className="w-full h-auto object-cover"
                 placeholder="blur"
                 blurDataURL={GOLD_BLUR_DATA_URL}

@@ -8,6 +8,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Download, RefreshCw, CheckCircle, XCircle, Users, Search, X, Clock, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toCsv, downloadCsv } from '@/lib/csv';
 
 interface RSVPResponse {
   id: number | string;
@@ -80,26 +81,18 @@ export function RSVPAnalytics() {
       return;
     }
 
-    const csv = [
-      ['Guest Name', 'Status', 'Dietary Restrictions', 'Message', 'Date Responded'].join(','),
-      ...analytics.responses.map(r =>
-        [
-          `"${r.guest_name}"`,
-          r.status,
-          `"${r.dietary_restrictions || ''}"`,
-          `"${r.message || ''}"`,
-          new Date(r.responded_at).toLocaleDateString(),
-        ].join(',')
-      ),
-    ].join('\n');
+    const csv = toCsv([
+      ['Guest Name', 'Status', 'Dietary Restrictions', 'Message', 'Date Responded'],
+      ...analytics.responses.map(r => [
+        r.guest_name,
+        r.status,
+        r.dietary_restrictions || '',
+        r.message || '',
+        new Date(r.responded_at).toLocaleDateString(),
+      ]),
+    ]);
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rsvp-responses-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    downloadCsv(`rsvp-responses-${new Date().toISOString().split('T')[0]}.csv`, csv);
     toast({ title: 'Exported successfully!', description: 'RSVP data downloaded' });
   };
 

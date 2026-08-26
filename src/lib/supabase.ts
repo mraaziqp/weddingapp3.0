@@ -297,12 +297,21 @@ export async function lookupHouseholdByQr(scanned: string): Promise<Household | 
 
     const selectHousehold = () => supabase.from('households').select('*, guests(*)');
 
-    for (const value of Array.from(new Set(candidates))) {
-        // qr_code first — it's the canonical value and what the pass encodes.
-        const byQr = await selectHousehold().eq('qr_code', value).maybeSingle();
-        if (byQr.data) return dbToHousehold(byQr.data);
+    // Bounded so a long or junk URL can't turn one scan into a dozen sequential
+    // round trips while a queue waits at the door. Real invite links yield two
+    // or three candidates.
+    const uniqueCandidates = Array.from(new Set(candidates)).slice(0, 6);
 
-        const byId = await selectHousehold().eq('id', value).maybeSingle();
+    for (const value of uniqueCandidates) {
+        // qr_code and id are checked together rather than one after the other:
+        // this runs at the door with guests waiting, and the miss path used to
+        // cost two full round trips per candidate before moving on.
+        const [byQr, byId] = await Promise.all([
+            selectHousehold().eq('qr_code', value).maybeSingle(),
+            selectHousehold().eq('id', value).maybeSingle(),
+        ]);
+        // qr_code first — it's the canonical value and what the pass encodes.
+        if (byQr.data) return dbToHousehold(byQr.data);
         if (byId.data) return dbToHousehold(byId.data);
 
         if (value.startsWith('guest-')) {

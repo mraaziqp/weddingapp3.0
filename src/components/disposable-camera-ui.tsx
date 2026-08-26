@@ -593,7 +593,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
             >
               <div className="w-40 bg-white p-2.5 pb-8 shadow-2xl rounded-sm border border-black/10">
                 <motion.div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-200">
-                  <Image src={polaroidSrc} alt="Captured" fill className="object-cover" />
+                  <Image src={polaroidSrc} alt="Captured" fill sizes="160px" className="object-cover" />
                   <motion.div
                     className="absolute inset-0"
                     initial={{ opacity: 1 }}

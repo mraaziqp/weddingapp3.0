@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_COOKIE_NAME, ADMIN_COOKIE_MAX_AGE, getAllowedAdminKeys } from '@/lib/admin-auth';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
+
+/**
+ * The whole admin surface — the full guest list, dietary details, phone
+ * numbers, the private photo vault — sits behind one shared access key, and
+ * /admin is linked from a public wedding site. Without a limit here that key
+ * can be brute-forced at network speed. Ten attempts a minute is generous for
+ * a human typing a key they were given and useless for a script.
+ */
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 60_000;
 
 export async function POST(req: NextRequest) {
+  const limit = rateLimit(`admin-login:${clientIp(req)}`, MAX_ATTEMPTS, WINDOW_MS);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many attempts. Please wait a moment and try again.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    );
+  }
+
   const { key } = await req.json().catch(() => ({ key: '' }));
 
   if (!key || typeof key !== 'string') {
