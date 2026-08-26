@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -218,36 +217,31 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
 
     try {
       const file = await compressImageFile(rawFile);
-      const path = `photos/${Date.now()}-${file.name}`;
 
-      const { data: uploadData, error: uploadError } = await withTimeout(
-        supabase.storage.from('wedding-photos').upload(path, file, { contentType: file.type, upsert: false }),
+      // Uploads go through our own API route rather than straight to storage:
+      // the media store is the couple's Google Drive, and its OAuth refresh
+      // token must never reach a guest's browser. The route writes the file and
+      // its metadata (guest, visibility, quest) in one call, so there is no
+      // longer a window where the photo exists but its metadata doesn't.
+      const body = new FormData();
+      body.append('file', file);
+      body.append('visibility', localVisibility);
+      body.append('guestId', guestId);
+      if (questTag) body.append('questTag', questTag);
+
+      const response = await withTimeout(
+        fetch('/api/media/upload', { method: 'POST', body }),
         30000
       );
 
       // A stale response (user already retried/moved on) should be ignored.
       if (uploadRequestIdRef.current !== requestId) return;
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('wedding-photos')
-        .getPublicUrl(uploadData.path);
-
-      // The file is safely in storage at this point — don't fail the whole
-      // upload (and re-prompt the guest to retake the shot) just because the
-      // metadata row failed to write; log it instead so it can be reconciled later.
-      try {
-        await supabase.from('media').insert({
-          media_url: publicUrl,
-          media_type: 'image',
-          visibility: localVisibility,
-          quest_tag: questTag ?? null,
-          guest_id: guestId,
-        });
-      } catch (metaError) {
-        console.error('Media metadata insert failed (file uploaded fine):', metaError);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error ?? `Upload failed (${response.status})`);
       }
+      const publicUrl: string = result.media.url;
 
       toast({
         title: localVisibility === 'public' ? '🌍 Shared to the Live Wall!' : '🔒 Secretly sent to the Couple!',
@@ -279,12 +273,16 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       console.error('Upload error:', error);
       const timedOut = error instanceof UploadTimeoutError;
       setLastFailedUpload({ file: rawFile, previewSrc });
+      // The upload route returns guest-readable reasons ("that photo is too
+      // large", "uploads aren't configured yet"); show those instead of the
+      // generic line so a guest at the venue knows whether retrying will help.
+      const serverMessage = !timedOut && error instanceof Error ? error.message : null;
       toast({
         variant: 'destructive',
         title: timedOut ? 'Upload is taking too long' : 'Upload failed',
         description: timedOut
           ? 'Your connection looks slow. Tap "Try Again" to retry this shot.'
-          : 'Could not upload your memory. Tap "Try Again" to retry.',
+          : serverMessage ?? 'Could not upload your memory. Tap "Try Again" to retry.',
       });
     } finally {
       clearTimeout(stalledTimer);

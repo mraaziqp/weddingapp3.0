@@ -64,6 +64,10 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
   const [introMusic, setIntroMusic] = useState<IntroMusic>('spark-rise');
   const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
   const introAudioCtxRef = useRef<AudioContext | null>(null);
+  // Read through a ref so the failsafe timer below doesn't re-arm every time
+  // the parent re-renders and hands down a fresh onComplete.
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
   const _titleControls = useAnimationControls();
   const _subtitleControls = useAnimationControls();
   const { isMuted } = useAudio();
@@ -159,8 +163,17 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
     playIntroMusic();
 
     const exitTimer = setTimeout(() => setPhase('exit'), 3600);
+
+    // Safety net. Dismissing the intro hangs entirely off framer-motion's
+    // onAnimationComplete, and a browser that throttles rAF — a backgrounded
+    // tab, a phone in low-power mode — can leave that callback unfired, which
+    // strands the guest on the splash with no way into the hub. On the day
+    // that is unrecoverable without a reload, so force the handoff.
+    const failsafeTimer = setTimeout(() => onCompleteRef.current(), 6000);
+
     return () => {
       clearTimeout(exitTimer);
+      clearTimeout(failsafeTimer);
       if (introAudioCtxRef.current) {
         void introAudioCtxRef.current.close();
         introAudioCtxRef.current = null;
@@ -175,6 +188,13 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
       animate={phase === 'exit' ? { y: '-100%' } : { y: '0%' }}
       transition={{ duration: 1.0, ease: [0.76, 0, 0.24, 1] }}
       onAnimationComplete={() => { if (phase === 'exit') onComplete(); }}
+      // Tap anywhere to skip. Guests arriving mid-party don't want to sit
+      // through 4.6s of monogram before they can reach the camera.
+      onClick={() => setPhase('exit')}
+      role="button"
+      tabIndex={0}
+      aria-label="Skip the welcome animation"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPhase('exit'); }}
     >
       <motion.div
         className="absolute -top-28 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full"

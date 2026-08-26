@@ -39,11 +39,14 @@ const Polaroid = ({ item, className }: { item: WallItem; className?: string }) =
         className={cn("break-inside-avoid-column p-2 pb-4 bg-white/90 rounded-sm shadow-lg rotate-[-2deg] transition-transform duration-300 hover:rotate-0 hover:scale-105", className)}
     >
         <div className="relative">
-            <Image 
-                src={item.imageUrl} 
-                alt={item.description} 
-                width={500} 
-                height={500} 
+            <Image
+                src={item.imageUrl}
+                alt={item.description}
+                // Drive reports each photo's real pixel size; using it keeps
+                // portrait shots from being reserved as squares and reflowing
+                // the whole column once they load.
+                width={item.width ?? 500}
+                height={item.height ?? 500}
                 className="w-full h-auto object-cover"
                 placeholder="blur"
                 blurDataURL={GOLD_BLUR_DATA_URL}

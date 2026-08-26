@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Gamepad2, GalleryHorizontal } from 'lucide-react';
@@ -51,6 +51,38 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
   const [activeQuest, setActiveQuest] = useState<string | null>(null);
   const [completedQuests, setCompletedQuests] = useState<string[]>([]);
 
+  // Photo-quest progress is per-guest and lives on their own phone. Without
+  // this it was React state only, so every reload — a locked screen, a tab the
+  // browser evicted, a guest reopening the invite link — reset them to 0/6 for
+  // quests they'd already shot. Keyed by guestId so a shared phone doesn't mix
+  // two households' progress.
+  const questStorageKey = `wedu:quests:${guestId}`;
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(questStorageKey);
+      if (saved) setCompletedQuests(JSON.parse(saved));
+    } catch {
+      // Private-mode Safari and full quotas both throw here; progress just
+      // won't persist, which is not worth breaking the hub over.
+    }
+  }, [questStorageKey]);
+
+  const markQuestComplete = useCallback((tag: string) => {
+    setCompletedQuests(prev => {
+      // Guard against duplicates: the same quest completing twice would push
+      // the counter past the number of quests that exist.
+      if (prev.includes(tag)) return prev;
+      const next = [...prev, tag];
+      try {
+        localStorage.setItem(questStorageKey, JSON.stringify(next));
+      } catch {
+        /* see above */
+      }
+      return next;
+    });
+  }, [questStorageKey]);
+
   // ── Secret 7-tap admin shortcut on the R&A monogram ──────────────────────
   const secretTapCount = useRef(0);
   const secretTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,12 +123,13 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
   }, [handleTabChange, isMorningAfter]);
 
   const handleCaptureComplete = useCallback((_blob?: unknown) => {
-    setActiveQuest(curr => {
-      if (curr) setCompletedQuests(prev => [...prev, curr]);
-      return null;
-    });
+    // Read activeQuest directly rather than from inside a setState updater —
+    // updaters must stay pure, and React invokes them twice in development, so
+    // the old shape credited the same quest twice.
+    if (activeQuest) markQuestComplete(activeQuest);
+    setActiveQuest(null);
     handleTabChange('games');
-  }, [handleTabChange]);
+  }, [activeQuest, markQuestComplete, handleTabChange]);
 
   const renderContent = () => {
     switch (activeTab) {

@@ -31,9 +31,24 @@ const { url: supabaseUrl, key: supabaseAnonKey } = getInitialConfig();
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Falls back to the anon key so the app still runs without a service role key
+// — which is how it is deployed today, leaning on the permissive "anon full
+// access" RLS policies in supabase/schema.sql. The fallback is silent, and
+// that has already cost a feature once: well_wishes shipped with RLS on and no
+// insert policy, so every guest post failed with 42501 and the wall stayed
+// permanently empty. A real service role key would have sailed straight past
+// it. Warn on the server so the next such gap is obvious.
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   supabaseAnonKey;
+
+if (typeof window === 'undefined' && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn(
+    '[supabase] SUPABASE_SERVICE_ROLE_KEY is not set — admin API routes are ' +
+    'running with anon privileges and depend entirely on RLS policies allowing ' +
+    'the anon role. Any table with RLS enabled but no anon policy will fail.'
+  );
+}
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -259,12 +274,22 @@ export async function lookupHouseholdByQr(scanned: string): Promise<Household | 
     if (/^https?:\/\//i.test(raw)) {
         try {
             const url = new URL(raw);
-            for (const key of ['household', 'id', 'qr', 'code']) {
+            // `guestId` matters most in practice: /invite/<code> redirects to
+            // /event?guestId=<code>, so that is the URL actually sitting in a
+            // guest's address bar. Without it, a bouncer pasting the link a
+            // guest shows them — which the manual fallback explicitly invites
+            // — got "QR Code Not Found", because /event has no useful last
+            // path segment to fall back to.
+            for (const key of ['guestId', 'household', 'id', 'qr', 'code']) {
                 const value = url.searchParams.get(key);
                 if (value) candidates.push(value.trim());
             }
-            const lastSegment = url.pathname.split('/').filter(Boolean).pop();
-            if (lastSegment) candidates.push(decodeURIComponent(lastSegment));
+            // Try every path segment, not just the last one: the app also
+            // hands out /invite/<code>/camera, where the code is second from
+            // the end. Paths here are two or three segments long, so this is a
+            // couple of extra lookups at worst and only on a miss.
+            const segments = url.pathname.split('/').filter(Boolean).reverse();
+            for (const segment of segments) candidates.push(decodeURIComponent(segment));
         } catch {
             // Not a parseable URL — fall through and try it as a plain code.
         }

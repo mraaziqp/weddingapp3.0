@@ -43,14 +43,16 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       g => g.dietary_restrictions?.toLowerCase().includes('vegan')
     ).length;
 
-    // Fetch photo count
-    const { data: photos, error: photoErr } = await supabase
-      .from('media')
-      .select('id', { count: 'exact' })
-      .eq('media_type', 'image');
-
-    if (photoErr) throw photoErr;
-    const totalPhotos = photos?.length ?? 0;
+    // Photo count comes from Google Drive via /api/media. A failure here must
+    // not blank out the guest/RSVP numbers beside it, so it falls back to 0
+    // rather than throwing into the catch below.
+    let totalPhotos = 0;
+    try {
+      const res = await fetch('/api/media?visibility=all&count=1', { cache: 'no-store' });
+      if (res.ok) totalPhotos = (await res.json()).count ?? 0;
+    } catch (photoErr) {
+      console.error('Failed to count photos:', photoErr);
+    }
 
     return {
       totalGuests,

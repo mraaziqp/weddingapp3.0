@@ -1,4 +1,11 @@
-import { supabase } from './supabase';
+/**
+ * Client-side media reads.
+ *
+ * The store behind these is Google Drive, reached through /api/media so the
+ * OAuth refresh token stays on the server. Server components must not import
+ * this — they should call `fetchPublicWallItemsServer` from ./media-server,
+ * which hits Drive directly and skips the extra HTTP hop.
+ */
 
 /** Display shape shared by the guest-photo walls (live wall, venue screen, gallery feed). */
 export type WallItem = {
@@ -8,23 +15,39 @@ export type WallItem = {
   imageHint?: string;
   guestName: string;
   likes: number;
+  /** Intrinsic pixel size when Drive reported it — lets the masonry grid
+   *  reserve the right aspect ratio instead of assuming every photo is square. */
+  width?: number;
+  height?: number;
 };
 
-/** Latest public guest photos from the real media table, newest first. */
-export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
-  const { data, error } = await supabase
-    .from('media')
-    .select('id, media_url, created_at')
-    .eq('visibility', 'public')
-    .eq('media_type', 'image')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map(m => ({
+/** Raw item shape returned by /api/media — mirrors DriveMedia. */
+type ApiMediaItem = {
+  id: string;
+  url: string;
+  guestName: string | null;
+  questTag: string | null;
+  width: number | null;
+  height: number | null;
+};
+
+export function toWallItem(m: ApiMediaItem): WallItem {
+  return {
     id: m.id,
-    imageUrl: m.media_url,
-    description: 'A cherished memory',
-    guestName: 'A Guest',
+    imageUrl: m.url,
+    description: m.questTag ? `${m.questTag} — a cherished memory` : 'A cherished memory',
+    imageHint: m.questTag ?? undefined,
+    guestName: m.guestName ?? 'A Guest',
     likes: 0,
-  }));
+    width: m.width ?? undefined,
+    height: m.height ?? undefined,
+  };
+}
+
+/** Latest public guest photos, newest first. Safe to call from the browser. */
+export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
+  const res = await fetch(`/api/media?visibility=public&limit=${limit}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Could not load the wall (${res.status})`);
+  const body = (await res.json()) as { items?: ApiMediaItem[] };
+  return (body.items ?? []).map(toWallItem);
 }

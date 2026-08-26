@@ -2,7 +2,7 @@
   "name": "R&A's Wedding — The Union of Razia & Abduraziq",
   "short_name": "R&A's Wedding",
   "description": "Your exclusive digital invitation and event companion.",
-  "start_url": "/invite",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#022c22",
   "theme_color": "#d4af37",

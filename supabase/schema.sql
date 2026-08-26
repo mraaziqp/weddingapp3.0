@@ -93,6 +93,14 @@ create table if not exists media (
   created_at timestamptz not null default now()
 );
 
+-- ── well_wishes (guestbook wall, open from RSVP through the wedding) ────
+create table if not exists well_wishes (
+  id         uuid primary key default gen_random_uuid(),
+  name       text,
+  message    text not null,
+  created_at timestamptz not null default now()
+);
+
 -- ── gifts (registry) ────────────────────────────────────────────────────
 create table if not exists gifts (
   id             text primary key,
@@ -164,7 +172,7 @@ declare
 begin
   for t in select unnest(array[
     'households','tables','guests','menu_items','timeline_events',
-    'tracks','media','gifts','contributions','std_opens',
+    'tracks','media','gifts','contributions','std_opens','well_wishes',
     'vendors','budget_items','budget_settings'
   ])
   loop

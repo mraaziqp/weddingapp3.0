@@ -1,6 +1,6 @@
 
 import { LiveMasonryGrid } from '@/components/live-masonry-grid';
-import { fetchPublicWallItems } from '@/lib/media';
+import { fetchPublicWallItemsServer } from '@/lib/media-server';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LuxuryLoader } from '@/components/luxury-loader';
@@ -12,10 +12,10 @@ import { Camera } from 'lucide-react';
 export const revalidate = 15;
 
 async function getMediaItems() {
-    // Real guest uploads from the media table. The 15s revalidate window means
+    // Real guest uploads from Google Drive. The 15s revalidate window means
     // concurrent guest refreshes hit the CDN cache, not the database.
     try {
-        return await fetchPublicWallItems(60);
+        return await fetchPublicWallItemsServer(60);
     } catch {
         return [];
     }

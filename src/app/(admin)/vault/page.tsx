@@ -4,16 +4,21 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import type { Media } from '@/lib/types';
+
+/** One photo as /api/media returns it, reshaped to what this page renders. */
+type VaultItem = {
+  id: string;
+  media_url: string;
+  guestName: string | null;
+};
 
 export default function VaultPage() {
-  const [mediaItems, setMediaItems] = useState<Media[]>([]);
+  const [mediaItems, setMediaItems] = useState<VaultItem[]>([]);
   const [activeTab, setActiveTab] = useState<'shared' | 'private'>('shared');
   const [loading, setLoading] = useState(true);
-  const [selectedPhoto, setSelectedPhoto] = useState<Media | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<VaultItem | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
@@ -27,15 +32,21 @@ export default function VaultPage() {
     try {
       setLoading(true);
       const visibility = activeTab === 'shared' ? 'public' : 'private';
-      const { data } = await supabase
-        .from('media')
-        .select('*')
-        .eq('visibility', visibility)
-        .eq('media_type', 'image')
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // The private tab is admin-only data, so this goes through /api/media
+      // (which checks the admin cookie) rather than querying storage directly.
+      const res = await fetch(`/api/media?visibility=${visibility}&limit=50`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error(`Vault load failed (${res.status})`);
+      const body = await res.json();
 
-      setMediaItems(data || []);
+      setMediaItems(
+        (body.items ?? []).map((m: { id: string; url: string; guestName: string | null }) => ({
+          id: m.id,
+          media_url: m.url,
+          guestName: m.guestName,
+        }))
+      );
     } catch (error) {
       console.error('Failed to load media:', error);
       toast({ variant: 'destructive', title: 'Failed to load vault' });
@@ -88,7 +99,12 @@ export default function VaultPage() {
             }`}
           >
             {tab === 'shared' ? '📸 Shared Gallery' : '🔒 Private Vault'}
-            <span className="text-xs ml-2">({mediaItems.length})</span>
+            {/* Only the loaded tab knows its own count — mediaItems holds
+                whichever tab is active, so showing it on both made the
+                inactive one claim a number that belongs to the other. */}
+            {activeTab === tab && !loading && (
+              <span className="text-xs ml-2">({mediaItems.length})</span>
+            )}
           </button>
         ))}
       </div>
@@ -130,7 +146,7 @@ export default function VaultPage() {
                   {/* Image */}
                   <div className="relative w-full aspect-square">
                     <Image
-                      src={item.media_url || 'https://via.placeholder.com/400'}
+                      src={item.media_url}
                       alt="Guest photo"
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -185,7 +201,7 @@ export default function VaultPage() {
             className="relative max-w-2xl w-full"
           >
             <Image
-              src={selectedPhoto.media_url || 'https://via.placeholder.com/600'}
+              src={selectedPhoto.media_url}
               alt="Full photo"
               width={600}
               height={600}

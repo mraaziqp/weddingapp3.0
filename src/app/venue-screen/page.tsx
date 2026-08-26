@@ -71,7 +71,7 @@ export default function VenueScreenPage() {
     return () => clearTimeout(slideTimer.current);
   }, [currentIndex, slides.length, advance]);
 
-  // Poll the real media table for newly uploaded guest photos
+  // Poll Google Drive for newly uploaded guest photos
   useEffect(() => {
     const poll = setInterval(async () => {
       try {

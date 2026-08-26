@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, RefreshCw, CheckCircle, XCircle, Users, Search, X, Clock, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -104,6 +103,37 @@ export function RSVPAnalytics() {
     toast({ title: 'Exported successfully!', description: 'RSVP data downloaded' });
   };
 
+  // These four derived values must be computed before the loading / failure
+  // early-returns below. Sitting after them, React saw four extra hooks the
+  // moment `loading` flipped to false and threw "rendered more hooks than
+  // during the previous render", crashing the page for any admin whose data
+  // actually loaded. `responses` defaults to [] so the hooks are safe to run
+  // while analytics is still null.
+  const responses = useMemo(() => analytics?.responses ?? [], [analytics]);
+  const acceptedCount = useMemo(() => responses.filter(r => r.status === 'Accepted').length, [responses]);
+  const declinedCount = useMemo(() => responses.filter(r => r.status === 'Declined').length, [responses]);
+  const pendingCount = useMemo(() => responses.filter(r => r.status === 'Pending').length, [responses]);
+
+  const filteredResponses = useMemo(() => {
+    return responses.filter(r => {
+      // 1. Status filter
+      if (statusFilter === 'accepted' && r.status !== 'Accepted') return false;
+      if (statusFilter === 'declined' && r.status !== 'Declined') return false;
+      if (statusFilter === 'pending' && r.status !== 'Pending') return false;
+
+      // 2. Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchName = r.guest_name.toLowerCase().includes(q);
+        const matchMsg = r.message ? r.message.toLowerCase().includes(q) : false;
+        const matchDiet = r.dietary_restrictions ? r.dietary_restrictions.toLowerCase().includes(q) : false;
+        const matchStatus = r.status.toLowerCase().includes(q);
+        return matchName || matchMsg || matchDiet || matchStatus;
+      }
+      return true;
+    });
+  }, [responses, statusFilter, searchQuery]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -139,29 +169,6 @@ export function RSVPAnalytics() {
     { label: 'Dietary Needs', value: analytics.withDietary, icon: Users, color: 'text-amber-500' },
   ];
 
-  const acceptedCount = useMemo(() => analytics.responses.filter(r => r.status === 'Accepted').length, [analytics.responses]);
-  const declinedCount = useMemo(() => analytics.responses.filter(r => r.status === 'Declined').length, [analytics.responses]);
-  const pendingCount = useMemo(() => analytics.responses.filter(r => r.status === 'Pending').length, [analytics.responses]);
-
-  const filteredResponses = useMemo(() => {
-    return analytics.responses.filter(r => {
-      // 1. Status filter
-      if (statusFilter === 'accepted' && r.status !== 'Accepted') return false;
-      if (statusFilter === 'declined' && r.status !== 'Declined') return false;
-      if (statusFilter === 'pending' && r.status !== 'Pending') return false;
-
-      // 2. Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchName = r.guest_name.toLowerCase().includes(q);
-        const matchMsg = r.message ? r.message.toLowerCase().includes(q) : false;
-        const matchDiet = r.dietary_restrictions ? r.dietary_restrictions.toLowerCase().includes(q) : false;
-        const matchStatus = r.status.toLowerCase().includes(q);
-        return matchName || matchMsg || matchDiet || matchStatus;
-      }
-      return true;
-    });
-  }, [analytics.responses, statusFilter, searchQuery]);
 
   return (
     <div className="space-y-8">

@@ -19,14 +19,17 @@ export function ActivityFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadInitialActivities = async () => {
+    let cancelled = false;
+
+    const loadActivities = async () => {
       try {
-        // Fetch recent media (photos)
-        const { data: photos } = await supabase
-          .from('media')
-          .select('id, created_at')
-          .order('created_at', { ascending: false })
-          .limit(3);
+        // Recent photos now come from Google Drive via /api/media. `all` spans
+        // the Live Wall and the private Vault, which is what the couple wants
+        // on their own dashboard — the route admin-gates that for us.
+        const photoRes = await fetch('/api/media?visibility=all&limit=3', { cache: 'no-store' });
+        const photos: { id: string; createdAt: string }[] = photoRes.ok
+          ? (await photoRes.json()).items ?? []
+          : [];
 
         // Fetch recent RSVPs
         const { data: guests } = await supabase
@@ -53,43 +56,30 @@ export function ActivityFeed() {
             id: `photo-${photo.id}`,
             type: 'photo',
             message: 'New photo uploaded to gallery',
-            timestamp: new Date(photo.created_at),
+            timestamp: new Date(photo.createdAt),
             icon: <Camera size={16} className="text-amber-400" />,
           });
         });
 
         items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-        setActivities(items.slice(0, 5));
+        if (!cancelled) setActivities(items.slice(0, 5));
       } catch (error) {
         console.error('Failed to load activities:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadInitialActivities();
+    loadActivities();
 
-    // Subscribe to real-time updates
-    const mediaSubscription = supabase
-      .channel('media-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'media' },
-        payload => {
-          const newActivity: ActivityItem = {
-            id: `photo-${payload.new.id}`,
-            type: 'photo',
-            message: 'New photo uploaded to gallery',
-            timestamp: new Date(),
-            icon: <Camera size={16} className="text-amber-400" />,
-          };
-          setActivities(prev => [newActivity, ...prev].slice(0, 5));
-        }
-      )
-      .subscribe();
+    // Drive has no change subscription to replace the old Supabase realtime
+    // channel on the media table, so the feed polls instead. 30s is plenty for
+    // a dashboard panel and costs one Drive list call per interval.
+    const timer = setInterval(loadActivities, 30_000);
 
     return () => {
-      mediaSubscription.unsubscribe();
+      cancelled = true;
+      clearInterval(timer);
     };
   }, []);
 
