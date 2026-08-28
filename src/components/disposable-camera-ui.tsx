@@ -206,6 +206,23 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     });
   }, [activeCssFilter]);
 
+  // Author / Guest Name tag
+  const [authorName, setAuthorName] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('wedding_guest_name');
+      if (saved) setAuthorName(saved);
+    }
+  }, []);
+
+  const handleNameChange = (name: string) => {
+    setAuthorName(name);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wedding_guest_name', name);
+    }
+  };
+
   const processUpload = useCallback(async (rawFile: File, previewSrc?: string) => {
     const requestId = ++uploadRequestIdRef.current;
     setIsFlashing(true);
@@ -229,6 +246,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       const formData = new FormData();
       formData.append('file', file);
       formData.append('guestId', guestId || '');
+      formData.append('guestName', authorName.trim() || 'Wedding Guest');
       formData.append('visibility', localVisibility);
       if (questTag) formData.append('questTag', questTag);
 
@@ -711,8 +729,22 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
 
       </div>
 
+      {/* ── GUEST NAME TAG PILL ─────────────────────────────────────────── */}
+      <div className="px-6 pt-2 pb-1 bg-black/40 backdrop-blur-md">
+        <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 border border-[#d4af37]/30 max-w-sm mx-auto shadow-inner">
+          <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider whitespace-nowrap">Your Name:</span>
+          <input
+            type="text"
+            value={authorName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder="e.g. Aunt Fatima & Uncle Zaid"
+            className="bg-transparent text-xs text-white placeholder:text-white/40 focus:outline-none w-full truncate"
+          />
+        </div>
+      </div>
+
       {/* ── CAMERA BODY CONTROLS ─────────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 pb-6 pt-3 gap-4 bg-black/60 backdrop-blur-md mt-2">
+      <div className="flex-shrink-0 flex items-center justify-between px-6 pb-6 pt-2 gap-4 bg-black/60 backdrop-blur-md">
         {/* Left controls: Gallery Upload & Film wind */}
         <div className="flex items-center gap-3">
           <button

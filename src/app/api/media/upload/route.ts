@@ -17,7 +17,6 @@ async function getWorkingBucket(): Promise<string> {
     }
   }
 
-  // Try creating 'wedding-photos' if not found
   try {
     const { data: created } = await supabaseAdmin.storage.createBucket('wedding-photos', {
       public: true,
@@ -25,7 +24,7 @@ async function getWorkingBucket(): Promise<string> {
     });
     if (created) return 'wedding-photos';
   } catch {
-    // If creation fails, default to wedding-photos
+    // Fallback
   }
 
   return 'wedding-photos';
@@ -36,6 +35,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const rawGuestId = (formData.get('guestId') as string) || '';
+    const guestName = (formData.get('guestName') as string) || (formData.get('name') as string) || 'Wedding Guest';
     const visibility = ((formData.get('visibility') as string) || 'public') as 'public' | 'private';
     const questTag = (formData.get('questTag') as string) || null;
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     let mediaUrl = '';
 
-    // 1. Attempt upload via Supabase Storage Admin
+    // 1. Storage Upload
     try {
       const bucket = await getWorkingBucket();
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -71,14 +71,14 @@ export async function POST(req: NextRequest) {
       console.warn('[Media Upload] Storage upload fallback:', storageErr);
     }
 
-    // 2. Fallback to base64 Data URL if storage bucket was unreachable
+    // 2. Base64 Fallback
     if (!mediaUrl) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64 = buffer.toString('base64');
       mediaUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
     }
 
-    // 3. Verify if guestId exists in guests table to avoid FK constraint error
+    // 3. Verify Foreign Key for guestId
     let validGuestId: string | null = null;
     if (rawGuestId) {
       try {
@@ -93,7 +93,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Insert record into Supabase `media` table with auto-retry
+    const description = questTag ? `${guestName} · Quest: ${questTag}` : guestName;
+
+    // 4. Insert record into Supabase `media` table
     let insertResult = null;
     try {
       const { data, error } = await supabaseAdmin.from('media').insert({
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
       }).select().single();
 
       if (error) {
-        console.warn('[Media Upload] Primary insert failed, retrying with guest_id=null:', error);
+        console.warn('[Media Upload] Primary insert failed, retrying without FK:', error);
         const { data: retryData, error: retryError } = await supabaseAdmin.from('media').insert({
           media_url: mediaUrl,
           media_type: fileType,
@@ -130,6 +132,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       mediaUrl,
       item: insertResult,
+      guestName,
     });
   } catch (err) {
     console.error('[Media Upload API] Error:', err);

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Sparkles, Upload, RefreshCw, Trophy, Heart, Volume2 } from 'lucide-react';
 import { LiveMasonryGrid } from '@/components/live-masonry-grid';
-import { fetchPublicWallItems, WallItem } from '@/lib/media';
+import { fetchPublicWallItems, deleteMediaItem, WallItem } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile } from '@/lib/image-utils';
@@ -35,10 +35,37 @@ export default function LiveWallPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const [authorName, setAuthorName] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('wedding_guest_name');
+      if (saved) setAuthorName(saved);
+    }
+  }, []);
+
+  const handleNameChange = (name: string) => {
+    setAuthorName(name);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wedding_guest_name', name);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+
+    let currentName = authorName.trim();
+    if (!currentName) {
+      const prompted = prompt('Enter your name or table number (e.g. Aunt Fatima):');
+      if (prompted && prompted.trim()) {
+        currentName = prompted.trim();
+        handleNameChange(currentName);
+      } else {
+        currentName = 'Wedding Guest';
+      }
+    }
 
     setIsUploading(true);
     try {
@@ -47,6 +74,7 @@ export default function LiveWallPage() {
       formData.append('file', compressed);
       formData.append('visibility', 'public');
       formData.append('guestId', 'live-wall-upload');
+      formData.append('guestName', currentName);
 
       const res = await fetch('/api/media/upload', {
         method: 'POST',
@@ -58,15 +86,15 @@ export default function LiveWallPage() {
 
       toast({
         title: '🎉 Memory Added to the Live Wall!',
-        description: 'Your photo is now live for everyone to see.',
+        description: `Captured by ${currentName}`,
       });
 
       // Instantly prepend
       const newItem: WallItem = {
         id: data.item?.id || `upload-${Date.now()}`,
         imageUrl: data.mediaUrl,
-        description: 'Captured live',
-        guestName: 'Wedding Guest',
+        description: `Captured by ${currentName}`,
+        guestName: currentName,
         likes: 0,
       };
       setMediaItems(prev => [newItem, ...prev]);
@@ -83,6 +111,19 @@ export default function LiveWallPage() {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Admin: Delete this photo from the live wall & database?')) return;
+    try {
+      const ok = await deleteMediaItem(id, '0408');
+      if (ok) {
+        setMediaItems(prev => prev.filter(item => item.id !== id));
+        toast({ title: '🗑️ Photo deleted', description: 'Removed from live wall and database.' });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: 'Could not delete photo' });
     }
   };
 
@@ -181,7 +222,7 @@ export default function LiveWallPage() {
             </Button>
           </div>
         ) : (
-          <LiveMasonryGrid mediaItems={mediaItems} />
+          <LiveMasonryGrid mediaItems={mediaItems} onDelete={handleDelete} />
         )}
       </main>
     </div>

@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { InvitationCard } from "@/components/invitation-card";
 import { downloadElementAsImage } from "@/lib/download-card";
 import { InvitationConfig } from "@/lib/invitation-config";
+import { AdminGalleryModerator } from "@/components/admin-gallery-moderator";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -400,6 +401,11 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* LIVE MEMORIES & GALLERY MODERATION (1-CLICK DELETE & DOWNLOAD) */}
+        <motion.div variants={itemVariants}>
+          <AdminGalleryModerator />
         </motion.div>
 
         {/* INVITATION THEME SELECTOR & PREVIEW */}

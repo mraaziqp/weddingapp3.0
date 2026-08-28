@@ -20,8 +20,23 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
   const [activeFilter, setActiveFilter] = useState('All');
   const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [authorName, setAuthorName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('wedding_guest_name');
+      if (saved) setAuthorName(saved);
+    }
+  }, []);
+
+  const handleNameChange = (name: string) => {
+    setAuthorName(name);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wedding_guest_name', name);
+    }
+  };
 
   const loadMedia = () => {
     fetchPublicWallItems(80)
@@ -41,6 +56,17 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
     e.target.value = '';
     if (!file) return;
 
+    let currentName = authorName.trim();
+    if (!currentName) {
+      const prompted = prompt('Enter your name or table number (e.g. Aunt Fatima):');
+      if (prompted && prompted.trim()) {
+        currentName = prompted.trim();
+        handleNameChange(currentName);
+      } else {
+        currentName = 'Wedding Guest';
+      }
+    }
+
     setIsUploading(true);
     try {
       const compressed = await compressImageFile(file);
@@ -48,6 +74,7 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
       formData.append('file', compressed);
       formData.append('visibility', 'public');
       formData.append('guestId', 'gallery-guest');
+      formData.append('guestName', currentName);
 
       const res = await fetch('/api/media/upload', {
         method: 'POST',
@@ -59,14 +86,14 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
 
       toast({
         title: '🎉 Added to the Live Memories Wall!',
-        description: 'Your photo is now live for all guests.',
+        description: `Your memory is live with tag: ${currentName}`,
       });
 
       const newItem: WallItem = {
         id: data.item?.id || `upload-${Date.now()}`,
         imageUrl: data.mediaUrl,
-        description: 'Captured live',
-        guestName: 'Wedding Guest',
+        description: `Captured by ${currentName}`,
+        guestName: currentName,
         likes: 0,
       };
       setMediaItems(prev => [newItem, ...prev]);
