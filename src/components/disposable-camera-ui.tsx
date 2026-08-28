@@ -334,7 +334,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   const outOfFilm = shotsLeft <= 0 && !isUploading;
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#141517] text-white relative overflow-hidden rounded-t-3xl border border-white/10 shadow-2xl p-1 bg-[url('https://www.transparenttextures.com/patterns/leather-bags.png')]">
+    <div className="flex h-full w-full flex-col bg-gradient-to-b from-[#1c1e22] via-[#121316] to-[#0a0b0d] text-white relative overflow-hidden rounded-t-3xl border border-white/10 shadow-2xl p-1">
       <canvas ref={canvasRef} className="hidden" />
       <input
         type="file"

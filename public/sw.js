@@ -1,12 +1,12 @@
 /**
- * Wedu 3.0 — Service Worker
+ * Wedu 3.0 — Service Worker v6
  * Provides offline capability, asset caching, and enables the PWA install prompt.
  * Strategy: stale-while-revalidate for static assets, network-first for API/data.
  */
 
-const CACHE_NAME = 'wedu-3-v5';
+const CACHE_NAME = 'wedu-3-v6';
 
-// Core assets to pre-cache on install for instant app launch
+// Core assets to pre-cache on install
 const PRECACHE_URLS = [
   '/manifest.json',
   '/RA-logo.svg',
@@ -44,35 +44,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ── Fetch: smart caching ──────────────────────────────────────────────────
+// ── Fetch: safe caching ───────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // Let browser handle non-http(s) requests
+  // Let browser handle non-http(s) requests (e.g. chrome-extension://)
   if (!event.request.url.startsWith('http')) return;
 
   const url = new URL(event.request.url);
 
-  // Never cache navigation requests. Keep HTML fresh to avoid stale chunk references.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cached = await caches.match(event.request);
-        return cached || Response.error();
-      })
-    );
-    return;
-  }
-
-  // Network-only for API routes and Next.js internals
+  // Never intercept navigation requests or API routes or Next.js internals
   if (
+    event.request.mode === 'navigate' ||
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/_next/') ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
     url.pathname.includes('__nextjs')
   ) {
-    event.respondWith(fetch(event.request));
-    return;
+    return; // Allow native network fetch without service worker interference
   }
 
   // Cache-first only for static assets (images, fonts, icons, manifest, media files).
@@ -81,24 +70,23 @@ self.addEventListener('fetch', (event) => {
     url.pathname === '/manifest.json';
 
   if (!isStaticAsset) {
-    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Stale-while-revalidate for static assets only.
+  // Safe Stale-While-Revalidate without unhandled rejections
   event.respondWith(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const cached = await cache.match(event.request);
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          if (response.ok && response.status !== 206 && response.type !== 'opaque') {
-            cache.put(event.request, response.clone());
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
-          return response;
+          return networkResponse;
         })
-        .catch(() => cached ?? Response.error());
+        .catch(() => cachedResponse);
 
-      return cached ?? networkFetch;
+      return cachedResponse || fetchPromise;
     })
   );
 });
