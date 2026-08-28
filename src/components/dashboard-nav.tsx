@@ -22,6 +22,7 @@ import {
   DollarSign,
   Briefcase,
   Sparkles,
+  PartyPopper,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,6 +45,7 @@ const navItems = [
   { href: "/save-the-date", icon: <CalendarHeart size={28} />, label: "Save the Date" },
   { href: "/qr-scanner", icon: <QrCode size={28} />, label: "Bouncer Mode" },
   { href: "/planner", icon: <CalendarDays size={28} />, label: "Planner Suite" },
+  { href: "/event-access", icon: <PartyPopper size={28} />, label: "Evening Access" },
 ];
 
 export function DashboardNav() {

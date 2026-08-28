@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, ADMIN_COOKIE_MAX_AGE, getAllowedAdminKeys } from "@/lib/admin-auth";
+import {
+  EVENT_HUB_ROUTE,
+  EVENT_JOIN_ROUTE,
+  getEventSession,
+  isWeddingOnlyRoute,
+} from "@/lib/event-access";
 
 const ADMIN_ROUTES = [
   "/dashboard",
@@ -18,6 +24,7 @@ const ADMIN_ROUTES = [
   "/vault",
   "/vendors",
   "/save-the-date",
+  "/event-access",
 ];
 
 const ADMIN_KEY_QUERY_PARAM = "adminKey";
@@ -35,8 +42,54 @@ function getUrlWithoutAdminQuery(request: NextRequest): URL {
   return sanitizedUrl;
 }
 
-export function middleware(request: NextRequest) {
+/**
+ * Gates the entertainment-evening hub, and walls its guests in.
+ *
+ * Two directions, and both matter:
+ *
+ *  - No event session may reach /event-hub → bounced to the join screen.
+ *  - An EVENT_ONLY_GUEST may not reach the wedding's own pages. Those guests
+ *    were invited to the side event and not to the wedding, so the itinerary,
+ *    seating plan, registry and invitation are not theirs to see — and the
+ *    couple would rather they never learn what they were not invited to.
+ *
+ * Runs before the admin check so that an admin holding both cookies is never
+ * bounced out of the hub by their own admin session.
+ */
+async function handleEventRoutes(request: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl;
+  const inHub = pathname === EVENT_HUB_ROUTE || pathname.startsWith(`${EVENT_HUB_ROUTE}/`);
+
+  if (!inHub && !isWeddingOnlyRoute(pathname)) return null;
+
+  const session = await getEventSession(request);
+
+  if (inHub) {
+    if (session) return NextResponse.next();
+    const joinUrl = request.nextUrl.clone();
+    joinUrl.pathname = EVENT_JOIN_ROUTE;
+    joinUrl.search = "";
+    return NextResponse.redirect(joinUrl);
+  }
+
+  // A wedding page. Only an EVENT_ONLY_GUEST is turned away; everyone else —
+  // main guests, admins, and visitors with no event session at all — keeps the
+  // access they had before this feature existed.
+  if (session?.role === "EVENT_ONLY_GUEST") {
+    const hubUrl = request.nextUrl.clone();
+    hubUrl.pathname = EVENT_HUB_ROUTE;
+    hubUrl.search = "";
+    return NextResponse.redirect(hubUrl);
+  }
+
+  return null;
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  const eventResponse = await handleEventRoutes(request);
+  if (eventResponse) return eventResponse;
 
   if (!isAdminRoute(pathname)) {
     return NextResponse.next();
@@ -105,5 +158,19 @@ export const config = {
     "/vault/:path*",
     "/vendors/:path*",
     "/save-the-date/:path*",
+    "/event-access/:path*",
+    // The side-event hub, plus every wedding page an EVENT_ONLY_GUEST must be
+    // kept out of. These must stay in step with WEDDING_ONLY_ROUTES in
+    // lib/event-access.ts — a route listed there but missing here is simply
+    // never checked, because the matcher decides whether middleware runs at all.
+    "/event-hub/:path*",
+    "/event/:path*",
+    "/invitation/:path*",
+    "/nikkah-invite/:path*",
+    "/gifts/:path*",
+    "/family/:path*",
+    "/invite/:path*",
+    "/live-wall/:path*",
+    "/venue-screen/:path*",
   ],
 };

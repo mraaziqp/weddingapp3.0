@@ -39,6 +39,23 @@ const FILE_FIELDS =
 
 export type MediaVisibility = 'public' | 'private';
 
+/**
+ * Which celebration a file belongs to.
+ *
+ * The side-event ("entertainment evening") crowd includes people who are not
+ * coming to the wedding, so their photos must never appear on the wedding Live
+ * Wall and the wedding's photos must never appear in their hub. That
+ * separation is a *different Drive folder*, not a flag, because every wall
+ * query already scopes itself with `'<folder>' in parents` — so a separate
+ * parent excludes the other event automatically, including from
+ * `visibility=all`, which omits the visibility filter entirely and would
+ * otherwise mix the two. The same reasoning as the assets folder below.
+ */
+export type MediaScope = 'wedding' | 'event';
+
+/** Photos and voice memos share a folder; this is what tells them apart. */
+export type MediaKind = 'photo' | 'voice';
+
 export type DriveMedia = {
   id: string;
   /** Same-origin proxy URL — Drive's own file links expire and rate-limit. */
@@ -53,6 +70,11 @@ export type DriveMedia = {
   questTag: string | null;
   width: number | null;
   height: number | null;
+  kind: MediaKind;
+  /** A short note the guest attached to the upload. */
+  caption: string | null;
+  /** Soft-deleted by an admin. Hidden from guests, still recoverable. */
+  hidden: boolean;
 };
 
 export class DriveNotConfiguredError extends Error {
@@ -165,8 +187,10 @@ async function driveJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 const FOLDER_NAME = process.env.GDRIVE_MEDIA_FOLDER_NAME || 'Wedding Media';
 const ASSET_FOLDER_NAME = process.env.GDRIVE_ASSET_FOLDER_NAME || 'Wedding Assets';
+const EVENT_FOLDER_NAME = process.env.GDRIVE_EVENT_FOLDER_NAME || 'Event Evening Memories';
 let cachedFolderId: string | null = null;
 let cachedAssetFolderId: string | null = null;
+let cachedEventFolderId: string | null = null;
 
 /**
  * Resolves the Drive folder all media lives in, creating it on first use.
@@ -220,6 +244,35 @@ export async function getAssetFolderId(): Promise<string> {
   return cachedAssetFolderId;
 }
 
+/**
+ * Folder for the entertainment evening's photos and voice memos.
+ *
+ * Separate from the wedding folder so the two guest lists never see each
+ * other's uploads — see the `MediaScope` note above.
+ */
+export async function getEventFolderId(): Promise<string> {
+  if (process.env.GDRIVE_EVENT_FOLDER_ID) return process.env.GDRIVE_EVENT_FOLDER_ID;
+  if (cachedEventFolderId) return cachedEventFolderId;
+  cachedEventFolderId = await resolveFolder(EVENT_FOLDER_NAME);
+  return cachedEventFolderId;
+}
+
+function folderIdForScope(scope: MediaScope): Promise<string> {
+  return scope === 'event' ? getEventFolderId() : getMediaFolderId();
+}
+
+/** The pinned-id env var for a scope, if the deploy set one. */
+function pinnedFolderId(scope: MediaScope): string | undefined {
+  return scope === 'event'
+    ? process.env.GDRIVE_EVENT_FOLDER_ID
+    : process.env.GDRIVE_MEDIA_FOLDER_ID;
+}
+
+function clearFolderCache(scope: MediaScope) {
+  if (scope === 'event') cachedEventFolderId = null;
+  else cachedFolderId = null;
+}
+
 // ── Mapping ───────────────────────────────────────────────────────────────
 
 type DriveFile = {
@@ -247,6 +300,9 @@ function toDriveMedia(f: DriveFile): DriveMedia {
     questTag: props.questTag || null,
     width: f.imageMediaMetadata?.width ?? null,
     height: f.imageMediaMetadata?.height ?? null,
+    kind: props.kind === 'voice' ? 'voice' : 'photo',
+    caption: props.caption || null,
+    hidden: props.hidden === 'true',
   };
 }
 
@@ -260,6 +316,10 @@ export type UploadMediaInput = {
   guestId?: string | null;
   guestName?: string | null;
   questTag?: string | null;
+  /** Which celebration's folder to write into. Defaults to the wedding. */
+  scope?: MediaScope;
+  kind?: MediaKind;
+  caption?: string | null;
 };
 
 /**
@@ -269,8 +329,9 @@ export type UploadMediaInput = {
  * truncated rather than left to fail the whole upload at the API boundary.
  */
 export async function uploadMedia(input: UploadMediaInput): Promise<DriveMedia> {
+  const scope: MediaScope = input.scope ?? 'wedding';
   try {
-    return await uploadToFolder(input, await getMediaFolderId());
+    return await uploadToFolder(input, await folderIdForScope(scope));
   } catch (err) {
     // The folder id is cached for the life of the server instance. If the
     // folder is deleted in Drive, a warm instance keeps uploading into an id
@@ -280,10 +341,10 @@ export async function uploadMedia(input: UploadMediaInput): Promise<DriveMedia> 
     // the night. Only retry when we hold the cache ourselves; a pinned
     // GDRIVE_MEDIA_FOLDER_ID that 404s is a config error worth surfacing.
     const isMissingParent = err instanceof Error && /Drive API 404/.test(err.message);
-    if (!isMissingParent || process.env.GDRIVE_MEDIA_FOLDER_ID) throw err;
+    if (!isMissingParent || pinnedFolderId(scope)) throw err;
 
-    cachedFolderId = null;
-    return uploadToFolder(input, await getMediaFolderId());
+    clearFolderCache(scope);
+    return uploadToFolder(input, await folderIdForScope(scope));
   }
 }
 
@@ -295,6 +356,8 @@ async function uploadToFolder(input: UploadMediaInput, folderId: string): Promis
   if (input.guestId) appProperties.guestId = clampProp(input.guestId);
   if (input.guestName) appProperties.guestName = clampProp(input.guestName);
   if (input.questTag) appProperties.questTag = clampProp(input.questTag);
+  if (input.kind) appProperties.kind = input.kind;
+  if (input.caption) appProperties.caption = clampProp(input.caption);
 
   const metadata = {
     name: input.filename,
@@ -372,6 +435,13 @@ export type ListMediaOptions = {
   guestId?: string | null;
   limit?: number;
   pageToken?: string;
+  /** Which celebration's folder to read. Defaults to the wedding. */
+  scope?: MediaScope;
+  /**
+   * Include admin-hidden uploads. Guests never get this; the couple's
+   * moderation view does, so a hide can be undone.
+   */
+  includeHidden?: boolean;
 };
 
 /**
@@ -415,8 +485,16 @@ export async function listMedia(
 async function listMediaUncached(
   options: ListMediaOptions
 ): Promise<{ items: DriveMedia[]; nextPageToken: string | null }> {
-  const { visibility = 'public', questTag, guestId, limit = 60, pageToken } = options;
-  const folderId = await getMediaFolderId();
+  const {
+    visibility = 'public',
+    questTag,
+    guestId,
+    limit = 60,
+    pageToken,
+    scope = 'wedding',
+    includeHidden = false,
+  } = options;
+  const folderId = await folderIdForScope(scope);
 
   const clauses = [`'${folderId}' in parents`, 'trashed = false'];
   if (visibility !== 'all') {
@@ -429,11 +507,16 @@ async function listMediaUncached(
     clauses.push(`appProperties has { key='guestId' and value='${escapeQ(guestId)}' }`);
   }
 
+  // Drive's query language has no negation for appProperties — there is no
+  // "where hidden != true" — so hidden files are dropped after mapping. Ask
+  // for a few extra so a moderated photo doesn't visibly shorten the page.
+  const overFetch = includeHidden ? 0 : 10;
+
   const params = new URLSearchParams({
     q: clauses.join(' and '),
     orderBy: 'createdTime desc',
     fields: `nextPageToken,files(${FILE_FIELDS})`,
-    pageSize: String(Math.min(Math.max(limit, 1), 1000)),
+    pageSize: String(Math.min(Math.max(limit + overFetch, 1), 1000)),
   });
   if (pageToken) params.set('pageToken', pageToken);
 
@@ -441,8 +524,11 @@ async function listMediaUncached(
     `${DRIVE_API}/files?${params}`
   );
 
+  const mapped = (res.files ?? []).map(toDriveMedia);
+  const visible = includeHidden ? mapped : mapped.filter(m => !m.hidden);
+
   return {
-    items: (res.files ?? []).map(toDriveMedia),
+    items: visible.slice(0, limit),
     nextPageToken: res.nextPageToken ?? null,
   };
 }
@@ -458,8 +544,11 @@ function escapeQ(value: string): string {
  * which is one round trip for any realistic wedding. Capped so a runaway
  * folder can't turn a dashboard load into an unbounded loop.
  */
-export async function countMedia(visibility: MediaVisibility | 'all' = 'all'): Promise<number> {
-  const folderId = await getMediaFolderId();
+export async function countMedia(
+  visibility: MediaVisibility | 'all' = 'all',
+  scope: MediaScope = 'wedding'
+): Promise<number> {
+  const folderId = await folderIdForScope(scope);
   const clauses = [`'${folderId}' in parents`, 'trashed = false'];
   if (visibility !== 'all') {
     clauses.push(`appProperties has { key='visibility' and value='${visibility}' }`);
@@ -519,6 +608,27 @@ export async function trashMedia(fileId: string): Promise<void> {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ trashed: true }),
+  });
+  invalidateListCache();
+}
+
+/**
+ * Admin soft-delete for the memory wall.
+ *
+ * Hides rather than trashes, because the judgement call is being made in a
+ * dark room on a phone in the middle of a party: an accidental tap on the
+ * wrong photo must be one tap to undo, not a trip to the Drive trash. A
+ * genuinely unwanted file can still be trashed afterwards with `trashMedia`.
+ *
+ * Drive merges `appProperties` on PATCH, so writing this one key leaves
+ * guestId, questTag and the rest untouched.
+ */
+export async function setMediaHidden(fileId: string, hidden: boolean): Promise<void> {
+  await driveJson(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=id`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    // Drive stores appProperties as strings; there is no boolean type.
+    body: JSON.stringify({ appProperties: { hidden: hidden ? 'true' : 'false' } }),
   });
   invalidateListCache();
 }

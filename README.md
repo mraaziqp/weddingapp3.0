@@ -185,3 +185,57 @@ guest.
 - Nothing outstanding on the database side: Supabase and Neon are both gone,
   well wishes work, and RSVP free-text comments are captured for the first time
   (the Neon database that was supposed to hold them was never configured).
+
+## The Evening — side-event Memory Panel
+
+A second, separate celebration lives at `/event-hub`: an entertainment evening
+whose guest list is **not** the wedding's. Some of those people were invited to
+the evening only, and must never see the wedding itinerary, seating plan,
+registry or invitation.
+
+    /join  →  4-digit PIN or magic link  →  signed cookie  →  /event-hub
+
+### Access tiers
+
+| Role | Reaches | Notes |
+|---|---|---|
+| `EVENT_ONLY_GUEST` | `/event-hub` only | Bounced off every wedding page by middleware |
+| `MAIN_GUEST` | Hub + the whole wedding site | Issued by magic link |
+| `ADMIN` | Hub + moderation controls | Granted automatically when the admin cookie is present |
+
+The session is a stateless HMAC-signed cookie built on Web Crypto, so
+`middleware.ts` can verify it on the Edge runtime, where `firebase-admin`
+cannot be imported. `WEDDING_ONLY_ROUTES` in `lib/event-access.ts` and the
+`matcher` in `middleware.ts` must be kept in step — a route listed in the first
+but missing from the second is never actually checked.
+
+Generate magic links at `/event-access` (admin only). They are signed, not
+stored, so they cannot be listed again after leaving the page.
+
+### Setup
+
+    EVENT_PIN=1234              # printed on the table cards
+    EVENT_SESSION_SECRET=…      # falls back to ADMIN_ACCESS_KEY if unset
+
+### Media separation
+
+Evening photos and voice notes go to their **own Drive folder** (`Event Evening
+Memories`), not the wedding folder. Every wall query scopes itself with
+`'<folder>' in parents`, so a separate parent excludes the other event
+automatically — including from `visibility=all`, which skips the visibility
+filter entirely and would otherwise mix the two guest lists' photos together.
+
+Moderation is a `hidden` appProperty rather than a delete: the call gets made
+on a phone, in a dark room, mid-party, and an accidental tap has to be one tap
+to undo.
+
+### Tests
+
+    node scripts/fake-google-drive.mjs   # terminal 1
+    npm run dev                          # terminal 2, with the GOOGLE_* fake endpoints set
+    npm run test:event                   # terminal 3
+
+Covers quick-join, wedding/event media isolation, scavenger scoring off a real
+upload, reaction idempotency, and admin moderation. Note that unless
+`FIRESTORE_EMULATOR_HOST` is set, this writes notes and scores to the **real**
+Firestore project — point it at the emulator or clean up afterwards.

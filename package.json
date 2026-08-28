@@ -13,6 +13,7 @@
     "drive:auth": "node scripts/google-drive-auth.mjs",
     "drive:fake": "node scripts/fake-google-drive.mjs",
     "test:media": "node scripts/test-media-pipeline.mjs",
+    "test:event": "node scripts/test-event-hub.mjs",
     "test:lib": "node scripts/test-lib.mjs",
     "test": "npm run typecheck && npm run lint && npm run test:lib",
     "firebase:emulator": "firebase emulators:start --only firestore --project studio-12716644-3255b",
