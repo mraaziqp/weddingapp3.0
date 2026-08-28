@@ -1,13 +1,21 @@
 /**
  * Wedu 3.0 — Service Worker
- * Provides offline capability and enables the PWA install prompt on Android.
+ * Provides offline capability, asset caching, and enables the PWA install prompt.
  * Strategy: stale-while-revalidate for static assets, network-first for API/data.
  */
 
-const CACHE_NAME = 'wedu-3-v4';
+const CACHE_NAME = 'wedu-3-v5';
 
-// Assets to pre-cache on install (app shell)
-const PRECACHE_URLS = ['/manifest.json', '/RA-logo.svg'];
+// Core assets to pre-cache on install for instant app launch
+const PRECACHE_URLS = [
+  '/manifest.json',
+  '/RA-logo.svg',
+  '/bismillah.png',
+  '/wedding-flowers.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/apple-touch-icon.png',
+];
 
 // ── Install: pre-cache app shell ───────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -15,6 +23,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
+      .catch((err) => console.log('[SW] Precache skipped:', err))
   );
 });
 
@@ -39,14 +48,19 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // Let browser/extensions handle non-http(s) requests.
+  // Let browser handle non-http(s) requests
   if (!event.request.url.startsWith('http')) return;
 
   const url = new URL(event.request.url);
 
   // Never cache navigation requests. Keep HTML fresh to avoid stale chunk references.
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match(event.request);
+        return cached || Response.error();
+      })
+    );
     return;
   }
 

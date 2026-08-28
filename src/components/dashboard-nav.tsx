@@ -22,6 +22,8 @@ import {
   DollarSign,
   Briefcase,
   Sparkles,
+  GalleryHorizontal,
+  Tv,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -30,19 +32,21 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", icon: <LayoutDashboard size={28} />, label: "Dashboard" },
+  { href: "/live-wall", icon: <GalleryHorizontal size={28} />, label: "Live Memory Wall" },
+  { href: "/venue-screen", icon: <Tv size={28} />, label: "Venue Screen" },
   { href: "/guests", icon: <Users size={28} />, label: "Guest Ledger" },
   { href: "/seating", icon: <Armchair size={28} />, label: "Seating Studio" },
+  { href: "/vault", icon: <Heart size={28} />, label: "Memory Vault" },
+  { href: "/playlist", icon: <Music size={28} />, label: "Playlist" },
+  { href: "/qr-scanner", icon: <QrCode size={28} />, label: "Bouncer Mode" },
   { href: "/budget", icon: <DollarSign size={28} />, label: "Budget" },
   { href: "/vendors", icon: <Briefcase size={28} />, label: "Vendors" },
   { href: "/registry", icon: <Gift size={28} />, label: "Registry" },
-  { href: "/vault", icon: <Heart size={28} />, label: "Memory Vault" },
-  { href: "/playlist", icon: <Music size={28} />, label: "Playlist" },
   { href: "/ai-secretary", icon: <Bot size={28} />, label: "AI Secretary" },
   { href: "/invites", icon: <Mail size={28} />, label: "Invite Studio" },
   { href: "/invitation-editor", icon: <Sparkles size={28} />, label: "Invitation Editor" },
   { href: "/rsvp-analytics", icon: <QrCode size={28} />, label: "RSVP Analytics" },
   { href: "/save-the-date", icon: <CalendarHeart size={28} />, label: "Save the Date" },
-  { href: "/qr-scanner", icon: <QrCode size={28} />, label: "Bouncer Mode" },
   { href: "/planner", icon: <CalendarDays size={28} />, label: "Planner Suite" },
 ];
 

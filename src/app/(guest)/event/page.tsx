@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 
 import { GuestEventHub } from '@/components/guest-event-hub';
+import { GuestDashboard } from '@/components/guest-dashboard';
 import { LuxuryLoader } from '@/components/luxury-loader';
 import { lookupHouseholdByQr } from '@/lib/supabase';
 import type { Household } from '@/lib/types';
@@ -321,7 +322,7 @@ function EventPageContent() {
       <AnimatePresence>
         {!introDone && <EventDayIntro household={household} onComplete={handleIntroComplete} />}
       </AnimatePresence>
-      {introDone && <GuestEventHub guestId={guestId} />}
+      {introDone && <GuestDashboard household={household} />}
     </>
   );
 }

@@ -9,6 +9,7 @@ import { ChevronDown, Volume2, VolumeX, CalendarPlus, MapPin, Download, Loader2 
 import { InvitationConfig, DEFAULT_INVITATION_CONFIG } from '@/lib/invitation-config';
 import { InvitationCard, GiftingCard, GoldDust, PetalDrift, WeddingBells, FlowerSprig, easeLuxe } from '@/components/invitation-card';
 import { DigitalPass } from '@/components/digital-pass';
+import { GuestDashboard } from '@/components/guest-dashboard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase, dbToHousehold } from '@/lib/supabase';
 import { downloadElementAsImage } from '@/lib/download-card';
@@ -747,7 +748,7 @@ export default function InvitationPage() {
             // a QR that always failed at the door).
             qrCode: params?.get('household') || params?.get('id') || ''
           };
-      return <DigitalPass household={householdObj} config={config ?? undefined} />;
+      return <GuestDashboard household={householdObj} config={config ?? undefined} />;
     }
 
     return (

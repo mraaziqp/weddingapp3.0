@@ -13,7 +13,7 @@ const DEFAULTS = {
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
   siteBgImage: '/couple-bg.jpg',
-  redirectToStd: true,
+  redirectToStd: false,
 };
 
 function getDb() {

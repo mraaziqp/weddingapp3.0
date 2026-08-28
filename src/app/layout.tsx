@@ -18,6 +18,15 @@ export const metadata: Metadata = {
   description: 'Your exclusive digital invitation and event companion.',
   metadataBase: new URL('https://www.raziaraaziq.co.za'),
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+  },
   openGraph: {
     siteName: 'Razia & Abdu-Raazig Wedding',
     type: 'website',
@@ -29,15 +38,21 @@ export const metadata: Metadata = {
   },
   other: {
     'mobile-web-app-capable': 'yes',
+    'application-name': "R&A's Wedding",
+    'msapplication-TileColor': '#031811',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#d4af37',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf5ec' },
+    { media: '(prefers-color-scheme: dark)', color: '#031811' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

@@ -117,6 +117,24 @@
     -webkit-touch-callout: none;
   }
 
+  /* iOS Safari tap and touch action optimization */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Prevent iOS auto-zoom on input focus while keeping accessibility */
+  @media screen and (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
   .font-headline {
     font-family: var(--wedu-heading-font, 'Playfair Display'), serif;
   }

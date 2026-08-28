@@ -1,12 +1,16 @@
 {
+  "id": "/",
   "name": "R&A's Wedding — The Union of Razia & Abduraziq",
-  "short_name": "R&A's Wedding",
-  "description": "Your exclusive digital invitation and event companion.",
-  "start_url": "/invite",
+  "short_name": "R&A Wedding",
+  "description": "Your exclusive digital invitation, VIP boarding pass, live memories wall, and event companion.",
+  "start_url": "/invitation",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#022c22",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "background_color": "#031811",
   "theme_color": "#d4af37",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -19,8 +23,36 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "screenshots": [],
-  "categories": ["entertainment", "lifestyle"]
+  "shortcuts": [
+    {
+      "name": "VIP Boarding Pass",
+      "short_name": "Pass",
+      "description": "View your door check-in QR pass and timeline",
+      "url": "/invitation",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Memory Wall",
+      "short_name": "Memories",
+      "description": "Live photos and videos from the celebration",
+      "url": "/live-wall",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Synergy Cam & Studio",
+      "short_name": "Camera",
+      "description": "Take and share wedding memories",
+      "url": "/event",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["lifestyle", "social", "entertainment"]
 }

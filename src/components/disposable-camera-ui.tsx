@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye } from 'lucide-react';
+import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye, ImageIcon, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
@@ -144,6 +144,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
@@ -353,6 +354,13 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
         accept="image/*,video/*"
         capture="environment"
         ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <input
+        type="file"
+        accept="image/*,video/*"
+        ref={galleryInputRef}
         onChange={handleFileChange}
         className="hidden"
       />
@@ -718,16 +726,31 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
 
       {/* ── CAMERA BODY CONTROLS ─────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-6 pb-6 pt-3 gap-4 bg-black/60 backdrop-blur-md mt-2">
-        {/* Film wind action */}
-        <div className="flex flex-col items-center gap-1 w-12">
-          <motion.div
-            animate={isWinding ? { rotate: 360 } : { rotate: 0 }}
-            transition={{ duration: 0.6 }}
-            className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center bg-black/30 shadow-inner"
+        {/* Left controls: Gallery Upload & Film wind */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            disabled={isBusy || outOfFilm}
+            className="flex flex-col items-center gap-1 group"
+            title="Upload photo or video from device library"
           >
-            <RotateCcw size={14} className={cn("transition-colors", isWinding ? "text-amber-400 animate-spin" : "text-white/20")} />
-          </motion.div>
-          <p className="text-[8px] text-white/30 uppercase tracking-widest">Wind</p>
+            <div className="w-10 h-10 rounded-full border border-amber-500/30 flex items-center justify-center bg-white/5 group-hover:bg-amber-500/20 group-hover:border-amber-400 transition-all shadow-inner">
+              <ImageIcon size={17} className="text-amber-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <p className="text-[8px] text-white/50 uppercase tracking-widest group-hover:text-amber-300">Upload</p>
+          </button>
+
+          <div className="flex flex-col items-center gap-1">
+            <motion.div
+              animate={isWinding ? { rotate: 360 } : { rotate: 0 }}
+              transition={{ duration: 0.6 }}
+              className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-black/30 shadow-inner"
+            >
+              <RotateCcw size={15} className={cn("transition-colors", isWinding ? "text-amber-400 animate-spin" : "text-white/30")} />
+            </motion.div>
+            <p className="text-[8px] text-white/30 uppercase tracking-widest">Wind</p>
+          </div>
         </div>
 
         {/* Shutter capture trigger button */}

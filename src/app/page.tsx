@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  let redirectToStd = true; // default: redirect to Save the Date
+  let redirectToStd = false; // Default: Wedding Invitation & Guest VIP Hub is LIVE
   try {
     const { data } = await supabaseAdmin
       .from('std_config')
@@ -13,11 +13,11 @@ export default async function Home() {
       .single();
 
     if (data?.config && typeof data.config === 'object' && 'redirectToStd' in data.config) {
-      redirectToStd = (data.config as { redirectToStd: boolean }).redirectToStd;
+      redirectToStd = Boolean((data.config as { redirectToStd?: boolean }).redirectToStd);
     }
   } catch (err) {
-    console.error('[Root redirect] failed to fetch config, defaulting to STD:', err);
+    console.error('[Root redirect] failed to fetch config, defaulting to invitation:', err);
   }
 
-  redirect(redirectToStd ? '/std' : '/event');
+  redirect(redirectToStd ? '/std' : '/invitation');
 }

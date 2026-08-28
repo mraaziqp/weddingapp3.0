@@ -234,7 +234,7 @@ export default function DashboardPage() {
                       <Sparkles className="text-red-400 animate-pulse" size={18} />
                       Wedding Day Mode
                     </h3>
-                    <p className="text-xs text-red-300/70">🎉 Activate celebration mode & special features</p>
+                    <p className="text-xs text-red-300/70">🎉 Activate celebration mode &amp; special features</p>
                   </div>
                   <Switch
                     checked={weddingDayMode}
@@ -243,6 +243,160 @@ export default function DashboardPage() {
                     className="data-[state=checked]:bg-red-500"
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── LIVE EVENING, ENTERTAINMENT & GALLERY SUITE ── */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-white/10 bg-black/50 backdrop-blur-2xl shadow-2xl overflow-hidden">
+            <CardHeader className="border-b border-white/10 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl text-amber-300 font-headline">
+                    <Sparkles className="text-amber-400" size={20} />
+                    Live Evening, Entertainment &amp; Gallery Suite
+                  </CardTitle>
+                  <CardDescription>
+                    Quick-launch projector screens, live guest memory walls, entertainment playlists, and bouncer check-in.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 1. Live Memory Wall */}
+                <a
+                  href="/live-wall"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-amber-500/25 hover:border-amber-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      📸
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                      Live Memory Wall &amp; Gallery
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Real-time photo stream with dynamic live updates from guests.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-amber-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Open Live Wall &rarr;
+                  </span>
+                </a>
+
+                {/* 2. Venue Projector Screen */}
+                <a
+                  href="/venue-screen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-emerald-500/25 hover:border-emerald-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      📺
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      Venue Projection Screen
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Optimized full-screen display for projector or venue TV screens.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-emerald-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Launch Big Screen &rarr;
+                  </span>
+                </a>
+
+                {/* 3. Entertainment & Playlist */}
+                <a
+                  href="/playlist"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-purple-500/25 hover:border-purple-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      🎵
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
+                      Evening Playlist &amp; Vibe
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Guest song requests, curated playlist tracks, and dance floor music.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-purple-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Manage Playlist &rarr;
+                  </span>
+                </a>
+
+                {/* 4. Memory Vault (Private Photos) */}
+                <a
+                  href="/vault"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-pink-500/25 hover:border-pink-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      🔒
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-pink-300 transition-colors">
+                      Secret Couple&apos;s Vault
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Private photos and voice recordings sent exclusively to the couple.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-pink-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Open Memory Vault &rarr;
+                  </span>
+                </a>
+
+                {/* 5. Guest VIP Hub Live View */}
+                <a
+                  href="/invitation"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-cyan-500/25 hover:border-cyan-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      🎟️
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
+                      Guest VIP Hub &amp; Pass
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Experience the live guest companion with Pass, Camera, Games &amp; Wishes.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-cyan-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Preview Guest View &rarr;
+                  </span>
+                </a>
+
+                {/* 6. Bouncer Mode / QR Scanner */}
+                <a
+                  href="/qr-scanner"
+                  className="group flex flex-col justify-between p-5 rounded-2xl bg-white/[0.04] border border-amber-500/25 hover:border-amber-400/60 hover:bg-white/[0.08] transition-all shadow-lg hover:-translate-y-1"
+                >
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                      🚨
+                    </div>
+                    <h4 className="font-headline text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                      Bouncer Mode (QR Check-in)
+                    </h4>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      Scan guest passes at the door with camera for immediate VIP check-in.
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center text-xs font-semibold text-amber-400 gap-1 group-hover:translate-x-1 transition-transform">
+                    Launch QR Scanner &rarr;
+                  </span>
+                </a>
               </div>
             </CardContent>
           </Card>
