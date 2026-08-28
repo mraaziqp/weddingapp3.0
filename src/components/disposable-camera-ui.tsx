@@ -219,46 +219,36 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
 
     try {
       const file = await compressImageFile(rawFile);
-      const path = `photos/${Date.now()}-${file.name}`;
+      const preview = previewSrc ?? createTrackedObjectURL(file);
 
-      const { data: uploadData, error: uploadError } = await withTimeout(
-        supabase.storage.from('wedding-photos').upload(path, file, { contentType: file.type, upsert: false }),
-        30000
-      );
+      // Instant UI response for guest
+      setRecentShots(prev => [...prev, preview]);
+      setPolaroidSrc(preview);
+      setPolaroidVisible(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('guestId', guestId || '');
+      formData.append('visibility', localVisibility);
+      if (questTag) formData.append('questTag', questTag);
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
       // A stale response (user already retried/moved on) should be ignored.
       if (uploadRequestIdRef.current !== requestId) return;
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('wedding-photos')
-        .getPublicUrl(uploadData.path);
-
-      // The file is safely in storage at this point — don't fail the whole
-      // upload (and re-prompt the guest to retake the shot) just because the
-      // metadata row failed to write; log it instead so it can be reconciled later.
-      try {
-        await supabase.from('media').insert({
-          media_url: publicUrl,
-          media_type: 'image',
-          visibility: localVisibility,
-          quest_tag: questTag ?? null,
-          guest_id: guestId,
-        });
-      } catch (metaError) {
-        console.error('Media metadata insert failed (file uploaded fine):', metaError);
-      }
 
       toast({
         title: localVisibility === 'public' ? '🌍 Shared to the Live Wall!' : '🔒 Secretly sent to the Couple!',
         description: 'Your memory has been captured.',
       });
-
-      const src = previewSrc ?? createTrackedObjectURL(file);
-      setRecentShots(prev => [...prev, src]);
-      setPolaroidSrc(src);
-      setPolaroidVisible(true);
 
       import('canvas-confetti').then(({ default: confetti }) => {
         confetti({
@@ -270,7 +260,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       });
 
       setShotsLeft(prev => prev - 1);
-      onUploadComplete({ url: publicUrl });
+      onUploadComplete({ url: data.mediaUrl || preview });
 
       setIsWinding(true);
       setTimeout(() => setIsWinding(false), 700);
@@ -278,14 +268,11 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     } catch (error) {
       if (uploadRequestIdRef.current !== requestId) return;
       console.error('Upload error:', error);
-      const timedOut = error instanceof UploadTimeoutError;
       setLastFailedUpload({ file: rawFile, previewSrc });
       toast({
         variant: 'destructive',
-        title: timedOut ? 'Upload is taking too long' : 'Upload failed',
-        description: timedOut
-          ? 'Your connection looks slow. Tap "Try Again" to retry this shot.'
-          : 'Could not upload your memory. Tap "Try Again" to retry.',
+        title: 'Upload failed',
+        description: 'Could not upload your memory. Tap "Try Again" to retry.',
       });
     } finally {
       clearTimeout(stalledTimer);
