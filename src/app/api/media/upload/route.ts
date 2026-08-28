@@ -13,7 +13,7 @@ async function getWorkingBucket(): Promise<string> {
         return bucket;
       }
     } catch {
-      // Continue to next check
+      // Continue
     }
   }
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
-    const guestId = (formData.get('guestId') as string) || '';
+    const rawGuestId = (formData.get('guestId') as string) || '';
     const visibility = ((formData.get('visibility') as string) || 'public') as 'public' | 'private';
     const questTag = (formData.get('questTag') as string) || null;
 
@@ -78,7 +78,22 @@ export async function POST(req: NextRequest) {
       mediaUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
     }
 
-    // 3. Insert record into Supabase `media` table
+    // 3. Verify if guestId exists in guests table to avoid FK constraint error
+    let validGuestId: string | null = null;
+    if (rawGuestId) {
+      try {
+        const { data: g } = await supabaseAdmin
+          .from('guests')
+          .select('id')
+          .eq('id', rawGuestId)
+          .maybeSingle();
+        if (g?.id) validGuestId = g.id;
+      } catch {
+        validGuestId = null;
+      }
+    }
+
+    // 4. Insert record into Supabase `media` table with auto-retry
     let insertResult = null;
     try {
       const { data, error } = await supabaseAdmin.from('media').insert({
@@ -86,12 +101,24 @@ export async function POST(req: NextRequest) {
         media_type: fileType,
         visibility: visibility,
         quest_tag: questTag,
-        guest_id: guestId || null,
+        guest_id: validGuestId,
         created_at: new Date().toISOString(),
       }).select().single();
 
       if (error) {
-        console.error('[Media Upload] Database insert error:', error);
+        console.warn('[Media Upload] Primary insert failed, retrying with guest_id=null:', error);
+        const { data: retryData, error: retryError } = await supabaseAdmin.from('media').insert({
+          media_url: mediaUrl,
+          media_type: fileType,
+          visibility: visibility,
+          quest_tag: questTag,
+          guest_id: null,
+          created_at: new Date().toISOString(),
+        }).select().single();
+
+        if (!retryError && retryData) {
+          insertResult = retryData;
+        }
       } else {
         insertResult = data;
       }
