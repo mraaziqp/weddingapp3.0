@@ -483,6 +483,39 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                   </div>
                 </div>
 
+                {/* ── Evening Celebration & Games Spotlight ── */}
+                <div className="bg-gradient-to-r from-[#1b2a22] via-[#0d1f17] to-[#1b2a22] border border-[#d4af37]/40 rounded-3xl p-5 sm:p-6 shadow-xl text-white">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-center sm:text-left space-y-1">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#d4af37]/20 text-[#f6e7b7] border border-[#d4af37]/30">
+                        <Sparkles size={11} className="text-[#d4af37] animate-pulse" /> Celebration Mode Active
+                      </div>
+                      <h3 className="font-headline italic text-2xl font-bold text-[#f6e7b7]">
+                        Join Tonight&apos;s Games &amp; Memories!
+                      </h3>
+                      <p className="text-xs text-white/70 max-w-md">
+                        Complete photo scavenger quests, play couple trivia, and upload your live photos &amp; videos to the big screen wall!
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
+                      <Button
+                        onClick={() => handleTabChange('games')}
+                        className="flex-1 sm:flex-initial rounded-2xl bg-gradient-to-r from-[#f6e7b7] via-[#d4af37] to-[#c8a030] text-black font-extrabold h-11 px-5 text-xs shadow-lg hover:scale-105 transition-all"
+                      >
+                        <Gamepad2 size={16} className="mr-1.5" /> Play Games
+                      </Button>
+                      <Button
+                        onClick={() => handleTabChange('capture')}
+                        variant="outline"
+                        className="flex-1 sm:flex-initial rounded-2xl border-[#d4af37]/50 bg-white/10 hover:bg-[#d4af37]/20 text-[#f6e7b7] font-bold h-11 px-5 text-xs shadow-sm"
+                      >
+                        <Camera size={16} className="mr-1.5" /> Upload Media
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* ── Holographic VIP Pass Card ── */}
                 <div className="relative max-w-lg mx-auto w-full">
                   <motion.div

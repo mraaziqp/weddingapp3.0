@@ -293,24 +293,13 @@ function EventPageContent() {
     );
   }
 
-  if (!guestId || !household) {
-    return (
-      <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-6 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(145deg,#fffdf8,#f7f0e4)] text-[#1C1C1C] p-8 text-center">
-        <motion.span
-          className="font-headline text-6xl text-luxe-gradient"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ textShadow: '0 0 30px rgba(212,175,55,0.3)' }}
-        >
-          R&amp;A
-        </motion.span>
-        <h2 className="font-headline text-2xl italic text-[#1C1C1C]">Oops — we couldn&apos;t find your invite.</h2>
-        <p className="text-base text-black/40 max-w-xs leading-relaxed">
-          Please scan your QR code from your original invitation link, or ask Razia or Abduraziq for help.
-        </p>
-      </div>
-    );
-  }
+  const effectiveHousehold: Household = household || {
+    id: guestId || 'guest-vip',
+    name: 'Honoured VIP Guest',
+    address: '',
+    qrCode: guestId || 'VIP-GUEST',
+    guests: [],
+  };
 
   const handleIntroComplete = () => {
     sessionStorage.setItem('hasSeenEventIntro', 'true');
@@ -320,9 +309,9 @@ function EventPageContent() {
   return (
     <>
       <AnimatePresence>
-        {!introDone && <EventDayIntro household={household} onComplete={handleIntroComplete} />}
+        {!introDone && <EventDayIntro household={effectiveHousehold} onComplete={handleIntroComplete} />}
       </AnimatePresence>
-      {introDone && <GuestDashboard household={household} />}
+      {introDone && <GuestDashboard household={effectiveHousehold} />}
     </>
   );
 }
