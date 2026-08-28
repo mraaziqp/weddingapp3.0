@@ -1,81 +1,116 @@
-
 'use client';
 
-import { motion } from "framer-motion";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { Heart } from "lucide-react";
-import { useState } from "react";
-import type { WallItem } from "@/lib/media";
-
-// Generates a base64 gold blur placeholder so images "reveal" from a warm
-// champagne shimmer rather than a grey void.
-const toBase64 = (str: string) =>
-  typeof window === 'undefined' ? Buffer.from(str).toString('base64') : window.btoa(str);
-
-const GOLD_BLUR_DATA_URL = `data:image/svg+xml;base64,${toBase64(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><rect width="50" height="50" fill="#d4af37" opacity="0.25"/></svg>`
-)}`;
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Heart, Play } from 'lucide-react';
+import type { WallItem } from '@/lib/media';
 
 const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-        opacity: 1,
-        transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-    },
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 50, scale: 0.9 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 100 } },
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 120, damping: 16 } },
 };
 
 const Polaroid = ({ item, className }: { item: WallItem; className?: string }) => {
-    const [isLiked, setIsLiked] = useState(false);
-    
-    return (
-     <motion.div 
-        variants={itemVariants} 
-        className={cn("break-inside-avoid-column p-2 pb-4 bg-white/90 rounded-sm shadow-lg rotate-[-2deg] transition-transform duration-300 hover:rotate-0 hover:scale-105", className)}
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(item.likes || 0);
+
+  const isVideo =
+    item.imageUrl?.startsWith('data:video') ||
+    /\.(mp4|webm|mov|ogg)$/i.test(item.imageUrl || '') ||
+    item.description?.toLowerCase().includes('video');
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isLiked) {
+      setIsLiked(true);
+      setLikeCount(prev => prev + 1);
+    } else {
+      setIsLiked(false);
+      setLikeCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className={cn(
+        'break-inside-avoid-column p-2.5 pb-4 bg-white/95 text-black rounded-2xl shadow-xl transition-all duration-300 hover:rotate-0 hover:scale-[1.03] hover:shadow-2xl border border-black/5',
+        className
+      )}
     >
-        <div className="relative">
-            <Image 
-                src={item.imageUrl} 
-                alt={item.description} 
-                width={500} 
-                height={500} 
-                className="w-full h-auto object-cover"
-                placeholder="blur"
-                blurDataURL={GOLD_BLUR_DATA_URL}
-                data-ai-hint={item.imageHint}
-            />
+      <div className="relative rounded-xl overflow-hidden bg-black/5 aspect-[4/5] flex items-center justify-center">
+        {isVideo ? (
+          <video
+            src={item.imageUrl}
+            controls
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={item.imageUrl}
+            alt={item.description || 'Wedding memory'}
+            className="w-full h-full object-cover select-none"
+            loading="lazy"
+          />
+        )}
+      </div>
+
+      <div className="flex justify-between items-center pt-3 px-1.5">
+        <div>
+          <p className="font-headline text-sm sm:text-base font-bold italic text-gray-900 leading-tight">
+            {item.guestName || 'Wedding Guest'}
+          </p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
+            {item.description || 'Cherished memory'}
+          </p>
         </div>
-        <div className="flex justify-between items-center pt-3 px-1">
-            <p className="font-headline text-center text-lg italic text-black">{item.guestName}</p>
-            <button onClick={() => setIsLiked(!isLiked)} className="flex items-center gap-1 text-gray-500">
-                <Heart className={cn("transition-colors", isLiked ? 'text-red-500 fill-current' : 'text-gray-400')} size={16} />
-                <span className="text-sm font-medium">{item.likes + (isLiked ? 1 : 0)}</span>
-            </button>
-        </div>
+
+        <button
+          onClick={handleLike}
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+        >
+          <Heart
+            className={cn('transition-all', isLiked ? 'text-red-500 fill-current scale-110' : 'text-gray-400')}
+            size={16}
+          />
+          <span className="font-semibold text-gray-600 tabular-nums">{likeCount}</span>
+        </button>
+      </div>
     </motion.div>
-)};
+  );
+};
 
 export function LiveMasonryGrid({ mediaItems }: { mediaItems: WallItem[] }) {
-
-    return (
-        <motion.div 
-            className="columns-2 sm:columns-3 gap-4 space-y-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-        >
-            {mediaItems.map((item, i) => (
-                <Polaroid key={item.id} item={item} className={cn(
-                    i % 4 === 1 && "rotate-[3deg]",
-                    i % 4 === 2 && "rotate-[-4deg]",
-                    i % 4 === 3 && "rotate-[1deg]",
-                )}/>
-            ))}
-        </motion.div>
-    );
+  return (
+    <motion.div
+      className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {mediaItems.map((item, i) => (
+        <Polaroid
+          key={item.id || i}
+          item={item}
+          className={cn(
+            i % 4 === 1 && 'rotate-[1.5deg]',
+            i % 4 === 2 && 'rotate-[-1.5deg]',
+            i % 4 === 3 && 'rotate-[1deg]'
+          )}
+        />
+      ))}
+    </motion.div>
+  );
 }
