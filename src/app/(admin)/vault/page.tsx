@@ -2,16 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Download } from 'lucide-react';
+import { Heart, Download, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { VaultUploader } from '@/components/vault-uploader';
 
-/** One photo as /api/media returns it, reshaped to what this page renders. */
+/** One item as /api/media returns it, reshaped to what this page renders. */
 type VaultItem = {
   id: string;
   media_url: string;
   guestName: string | null;
+  /** Videos need a <video> element; an <img> would just never load. */
+  isVideo: boolean;
 };
 
 export default function VaultPage() {
@@ -41,11 +44,22 @@ export default function VaultPage() {
       const body = await res.json();
 
       setMediaItems(
-        (body.items ?? []).map((m: { id: string; url: string; guestName: string | null }) => ({
-          id: m.id,
-          media_url: m.url,
-          guestName: m.guestName,
-        }))
+        (body.items ?? []).map(
+          (m: {
+            id: string;
+            url: string;
+            guestName: string | null;
+            kind?: string;
+            mimeType?: string;
+          }) => ({
+            id: m.id,
+            media_url: m.url,
+            guestName: m.guestName,
+            // `kind` is set on upload; fall back to the MIME type for files
+            // stored before that property existed.
+            isVideo: m.kind === 'video' || Boolean(m.mimeType?.startsWith('video/')),
+          })
+        )
       );
     } catch (error) {
       console.error('Failed to load media:', error);
@@ -109,6 +123,14 @@ export default function VaultPage() {
         ))}
       </div>
 
+      {/* Bulk upload — many photos and videos in one go. Uploads land in the
+          tab that is currently open, so the couple can put something straight
+          into the private vault without it touching the shared gallery. */}
+      <VaultUploader
+        visibility={activeTab === 'shared' ? 'public' : 'private'}
+        onUploaded={loadMedia}
+      />
+
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12 text-white/40">
@@ -143,19 +165,37 @@ export default function VaultPage() {
                   onClick={() => setSelectedPhoto(item)}
                   className="relative group rounded-lg overflow-hidden bg-white/5 border border-white/10 cursor-pointer"
                 >
-                  {/* Image */}
+                  {/* Image or video */}
                   <div className="relative w-full aspect-square">
-                    <Image
-                      src={item.media_url}
-                      alt="Guest photo"
-                      fill
-                      // Matches the grid below (2 / 3 / 4 columns). Without
-                      // this next/image assumes the image is full-viewport
-                      // width and ships a far larger file than the thumbnail
-                      // slot needs.
-                      sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
+                    {item.isVideo ? (
+                      <>
+                        {/* preload="metadata" so the tile can show a first
+                            frame without pulling the whole clip down for
+                            every video in the grid. */}
+                        <video
+                          src={item.media_url}
+                          preload="metadata"
+                          muted
+                          playsInline
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                          <Play size={26} className="text-white/90" fill="currentColor" />
+                        </div>
+                      </>
+                    ) : (
+                      <Image
+                        src={item.media_url}
+                        alt="Guest photo"
+                        fill
+                        // Matches the grid below (2 / 3 / 4 columns). Without
+                        // this next/image assumes the image is full-viewport
+                        // width and ships a far larger file than the thumbnail
+                        // slot needs.
+                        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    )}
                   </div>
 
                   {/* Hover Overlay */}
@@ -172,7 +212,7 @@ export default function VaultPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        downloadPhoto(item.media_url, `photo-${item.id}.jpg`);
+                        downloadPhoto(item.media_url, `${item.isVideo ? 'video' : 'photo'}-${item.id}${item.isVideo ? '.mp4' : '.jpg'}`);
                       }}
                       className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
                     >
@@ -205,14 +245,24 @@ export default function VaultPage() {
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-2xl w-full"
           >
-            <Image
-              src={selectedPhoto.media_url}
-              alt="Full photo"
-              width={600}
-              height={600}
-              sizes="(min-width: 768px) 672px, 100vw"
-              className="w-full rounded-lg"
-            />
+            {selectedPhoto.isVideo ? (
+              <video
+                src={selectedPhoto.media_url}
+                controls
+                autoPlay
+                playsInline
+                className="w-full rounded-lg"
+              />
+            ) : (
+              <Image
+                src={selectedPhoto.media_url}
+                alt="Full photo"
+                width={600}
+                height={600}
+                sizes="(min-width: 768px) 672px, 100vw"
+                className="w-full rounded-lg"
+              />
+            )}
             <button
               onClick={() => setSelectedPhoto(null)}
               className="absolute -top-10 right-0 text-white hover:text-amber-400 transition-colors"

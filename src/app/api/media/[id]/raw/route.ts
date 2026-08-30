@@ -28,7 +28,11 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   try {
-    const file = await getMediaStream(id);
+    // Forwarded so <video> can seek. A video element asks for byte ranges;
+    // without this it must fetch the whole clip before playing and the
+    // scrubber does nothing.
+    const range = _req.headers.get('range');
+    const file = await getMediaStream(id, range);
     if (!file) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -37,12 +41,15 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       'Content-Type': file.mimeType,
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
-      // Photos are shown inline on the wall, never offered as a download here.
+      // Media is shown inline on the wall, never offered as a download here.
       'Content-Disposition': 'inline',
+      // Tells the browser ranged requests are worth making at all.
+      'Accept-Ranges': 'bytes',
     });
     if (file.size) headers.set('Content-Length', file.size);
+    if (file.contentRange) headers.set('Content-Range', file.contentRange);
 
-    return new NextResponse(file.body, { status: 200, headers });
+    return new NextResponse(file.body, { status: file.status, headers });
   } catch (err) {
     console.error(`[Media] raw fetch failed for ${id}:`, err);
     return NextResponse.json({ error: 'Could not load that photo' }, { status: 502 });

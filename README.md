@@ -239,3 +239,25 @@ Covers quick-join, wedding/event media isolation, scavenger scoring off a real
 upload, reaction idempotency, and admin moderation. Note that unless
 `FIRESTORE_EMULATOR_HOST` is set, this writes notes and scores to the **real**
 Firestore project — point it at the emulator or clean up afterwards.
+
+## Bulk upload in the Memory Vault
+
+`/vault` takes any number of photos and videos at once — multi-select or drag a
+whole folder in, with per-file progress and retry.
+
+Uploads go to Drive through a **resumable session**: `/api/media/upload-session`
+(admin-gated) mints a single-use URI and the browser PUTs the bytes straight to
+Google. This is not an optimisation — it is required. The app deploys to
+Firebase App Hosting, which is Cloud Run, and Cloud Run refuses a request body
+over 32MB, while a thirty-second phone clip is routinely larger. Proxying the
+bytes would also mean paying for them twice, in and back out.
+
+`/api/media/upload` stays the guest path and keeps its 15MB ceiling; the vault
+falls back to it only for files that would actually fit, so a network blocking
+Google's upload host degrades rather than fails.
+
+Videos need byte ranges to play and seek, so `/api/media/<id>/raw` forwards
+`Range` to Drive and answers `206` with `Content-Range`. Without it a browser
+must download an entire clip before it will play, and the scrubber does nothing.
+
+    npm run test:vault    # both upload routes, kind tagging, Range playback

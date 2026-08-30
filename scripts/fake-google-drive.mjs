@@ -39,8 +39,11 @@ const server = http.createServer(async (req, res) => {
   try {
     if (path === '/token' && req.method === 'POST') return handleToken(req, res);
 
-    // Everything below is a Drive call and must carry the bearer token.
-    if (path !== '/reset') {
+    // Everything below is a Drive call and must carry the bearer token —
+    // except a resumable session PUT, whose URI already embeds its own
+    // authorisation. That is what lets the browser upload straight to Google
+    // without ever holding the OAuth token.
+    if (path !== '/reset' && !path.startsWith('/resumable/')) {
       const auth = req.headers.authorization;
       if (auth !== `Bearer ${ACCESS_TOKEN}`) {
         return json(res, 401, { error: { code: 401, message: 'Invalid Credentials' } });
@@ -50,6 +53,10 @@ const server = http.createServer(async (req, res) => {
     if (path === '/reset') { files.clear(); seq = 0; listCallCount = 0; return json(res, 200, { ok: true }); }
     if (path === '/stats') return json(res, 200, { listCallCount });
     if (path === '/upload/drive/v3/files' && req.method === 'POST') return handleUpload(req, res, url);
+    const resumableMatch = /^\/resumable\/([^/]+)$/.exec(path);
+    if (resumableMatch && req.method === 'PUT') {
+      return handleResumablePut(req, res, resumableMatch[1]);
+    }
     if (path === '/drive/v3/files' && req.method === 'GET') return handleList(res, url);
     if (path === '/drive/v3/files' && req.method === 'POST') return handleCreate(req, res);
 
@@ -104,9 +111,44 @@ async function handleCreate(req, res) {
  * multipart/related upload. Parses the body the way Drive does, so a
  * malformed boundary or a missing metadata part is caught here.
  */
+/** Open resumable sessions: token -> pending metadata. */
+const sessions = new Map();
+
 async function handleUpload(req, res, url) {
-  if (url.searchParams.get('uploadType') !== 'multipart') {
-    return json(res, 400, { error: { code: 400, message: 'expected uploadType=multipart' } });
+  const uploadType = url.searchParams.get('uploadType');
+
+  // Resumable: the metadata arrives now, the bytes arrive later by PUT to the
+  // session URI returned in Location. This is the path large videos take, so
+  // that they never pass through the app's own server.
+  if (uploadType === 'resumable') {
+    const raw = await readBody(req);
+    let meta;
+    try {
+      meta = JSON.parse(raw.toString('utf8'));
+    } catch {
+      return json(res, 400, { error: { code: 400, message: 'metadata is not valid JSON' } });
+    }
+    if (!meta.name) {
+      return json(res, 400, { error: { code: 400, message: 'metadata.name required' } });
+    }
+    for (const parent of meta.parents ?? []) {
+      if (!files.has(parent)) {
+        return json(res, 404, { error: { code: 404, message: `File not found: ${parent}.` } });
+      }
+    }
+
+    const token = randomBytes(12).toString('hex');
+    sessions.set(token, { meta, contentType: req.headers['x-upload-content-type'] || 'application/octet-stream' });
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      Location: `http://127.0.0.1:${PORT}/resumable/${token}`,
+    });
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  if (uploadType !== 'multipart') {
+    return json(res, 400, { error: { code: 400, message: 'expected uploadType=multipart or resumable' } });
   }
 
   const contentType = req.headers['content-type'] || '';
@@ -188,10 +230,69 @@ function handleGet(res, url, id) {
   const file = files.get(id);
   if (!file) return json(res, 404, { error: { code: 404, message: 'File not found' } });
   if (url.searchParams.get('alt') === 'media') {
-    res.writeHead(200, { 'Content-Type': file.mimeType, 'Content-Length': file.bytes.length });
+    // Honour Range the way Drive does. A <video> element seeks by asking for
+    // byte ranges, so a fake that always returns 200 would let a broken proxy
+    // pass these tests.
+    const range = res.req?.headers?.range;
+    const match = range && /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (match) {
+      const total = file.bytes.length;
+      const start = match[1] ? Number(match[1]) : 0;
+      const end = match[2] ? Math.min(Number(match[2]), total - 1) : total - 1;
+      if (start >= total || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${total}` });
+        return res.end();
+      }
+      const slice = file.bytes.subarray(start, end + 1);
+      res.writeHead(206, {
+        'Content-Type': file.mimeType,
+        'Content-Length': slice.length,
+        'Content-Range': `bytes ${start}-${end}/${total}`,
+        'Accept-Ranges': 'bytes',
+      });
+      return res.end(slice);
+    }
+
+    res.writeHead(200, {
+      'Content-Type': file.mimeType,
+      'Content-Length': file.bytes.length,
+      'Accept-Ranges': 'bytes',
+    });
     return res.end(file.bytes);
   }
   return json(res, 200, { ...project(file), trashed: file.trashed });
+}
+
+/**
+ * Receives the bytes for an open resumable session and materialises the file.
+ * This is the request a browser makes directly to Google, bypassing the app.
+ */
+async function handleResumablePut(req, res, token) {
+  const session = sessions.get(token);
+  if (!session) {
+    return json(res, 404, { error: { code: 404, message: 'Unknown or completed upload session' } });
+  }
+
+  const bytes = await readBody(req);
+  const { meta } = session;
+
+  const file = {
+    id: newId(),
+    name: meta.name,
+    mimeType: req.headers['content-type'] || session.contentType,
+    size: String(bytes.length),
+    createdTime: new Date(Date.now() + seq).toISOString(),
+    appProperties: meta.appProperties ?? {},
+    parents: meta.parents ?? [],
+    trashed: false,
+    bytes,
+  };
+  files.set(file.id, file);
+
+  // One-shot: replaying a completed session must not create a second file.
+  sessions.delete(token);
+
+  return json(res, 200, project(file));
 }
 
 async function handlePatch(req, res, id) {

@@ -15,10 +15,19 @@ export const runtime = 'nodejs';
 // Guests upload at the venue in real time — nothing here may be cached.
 export const dynamic = 'force-dynamic';
 
-/** Client-side compression targets ~1600px/0.82 JPEG, well under this. */
+/**
+ * Client-side compression targets ~1600px/0.82 JPEG, well under this.
+ *
+ * Deliberately not raised to accommodate video. The platform caps a request
+ * body at 32MB (Firebase App Hosting is Cloud Run), and a clip large enough to
+ * strain this limit should be going straight to Drive through a resumable
+ * session anyway — see /api/media/upload-session. Video that fits is welcome
+ * here; video that doesn't has a better route than a bigger ceiling.
+ */
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
-const ALLOWED_MIME = /^image\/(jpeg|png|webp|heic|heif|gif)$/;
+const ALLOWED_MIME =
+  /^(image\/(jpeg|png|webp|heic|heif|gif)|video\/(mp4|quicktime|webm|x-matroska|3gpp))$/;
 
 export async function POST(req: NextRequest) {
   if (!isDriveConfigured()) {
@@ -49,7 +58,10 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!ALLOWED_MIME.test(file.type)) {
-    return NextResponse.json({ error: 'Only image files can be uploaded' }, { status: 415 });
+    return NextResponse.json(
+      { error: 'Only photos and videos can be uploaded' },
+      { status: 415 }
+    );
   }
 
   const visibility: MediaVisibility = form.get('visibility') === 'private' ? 'private' : 'public';

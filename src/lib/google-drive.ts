@@ -53,8 +53,15 @@ export type MediaVisibility = 'public' | 'private';
  */
 export type MediaScope = 'wedding' | 'event';
 
-/** Photos and voice memos share a folder; this is what tells them apart. */
-export type MediaKind = 'photo' | 'voice';
+/** Photos, videos and voice memos share a folder; this is what tells them apart. */
+export type MediaKind = 'photo' | 'video' | 'voice';
+
+/** Classifies an upload from its MIME type, for the `kind` appProperty. */
+export function kindForMime(mimeType: string): MediaKind {
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'voice';
+  return 'photo';
+}
 
 export type DriveMedia = {
   id: string;
@@ -300,7 +307,7 @@ function toDriveMedia(f: DriveFile): DriveMedia {
     questTag: props.questTag || null,
     width: f.imageMediaMetadata?.width ?? null,
     height: f.imageMediaMetadata?.height ?? null,
-    kind: props.kind === 'voice' ? 'voice' : 'photo',
+    kind: props.kind === 'voice' || props.kind === 'video' ? props.kind : 'photo',
     caption: props.caption || null,
     hidden: props.hidden === 'true',
   };
@@ -356,7 +363,10 @@ async function uploadToFolder(input: UploadMediaInput, folderId: string): Promis
   if (input.guestId) appProperties.guestId = clampProp(input.guestId);
   if (input.guestName) appProperties.guestName = clampProp(input.guestName);
   if (input.questTag) appProperties.questTag = clampProp(input.questTag);
-  if (input.kind) appProperties.kind = input.kind;
+  // Derived from the MIME type when the caller does not say, so a video
+  // uploaded through this route is still tagged as one and the Vault knows to
+  // render a player rather than an <img> that will never load.
+  appProperties.kind = input.kind ?? kindForMime(input.mimeType);
   if (input.caption) appProperties.caption = clampProp(input.caption);
 
   const metadata = {
@@ -379,6 +389,80 @@ async function uploadToFolder(input: UploadMediaInput, folderId: string): Promis
 
   invalidateListCache();
   return toDriveMedia(file);
+}
+
+/**
+ * Opens a resumable upload session and returns the URI the browser PUTs to.
+ * ────────────────────────────────────────────────────────────────────────
+ * Videos do not fit through the app's own upload route. This deploys to
+ * Firebase App Hosting, which is Cloud Run, and Cloud Run refuses a request
+ * body over 32MB — while a thirty-second clip off a phone is routinely 60MB
+ * or more. Proxying the bytes would also mean paying for them twice: once
+ * into the container, once back out to Google.
+ *
+ * So the server only mints the session. The OAuth token is spent here and
+ * never leaves; what the browser receives is a single-use URI scoped to one
+ * file in one folder, which is why this is safe to hand out — and why the
+ * route that calls it is still admin-gated, since minting them freely would
+ * let anyone write into the couple's Drive.
+ *
+ * The returned URI accepts a cross-origin PUT (Google sets CORS headers on
+ * the upload host), and the browser can resume an interrupted one against the
+ * same URI rather than restarting a 60MB video on a flaky venue connection.
+ */
+export async function createResumableSession(input: {
+  filename: string;
+  mimeType: string;
+  visibility: MediaVisibility;
+  scope?: MediaScope;
+  guestId?: string | null;
+  guestName?: string | null;
+  questTag?: string | null;
+  caption?: string | null;
+  /** Total byte length, so Drive can reject an over-large file up front. */
+  sizeBytes?: number;
+}): Promise<{ uploadUri: string }> {
+  const folderId = await folderIdForScope(input.scope ?? 'wedding');
+
+  const appProperties: Record<string, string> = {
+    visibility: input.visibility,
+    app: 'wedu',
+    kind: kindForMime(input.mimeType),
+  };
+  if (input.guestId) appProperties.guestId = clampProp(input.guestId);
+  if (input.guestName) appProperties.guestName = clampProp(input.guestName);
+  if (input.questTag) appProperties.questTag = clampProp(input.questTag);
+  if (input.caption) appProperties.caption = clampProp(input.caption);
+
+  const metadata = {
+    name: input.filename,
+    parents: [folderId],
+    appProperties,
+  };
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Upload-Content-Type': input.mimeType,
+  };
+  if (input.sizeBytes) headers['X-Upload-Content-Length'] = String(input.sizeBytes);
+
+  const res = await driveFetch(
+    `${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=${encodeURIComponent(FILE_FIELDS)}`,
+    { method: 'POST', headers, body: JSON.stringify(metadata) }
+  );
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Drive API ${res.status} opening resumable session: ${body.slice(0, 200)}`);
+  }
+
+  // Drive returns the session URI in Location; it already carries its own
+  // upload token, so nothing further needs to be signed.
+  const uploadUri = res.headers.get('location');
+  if (!uploadUri) throw new Error('Drive did not return a resumable session URI');
+
+  invalidateListCache();
+  return { uploadUri };
 }
 
 /**
@@ -574,10 +658,24 @@ export async function countMedia(
   return total;
 }
 
-/** Streams one file's bytes back, for the same-origin image proxy. */
+/**
+ * Streams one file's bytes back, for the same-origin media proxy.
+ *
+ * `range` is forwarded to Drive verbatim so `<video>` can seek: a video
+ * element requests byte ranges rather than the whole file, and a proxy that
+ * ignores Range forces the browser to download the entire clip before it will
+ * play, and makes the scrubber inert.
+ */
 export async function getMediaStream(
-  fileId: string
-): Promise<{ body: ReadableStream<Uint8Array>; mimeType: string; size: string | null } | null> {
+  fileId: string,
+  range?: string | null
+): Promise<{
+  body: ReadableStream<Uint8Array>;
+  mimeType: string;
+  size: string | null;
+  status: number;
+  contentRange: string | null;
+} | null> {
   const meta = await driveFetch(
     `${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=id,mimeType,size,appProperties,trashed`
   );
@@ -590,15 +688,22 @@ export async function getMediaStream(
   // an unrelated document in the couple's Drive.
   if (file.appProperties?.app !== 'wedu') return null;
 
-  const download = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`);
-  if (!download.ok || !download.body) {
+  const download = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, {
+    headers: range ? { Range: range } : {},
+  });
+
+  // 206 is the success case for a ranged request, so it must not be treated
+  // as a failure alongside the genuine errors.
+  if ((!download.ok && download.status !== 206) || !download.body) {
     throw new Error(`Drive API ${download.status} downloading file`);
   }
 
   return {
     body: download.body as ReadableStream<Uint8Array>,
     mimeType: file.mimeType || 'application/octet-stream',
-    size: file.size ?? null,
+    size: download.headers.get('content-length') ?? file.size ?? null,
+    status: download.status === 206 ? 206 : 200,
+    contentRange: download.headers.get('content-range'),
   };
 }
 
