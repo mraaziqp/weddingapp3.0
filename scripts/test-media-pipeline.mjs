@@ -15,7 +15,7 @@
  * Exits non-zero on the first failing assertion.
  */
 
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
