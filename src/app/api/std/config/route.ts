@@ -13,7 +13,12 @@ const DEFAULTS = {
   city: 'Cape Town',
   bgImage: '/couple-bg.jpg',
   siteBgImage: '/couple-bg.jpg',
-  redirectToStd: true,
+  // The celebration is the default landing, matching src/app/page.tsx. This
+  // was `true`, so whenever Firestore was unreachable the GET fell back to
+  // these defaults and reported the envelope as switched on — which is what
+  // the dashboard renders its toggle from. The switch therefore showed "on"
+  // while the couple were trying to turn it off, on the one night it mattered.
+  redirectToStd: false,
 };
 
 const COLLECTION = 'std_config';
