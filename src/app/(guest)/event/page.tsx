@@ -478,7 +478,19 @@ function EventPageContent() {
     );
   }
 
-  if (!guestId || !household) {
+  // No invite code at all — somebody opened the site directly rather than
+  // following their link. That is not a broken invite, so it must not show the
+  // "we couldn't find your invite" dead end: this is also where the site root
+  // lands once Save the Date mode is switched off. Drop them straight into the
+  // hub as an anonymous guest — the wall and the games need no identity, and
+  // an upload without one is already allowed, it just credits "A Guest".
+  if (!guestId) {
+    return <GuestEventHub guestId="" />;
+  }
+
+  // A code was supplied and did not resolve. That *is* a broken link, and the
+  // guest needs telling rather than quietly being made anonymous.
+  if (!household) {
     return (
       <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-6 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(145deg,#fffdf8,#f7f0e4)] text-[#1C1C1C] p-8 text-center">
         <motion.span

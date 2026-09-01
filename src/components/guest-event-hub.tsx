@@ -138,7 +138,13 @@ export function GuestEventHub({ guestId }: { guestId: string }) {
       case 'capture':
         return <CaptureView guestId={guestId} questTag={activeQuest} onUploadComplete={handleCaptureComplete} />;
       case 'games':
-        return <GamesView onSelectQuest={handleSelectQuest} completedQuests={completedQuests} />;
+        return (
+          <GamesView
+            onSelectQuest={handleSelectQuest}
+            completedQuests={completedQuests}
+            partyMode={partyMode}
+          />
+        );
       default:
         return null;
     }
