@@ -56,3 +56,6 @@ firestore-debug.log
 *serviceAccount*.json
 firebase-adminsdk-*.json
 /secrets/
+
+# Local-only: contains the service account for pasting into the host.
+VERCEL_ENV_SETUP.txt

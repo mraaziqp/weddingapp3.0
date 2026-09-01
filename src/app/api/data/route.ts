@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as store from '@/lib/firestore-server';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
+import { isAdminConfigured } from '@/lib/firebase-admin';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 /**
@@ -120,6 +121,21 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
       );
     }
+  }
+
+  // A deploy without credentials fails every single read, and a generic 500
+  // makes that look like data loss rather than a missing environment
+  // variable. Say which one is missing instead.
+  if (!isAdminConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          'The database is not configured on this deployment. ' +
+          'Set FIREBASE_SERVICE_ACCOUNT_B64 in the hosting environment.',
+        configured: false,
+      },
+      { status: 503 }
+    );
   }
 
   const args = Array.isArray(body.args) ? body.args : [];
