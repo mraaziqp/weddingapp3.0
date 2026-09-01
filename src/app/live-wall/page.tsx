@@ -1,25 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Sparkles, Upload, RefreshCw, Trophy, Heart, Search, X, Film, Image as ImageIcon } from 'lucide-react';
 import { LiveMasonryGrid } from '@/components/live-masonry-grid';
 import { fetchPublicWallItems, deleteMediaItem, WallItem } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { compressImageFile } from '@/lib/image-utils';
+import { MultiMediaUploaderModal } from '@/components/multi-media-uploader-modal';
 
 const filterTabs = ['All', '📸 Photos', '🎥 Videos', '🎯 Quests'];
 
 export default function LiveWallPage() {
   const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [isUploaderModalOpen, setIsUploaderModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [authorName, setAuthorName] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const loadMedia = async () => {
@@ -53,72 +51,8 @@ export default function LiveWallPage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFiles = e.target.files;
-    e.target.value = '';
-    if (!rawFiles || rawFiles.length === 0) return;
-
-    let currentName = authorName.trim();
-    if (!currentName) {
-      const prompted = prompt('Enter your name or table number (e.g. Aunt Fatima):');
-      if (prompted && prompted.trim()) {
-        currentName = prompted.trim();
-        handleNameChange(currentName);
-      } else {
-        currentName = 'Wedding Guest';
-      }
-    }
-
-    const filesArray = Array.from(rawFiles);
-    setIsUploading(true);
-    setUploadProgress(`Uploading ${filesArray.length} item${filesArray.length > 1 ? 's' : ''}...`);
-
-    try {
-      const compressedFiles = await Promise.all(
-        filesArray.map(f => (f.type.startsWith('video') ? Promise.resolve(f) : compressImageFile(f)))
-      );
-
-      const formData = new FormData();
-      for (const file of compressedFiles) {
-        formData.append('files', file);
-      }
-      formData.append('visibility', 'public');
-      formData.append('guestId', 'live-wall-upload');
-      formData.append('guestName', currentName);
-
-      const res = await fetch('/api/media/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Upload failed');
-
-      toast({
-        title: `🎉 ${compressedFiles.length} Memory Added to Live Wall!`,
-        description: `Captured by ${currentName}`,
-      });
-
-      if (Array.isArray(data.items)) {
-        setMediaItems(prev => [...data.items, ...prev]);
-      } else {
-        loadMedia();
-      }
-
-      import('canvas-confetti').then(({ default: confetti }) => {
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      });
-    } catch (err) {
-      console.error(err);
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description: 'Please try uploading again.',
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(null);
-    }
+  const handleUploadSuccess = (newItems: WallItem[]) => {
+    setMediaItems(prev => [...newItems, ...prev]);
   };
 
   const handleDelete = async (id: string) => {
@@ -158,14 +92,11 @@ export default function LiveWallPage() {
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_50%_0%,#09261b_0%,#03160e_50%,#010905_100%)] text-white p-4 sm:p-6 lg:p-8 relative selection:bg-amber-500 selection:text-black">
-      {/* Hidden File Input with Multiple support */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/*,video/*"
-        onChange={handleFileUpload}
-        className="hidden"
+      {/* Dedicated Multi-Media Uploader Modal */}
+      <MultiMediaUploaderModal
+        isOpen={isUploaderModalOpen}
+        onClose={() => setIsUploaderModalOpen(false)}
+        onUploadSuccess={handleUploadSuccess}
       />
 
       {/* ── Evening Celebration Live Header ── */}
@@ -200,13 +131,12 @@ export default function LiveWallPage() {
             </div>
 
             <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+              onClick={() => setIsUploaderModalOpen(true)}
               size="lg"
               className="rounded-full bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 text-black font-extrabold px-7 hover:scale-105 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)]"
             >
               <Camera size={18} className="mr-2" />
-              {isUploading ? (uploadProgress || 'Uploading...') : '📸 Upload Photos & Videos'}
+              📸 Upload Photos &amp; Videos
             </Button>
 
             <Button
@@ -302,7 +232,7 @@ export default function LiveWallPage() {
               Select multiple photos and videos to share live on the big screen!
             </p>
             <Button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setIsUploaderModalOpen(true)}
               className="rounded-full bg-amber-400 text-black font-bold px-8 hover:bg-amber-300 shadow-lg"
             >
               <Camera size={16} className="mr-2" /> Upload Memories

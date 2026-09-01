@@ -7,7 +7,7 @@ import { LiveMasonryGrid } from '../live-masonry-grid';
 import { fetchPublicWallItems, WallItem } from '@/lib/media';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { compressImageFile } from '@/lib/image-utils';
+import { MultiMediaUploaderModal } from '../multi-media-uploader-modal';
 
 const filterTabs = ['All', '📸 Photos', '🎥 Videos', '🎯 Quests'];
 
@@ -20,11 +20,8 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [isUploaderModalOpen, setIsUploaderModalOpen] = useState(false);
   const [authorName, setAuthorName] = useState('');
-  const [lightboxItem, setLightboxItem] = useState<WallItem | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,73 +51,8 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
     return () => clearInterval(id);
   }, []);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFiles = e.target.files;
-    e.target.value = '';
-    if (!rawFiles || rawFiles.length === 0) return;
-
-    let currentName = authorName.trim();
-    if (!currentName) {
-      const prompted = prompt('Enter your name or table number (e.g. Aunt Fatima):');
-      if (prompted && prompted.trim()) {
-        currentName = prompted.trim();
-        handleNameChange(currentName);
-      } else {
-        currentName = 'Wedding Guest';
-      }
-    }
-
-    const filesArray = Array.from(rawFiles);
-    setIsUploading(true);
-    setUploadProgress(`Uploading ${filesArray.length} item${filesArray.length > 1 ? 's' : ''}...`);
-
-    try {
-      // Compress images in parallel (skip video compression)
-      const compressedFiles = await Promise.all(
-        filesArray.map(f => (f.type.startsWith('video') ? Promise.resolve(f) : compressImageFile(f)))
-      );
-
-      const formData = new FormData();
-      for (const file of compressedFiles) {
-        formData.append('files', file);
-      }
-      formData.append('visibility', 'public');
-      formData.append('guestId', 'gallery-guest');
-      formData.append('guestName', currentName);
-
-      const res = await fetch('/api/media/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Upload failed');
-
-      toast({
-        title: `🎉 ${compressedFiles.length} Memory Added!`,
-        description: `Live on the Memories Wall with tag: ${currentName}`,
-      });
-
-      if (Array.isArray(data.items)) {
-        setMediaItems(prev => [...data.items, ...prev]);
-      } else {
-        loadMedia();
-      }
-
-      import('canvas-confetti').then(({ default: confetti }) => {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.65 } });
-      });
-    } catch (err) {
-      console.error(err);
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description: 'Please try uploading again.',
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(null);
-    }
+  const handleUploadSuccess = (newItems: WallItem[]) => {
+    setMediaItems(prev => [...newItems, ...prev]);
   };
 
   // Filtered & Searched media items
@@ -153,14 +85,11 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
 
   return (
     <div className="p-2 sm:p-4 space-y-4">
-      {/* Hidden File Input for Multiple Uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/*,video/*"
-        onChange={handleFileUpload}
-        className="hidden"
+      {/* Dedicated Multi-Media Uploader Modal */}
+      <MultiMediaUploaderModal
+        isOpen={isUploaderModalOpen}
+        onClose={() => setIsUploaderModalOpen(false)}
+        onUploadSuccess={handleUploadSuccess}
       />
 
       <AnimatePresence mode="wait">
@@ -233,12 +162,11 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
                 </div>
 
                 <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
+                  onClick={() => setIsUploaderModalOpen(true)}
                   className="w-full sm:w-auto rounded-full bg-gradient-to-r from-[#f6e7b7] via-[#d4af37] to-[#c8a030] hover:scale-105 text-black font-extrabold px-5 text-xs shadow-md transition-all h-10"
                 >
                   <Camera size={16} className="mr-1.5" />
-                  {isUploading ? (uploadProgress || 'Uploading...') : '📸 Upload Photos / Videos'}
+                  📸 Upload Photos / Videos
                 </Button>
               </div>
             </div>
@@ -285,7 +213,7 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
         )}
       </AnimatePresence>
 
-      {/* Grid rendering */}
+      {/* Grid rendering with built-in Lightbox */}
       {filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center" style={{ color: subtitleColor }}>
           <div className="w-14 h-14 rounded-full bg-[#d4af37]/15 flex items-center justify-center mb-3 text-2xl shadow-inner">
@@ -298,7 +226,7 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
             Select multiple photos and videos from your phone to share live!
           </p>
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setIsUploaderModalOpen(true)}
             className="mt-4 rounded-full bg-[#d4af37] text-black font-bold px-6 text-xs hover:bg-[#b8992d] shadow-md"
           >
             <Upload size={14} className="mr-1.5" /> Upload Photos &amp; Videos
