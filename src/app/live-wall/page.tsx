@@ -1,27 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Sparkles, Upload, RefreshCw, Trophy, Heart, Volume2 } from 'lucide-react';
+import { Camera, Sparkles, Upload, RefreshCw, Trophy, Heart, Search, X, Film, Image as ImageIcon } from 'lucide-react';
 import { LiveMasonryGrid } from '@/components/live-masonry-grid';
 import { fetchPublicWallItems, deleteMediaItem, WallItem } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile } from '@/lib/image-utils';
 
+const filterTabs = ['All', '📸 Photos', '🎥 Videos', '🎯 Quests'];
+
 export default function LiveWallPage() {
   const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadCount, setUploadCount] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [authorName, setAuthorName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const loadMedia = async () => {
     try {
-      const items = await fetchPublicWallItems(80);
+      const items = await fetchPublicWallItems(100);
       setMediaItems(items);
-      setUploadCount(items.length);
     } catch {
       // Fallback
     } finally {
@@ -34,8 +38,6 @@ export default function LiveWallPage() {
     const interval = setInterval(loadMedia, 10000); // 10s live polling
     return () => clearInterval(interval);
   }, []);
-
-  const [authorName, setAuthorName] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,9 +54,9 @@ export default function LiveWallPage() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const rawFiles = e.target.files;
     e.target.value = '';
-    if (!file) return;
+    if (!rawFiles || rawFiles.length === 0) return;
 
     let currentName = authorName.trim();
     if (!currentName) {
@@ -67,11 +69,19 @@ export default function LiveWallPage() {
       }
     }
 
+    const filesArray = Array.from(rawFiles);
     setIsUploading(true);
+    setUploadProgress(`Uploading ${filesArray.length} item${filesArray.length > 1 ? 's' : ''}...`);
+
     try {
-      const compressed = await compressImageFile(file);
+      const compressedFiles = await Promise.all(
+        filesArray.map(f => (f.type.startsWith('video') ? Promise.resolve(f) : compressImageFile(f)))
+      );
+
       const formData = new FormData();
-      formData.append('file', compressed);
+      for (const file of compressedFiles) {
+        formData.append('files', file);
+      }
       formData.append('visibility', 'public');
       formData.append('guestId', 'live-wall-upload');
       formData.append('guestName', currentName);
@@ -85,22 +95,18 @@ export default function LiveWallPage() {
       if (!res.ok || !data.ok) throw new Error(data.error || 'Upload failed');
 
       toast({
-        title: '🎉 Memory Added to the Live Wall!',
+        title: `🎉 ${compressedFiles.length} Memory Added to Live Wall!`,
         description: `Captured by ${currentName}`,
       });
 
-      // Instantly prepend
-      const newItem: WallItem = {
-        id: data.item?.id || `upload-${Date.now()}`,
-        imageUrl: data.mediaUrl,
-        description: `Captured by ${currentName}`,
-        guestName: currentName,
-        likes: 0,
-      };
-      setMediaItems(prev => [newItem, ...prev]);
+      if (Array.isArray(data.items)) {
+        setMediaItems(prev => [...data.items, ...prev]);
+      } else {
+        loadMedia();
+      }
 
       import('canvas-confetti').then(({ default: confetti }) => {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       });
     } catch (err) {
       console.error(err);
@@ -111,6 +117,7 @@ export default function LiveWallPage() {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -127,12 +134,35 @@ export default function LiveWallPage() {
     }
   };
 
+  const filteredItems = useMemo(() => {
+    return mediaItems.filter(item => {
+      const isVid = item.imageUrl?.startsWith('data:video') || /\.(mp4|webm|mov)$/i.test(item.imageUrl || '') || item.mediaType === 'video';
+      if (activeFilter === '📸 Photos' && isVid) return false;
+      if (activeFilter === '🎥 Videos' && !isVid) return false;
+      if (activeFilter === '🎯 Quests' && !item.questTag && !item.description?.toLowerCase().includes('quest')) return false;
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const nameMatch = item.guestName?.toLowerCase().includes(query);
+        const descMatch = item.description?.toLowerCase().includes(query);
+        const tagMatch = item.questTag?.toLowerCase().includes(query);
+        if (!nameMatch && !descMatch && !tagMatch) return false;
+      }
+
+      return true;
+    });
+  }, [mediaItems, activeFilter, searchQuery]);
+
+  const photoCount = mediaItems.filter(i => !(i.imageUrl?.startsWith('data:video') || /\.(mp4|webm|mov)$/i.test(i.imageUrl || '') || i.mediaType === 'video')).length;
+  const videoCount = mediaItems.length - photoCount;
+
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_50%_0%,#09261b_0%,#03160e_50%,#010905_100%)] text-white p-4 sm:p-6 lg:p-8 relative selection:bg-amber-500 selection:text-black">
-      {/* Hidden File Input */}
+      {/* Hidden File Input with Multiple support */}
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         accept="image/*,video/*"
         onChange={handleFileUpload}
         className="hidden"
@@ -157,6 +187,18 @@ export default function LiveWallPage() {
 
           {/* Live Action Bar */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+            {/* Name Tag Pill */}
+            <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3.5 py-2 border border-amber-500/30">
+              <span className="text-[10px] uppercase font-bold text-amber-400">Tag:</span>
+              <input
+                type="text"
+                value={authorName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Your name or table..."
+                className="bg-transparent text-xs text-white placeholder:text-white/40 focus:outline-none w-32 truncate"
+              />
+            </div>
+
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
@@ -164,7 +206,7 @@ export default function LiveWallPage() {
               className="rounded-full bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 text-black font-extrabold px-7 hover:scale-105 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)]"
             >
               <Camera size={18} className="mr-2" />
-              {isUploading ? 'Uploading...' : '📸 Snap or Upload Memory'}
+              {isUploading ? (uploadProgress || 'Uploading...') : '📸 Upload Photos & Videos'}
             </Button>
 
             <Button
@@ -191,9 +233,52 @@ export default function LiveWallPage() {
           </div>
 
           {/* Live counter */}
-          <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/50">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>{mediaItems.length} Real-Time Wedding Memories Captured</span>
+          <div className="inline-flex items-center gap-3 mt-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white/70">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              {mediaItems.length} Total Memories
+            </span>
+            <span>•</span>
+            <span>📸 {photoCount} Photos</span>
+            <span>•</span>
+            <span>🎥 {videoCount} Videos</span>
+          </div>
+
+          {/* Category tabs & Search filter bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-2xl mt-4 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
+              {filterTabs.map(tab => (
+                <Button
+                  key={tab}
+                  size="sm"
+                  variant={activeFilter === tab ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter(tab)}
+                  className={`rounded-full text-xs font-bold transition-all ${
+                    activeFilter === tab
+                      ? 'bg-amber-400 text-black border-amber-400 font-extrabold shadow-md'
+                      : 'border-white/15 text-white/70 bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  {tab}
+                </Button>
+              ))}
+            </div>
+
+            <div className="relative w-full sm:w-56">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search guest or tag..."
+                className="w-full rounded-full bg-white/10 border border-white/15 pl-8 pr-4 py-1.5 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-amber-400"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -205,24 +290,26 @@ export default function LiveWallPage() {
             <div className="w-12 h-12 rounded-full border-2 border-amber-400 border-t-transparent animate-spin mb-4" />
             <p className="font-headline italic text-amber-300 text-xl">Loading Live Memories…</p>
           </div>
-        ) : mediaItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center glass-card !rounded-3xl border-white/10 max-w-lg mx-auto p-8 space-y-4">
             <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl">
               📸
             </div>
-            <h3 className="font-headline italic text-3xl font-bold text-white">The Live Wall is Ready!</h3>
+            <h3 className="font-headline italic text-3xl font-bold text-white">
+              {searchQuery ? 'No matching memories found' : 'The Live Wall is Ready!'}
+            </h3>
             <p className="text-sm text-white/60 leading-relaxed">
-              Be the first to capture a photo or video from the celebration! Tap the button below to add yours.
+              Select multiple photos and videos to share live on the big screen!
             </p>
             <Button
               onClick={() => fileInputRef.current?.click()}
               className="rounded-full bg-amber-400 text-black font-bold px-8 hover:bg-amber-300 shadow-lg"
             >
-              <Camera size={16} className="mr-2" /> Upload First Photo
+              <Camera size={16} className="mr-2" /> Upload Memories
             </Button>
           </div>
         ) : (
-          <LiveMasonryGrid mediaItems={mediaItems} onDelete={handleDelete} />
+          <LiveMasonryGrid mediaItems={filteredItems} onDelete={handleDelete} />
         )}
       </main>
     </div>

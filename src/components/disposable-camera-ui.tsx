@@ -299,7 +299,80 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
         setUploadStalled(false);
       }
     }
-  }, [guestId, localVisibility, questTag, onUploadComplete, toast]);
+  }, [guestId, authorName, localVisibility, questTag, onUploadComplete, toast]);
+
+  const processBatchUpload = useCallback(async (rawFiles: File[]) => {
+    const requestId = ++uploadRequestIdRef.current;
+    setIsFlashing(true);
+    setIsUploading(true);
+    setUploadStalled(false);
+
+    try {
+      // Compress files in parallel (skip videos)
+      const compressedFiles = await Promise.all(
+        rawFiles.map(f => (f.type.startsWith('video') ? Promise.resolve(f) : compressImageFile(f)))
+      );
+
+      // Previews
+      const previews = compressedFiles.map(f => createTrackedObjectURL(f));
+      setRecentShots(prev => [...prev, ...previews]);
+      setPolaroidSrc(previews[previews.length - 1]);
+      setPolaroidVisible(true);
+
+      const formData = new FormData();
+      for (const file of compressedFiles) {
+        formData.append('files', file);
+      }
+      formData.append('guestId', guestId || '');
+      formData.append('guestName', authorName.trim() || 'Wedding Guest');
+      formData.append('visibility', localVisibility);
+      if (questTag) formData.append('questTag', questTag);
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      if (uploadRequestIdRef.current !== requestId) return;
+
+      toast({
+        title: `🎉 ${compressedFiles.length} Memories Uploaded!`,
+        description: localVisibility === 'public' ? 'Shared to the Live Memories Wall.' : 'Sent to the Couple’s Vault.',
+      });
+
+      import('canvas-confetti').then(({ default: confetti }) => {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.7 },
+          colors: ['#d4af37', '#ffffff', '#fb923c', '#a78bfa'],
+        });
+      });
+
+      setShotsLeft(prev => Math.max(0, prev - compressedFiles.length));
+      onUploadComplete({ count: compressedFiles.length, items: data.items });
+
+      setIsWinding(true);
+      setTimeout(() => setIsWinding(false), 800);
+    } catch (error) {
+      if (uploadRequestIdRef.current !== requestId) return;
+      console.error('Batch upload error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: 'Could not upload files. Please try again.',
+      });
+    } finally {
+      if (uploadRequestIdRef.current === requestId) {
+        setIsUploading(false);
+      }
+    }
+  }, [guestId, authorName, localVisibility, questTag, onUploadComplete, toast]);
 
   const handleRetryUpload = useCallback(() => {
     if (!lastFailedUpload) return;
@@ -334,11 +407,17 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const files = event.target.files;
     event.target.value = '';
-    if (!file) return;
-    const previewSrc = createTrackedObjectURL(file);
-    await processUpload(file, previewSrc);
+    if (!files || files.length === 0) return;
+
+    if (files.length === 1) {
+      const file = files[0];
+      const previewSrc = createTrackedObjectURL(file);
+      await processUpload(file, previewSrc);
+    } else {
+      await processBatchUpload(Array.from(files));
+    }
   };
 
   useEffect(() => {
@@ -357,6 +436,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       <input
         type="file"
         accept="image/*,video/*"
+        multiple
         capture="environment"
         ref={fileInputRef}
         onChange={handleFileChange}
@@ -365,6 +445,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       <input
         type="file"
         accept="image/*,video/*"
+        multiple
         ref={galleryInputRef}
         onChange={handleFileChange}
         className="hidden"
