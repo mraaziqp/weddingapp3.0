@@ -9,6 +9,13 @@ import { cn } from '@/lib/utils';
 interface GamesViewProps {
     onSelectQuest: (questTag: string) => void;
     completedQuests: string[];
+    /**
+     * Party Mode swaps the hub to a dark emerald background. Without this the
+     * whole page kept its light-mode palette — near-black headings and grey
+     * body text over translucent white cards — and became unreadable the
+     * moment the lights went down. The gallery already adapted; this did not.
+     */
+    partyMode?: boolean;
 }
 
 const quests = [
@@ -98,7 +105,7 @@ const TriviaCard = ({ question, answer, onNext, index }: { question: string; ans
     );
 };
 
-export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
+export function GamesView({ onSelectQuest, completedQuests, partyMode = false }: GamesViewProps) {
     const [activeTriviaIndex, setActiveTriviaIndex] = useState(0);
 
     const handleNextTrivia = () => {
@@ -108,26 +115,48 @@ export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
     const completedCount = completedQuests.length;
     const allDone = completedCount >= quests.length;
 
+    // One place to decide light vs dark, so a colour can't be missed on one
+    // element and leave it invisible against the other background.
+    const headingColor = partyMode ? '#f6e7b7' : '#1C1C1C';
+    const bodyColor = partyMode ? 'rgba(246,231,183,0.62)' : '#6b7280';
+    const cardClass = partyMode
+        ? 'bg-white/[0.06] backdrop-blur-md border-[#d4af37]/25 shadow-lg overflow-hidden'
+        : 'bg-white/60 backdrop-blur-md border-black/10 shadow-lg overflow-hidden';
+
     return (
         <div className="p-4 space-y-6 pb-8">
             {/* Header */}
             <header className="text-center pt-2">
-                <h1 className="font-headline text-3xl font-bold italic text-[#1C1C1C]">
+                <h1
+                    className="font-headline text-3xl font-bold italic"
+                    style={{ color: headingColor, transition: 'color 2.5s ease' }}
+                >
                     Let&apos;s Play 🎉
                 </h1>
-                <p className="text-gray-500 tracking-wide mt-1 text-sm">Join the fun and capture some memories.</p>
+                <p
+                    className="tracking-wide mt-1 text-sm"
+                    style={{ color: bodyColor, transition: 'color 2.5s ease' }}
+                >
+                    Join the fun and capture some memories.
+                </p>
             </header>
 
             {/* Progress bar */}
-            <div className="glass-card !bg-white/70 !border-[#d4af37]/20 !p-4 space-y-2">
+            <div className={cn(
+                'glass-card !border-[#d4af37]/25 !p-4 space-y-2',
+                partyMode ? '!bg-white/[0.07]' : '!bg-white/70'
+            )}>
                 <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#1C1C1C] flex items-center gap-2">
+                    <span
+                        className="font-medium flex items-center gap-2"
+                        style={{ color: headingColor, transition: 'color 2.5s ease' }}
+                    >
                         <Trophy size={16} className="text-[#d4af37]" />
                         Scavenger Progress
                     </span>
                     <span className="font-mono font-bold text-[#d4af37]">{completedCount}/{quests.length}</span>
                 </div>
-                <div className="w-full h-2 bg-black/5 rounded-full overflow-hidden">
+                <div className={cn("w-full h-2 rounded-full overflow-hidden", partyMode ? "bg-white/10" : "bg-black/5")}>
                     <motion.div
                         className="h-full rounded-full"
                         style={{ background: 'linear-gradient(90deg, #d4af37, #f6e7b7)' }}
@@ -147,10 +176,10 @@ export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
             </div>
 
             {/* Photo Scavenger Hunt */}
-            <Card className="bg-white/60 backdrop-blur-md border-black/10 shadow-lg overflow-hidden">
+            <Card className={cardClass}>
                 <CardHeader className="pb-3">
                     <CardTitle className="font-headline text-2xl italic text-[#d4af37]">📸 Photo Hunt</CardTitle>
-                    <p className="text-xs text-gray-500">Tap a challenge → snap it → earn it!</p>
+                    <p className="text-xs" style={{ color: bodyColor }}>Tap a challenge → snap it → earn it!</p>
                 </CardHeader>
                 <CardContent className="space-y-2 px-4 pb-4">
                     {quests.map((quest, i) => {
@@ -165,14 +194,25 @@ export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
                                 className={cn(
                                     "w-full flex items-center justify-between p-3 rounded-xl text-left transition-all border",
                                     isCompleted
-                                        ? "bg-green-50 border-green-200 text-gray-400 cursor-default"
-                                        : "bg-white border-black/5 hover:border-[#d4af37]/40 hover:bg-[#d4af37]/5 active:scale-[0.98]"
+                                        ? partyMode
+                                            ? "bg-green-500/10 border-green-400/30 cursor-default"
+                                            : "bg-green-50 border-green-200 text-gray-400 cursor-default"
+                                        : partyMode
+                                            ? "bg-white/[0.06] border-[#d4af37]/20 hover:border-[#d4af37]/50 hover:bg-[#d4af37]/10 active:scale-[0.98]"
+                                            : "bg-white border-black/5 hover:border-[#d4af37]/40 hover:bg-[#d4af37]/5 active:scale-[0.98]"
                                 )}
                                 whileTap={isCompleted ? {} : { scale: 0.97 }}
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="text-xl flex-shrink-0">{quest.emoji}</span>
-                                    <span className={cn("font-medium text-sm leading-snug", isCompleted && "line-through text-gray-400")}>{quest.title}</span>
+                                    <span
+                                        className={cn("font-medium text-sm leading-snug", isCompleted && "line-through")}
+                                        style={{
+                                            color: isCompleted
+                                                ? (partyMode ? 'rgba(246,231,183,0.4)' : '#9ca3af')
+                                                : headingColor,
+                                        }}
+                                    >{quest.title}</span>
                                 </div>
                                 <AnimatePresence mode="wait">
                                     {isCompleted ? (
@@ -192,10 +232,10 @@ export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
             </Card>
 
             {/* Couple's Trivia */}
-            <Card className="bg-white/60 backdrop-blur-md border-black/10 shadow-lg overflow-hidden">
+            <Card className={cardClass}>
                 <CardHeader className="pb-3">
                     <CardTitle className="font-headline text-2xl italic text-[#d4af37]">💛 Couple&apos;s Trivia</CardTitle>
-                    <p className="text-xs text-gray-500">How well do you know R&amp;A? Flip the card to find out!</p>
+                    <p className="text-xs" style={{ color: bodyColor }}>How well do you know R&amp;A? Flip the card to find out!</p>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 space-y-4">
                     <AnimatePresence mode="wait">
@@ -231,7 +271,7 @@ export function GamesView({ onSelectQuest, completedQuests }: GamesViewProps) {
 
             {/* Fun footer */}
             <div className="text-center py-2">
-                <p className="text-xs text-gray-400 italic">Wishing Razia &amp; Abduraziq a lifetime of joy 🌿✨</p>
+                <p className="text-xs italic" style={{ color: bodyColor }}>Wishing Razia &amp; Abduraziq a lifetime of joy 🌿✨</p>
             </div>
         </div>
     );
