@@ -16,15 +16,19 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Client-side compression targets ~1600px/0.82 JPEG, well under this.
+ * Client-side compression targets ~1600px/0.82 JPEG, comfortably under this.
  *
- * Deliberately not raised to accommodate video. The platform caps a request
- * body at 32MB (Firebase App Hosting is Cloud Run), and a clip large enough to
- * strain this limit should be going straight to Drive through a resumable
- * session anyway — see /api/media/upload-session. Video that fits is welcome
- * here; video that doesn't has a better route than a bigger ceiling.
+ * Sits below the ~4.5MB request body Vercel accepts, because that cap is
+ * enforced at the edge *before* this handler runs: an oversized upload never
+ * reaches the code below and comes back as plain text "Request Entity Too
+ * Large", which the browser then fails to parse as JSON. Refusing it here
+ * instead means the guest gets a readable reason.
+ *
+ * Deliberately not raised for video. Anything larger belongs on the resumable
+ * path (/api/media/upload-session), which uploads straight to Drive and never
+ * touches this request cap at all.
  */
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 const ALLOWED_MIME =
   /^(image\/(jpeg|png|webp|heic|heif|gif)|video\/(mp4|quicktime|webm|x-matroska|3gpp))$/;

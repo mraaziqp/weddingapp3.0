@@ -422,8 +422,36 @@ export async function createResumableSession(input: {
   /** Total byte length, so Drive can reject an over-large file up front. */
   sizeBytes?: number;
 }): Promise<{ uploadUri: string }> {
-  const folderId = await folderIdForScope(input.scope ?? 'wedding');
+  const scope: MediaScope = input.scope ?? 'wedding';
+  try {
+    return await openSession(input, await folderIdForScope(scope));
+  } catch (err) {
+    // Same stale-folder recovery the multipart path has. Without it a deleted
+    // (or recreated) folder leaves a warm instance minting sessions against an
+    // id Drive no longer knows, and every guest upload fails with a 404 for as
+    // long as that instance lives — which on the night is the whole night.
+    const isMissingParent = err instanceof Error && /Drive API 404/.test(err.message);
+    if (!isMissingParent || pinnedFolderId(scope)) throw err;
 
+    clearFolderCache(scope);
+    return openSession(input, await folderIdForScope(scope));
+  }
+}
+
+async function openSession(
+  input: {
+    filename: string;
+    mimeType: string;
+    visibility: MediaVisibility;
+    scope?: MediaScope;
+    guestId?: string | null;
+    guestName?: string | null;
+    questTag?: string | null;
+    caption?: string | null;
+    sizeBytes?: number;
+  },
+  folderId: string
+): Promise<{ uploadUri: string }> {
   const appProperties: Record<string, string> = {
     visibility: input.visibility,
     app: 'wedu',

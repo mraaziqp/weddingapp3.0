@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
+import { uploadOne } from '@/lib/bulk-upload';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -218,30 +219,34 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     try {
       const file = await compressImageFile(rawFile);
 
-      // Uploads go through our own API route rather than straight to storage:
-      // the media store is the couple's Google Drive, and its OAuth refresh
-      // token must never reach a guest's browser. The route writes the file and
-      // its metadata (guest, visibility, quest) in one call, so there is no
-      // longer a window where the photo exists but its metadata doesn't.
-      const body = new FormData();
-      body.append('file', file);
-      body.append('visibility', localVisibility);
-      body.append('guestId', guestId);
-      if (questTag) body.append('questTag', questTag);
-
-      const response = await withTimeout(
-        fetch('/api/media/upload', { method: 'POST', body }),
-        30000
+      // Shares the queue's upload path rather than posting the file at our own
+      // API route directly. That path tries a Drive resumable session first and
+      // only falls back to the app for genuinely small files — which matters
+      // because Vercel rejects a request body over ~4.5MB at the edge, so a
+      // video (or an uncompressible photo) picked from the roll used to come
+      // back as unparseable plain text rather than an uploaded memory.
+      //
+      // The Drive refresh token still never reaches the browser: the session is
+      // minted server-side and the URI is scoped to this one file.
+      await withTimeout(
+        uploadOne(
+          {
+            id: `camera-${requestId}`,
+            file,
+            name: file.name,
+            sizeBytes: file.size,
+            isVideo: file.type.startsWith('video/'),
+            status: 'queued',
+            progress: 0,
+          },
+          { visibility: localVisibility, guestId, questTag },
+          () => {}
+        ),
+        120000
       );
 
       // A stale response (user already retried/moved on) should be ignored.
       if (uploadRequestIdRef.current !== requestId) return;
-
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(result.error ?? `Upload failed (${response.status})`);
-      }
-      const publicUrl: string = result.media.url;
 
       toast({
         title: localVisibility === 'public' ? '🌍 Shared to the Live Wall!' : '🔒 Secretly sent to the Couple!',
@@ -263,7 +268,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       });
 
       setShotsLeft(prev => prev - 1);
-      onUploadComplete({ url: publicUrl });
+      onUploadComplete();
 
       setIsWinding(true);
       setTimeout(() => setIsWinding(false), 700);
@@ -326,11 +331,17 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
     event.target.value = '';
-    if (!file) return;
-    const previewSrc = createTrackedObjectURL(file);
-    await processUpload(file, previewSrc);
+    if (!files.length) return;
+
+    // One at a time so the film counter, polaroid animation and confetti stay
+    // in step with what is actually being uploaded. Picking many here is a
+    // convenience; the "From my phone" tab is the tool for a whole roll.
+    for (const file of files) {
+      const previewSrc = createTrackedObjectURL(file);
+      await processUpload(file, previewSrc);
+    }
   };
 
   useEffect(() => {
@@ -349,7 +360,11 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       <input
         type="file"
         accept="image/*,video/*"
-        capture="environment"
+        // No `capture` attribute: it forces the camera app and, as a
+        // side effect, restricts the picker to a single item — which is what
+        // stopped guests choosing more than one photo. `multiple` lets the
+        // fallback path take a whole selection.
+        multiple
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"

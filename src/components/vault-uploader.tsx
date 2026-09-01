@@ -110,7 +110,7 @@ export function VaultUploader({ visibility, onUploaded }: Props) {
         try {
           await uploadOne(
             task,
-            visibility,
+            { visibility },
             percent => patch(task.id, { status: 'uploading', progress: percent }),
             controller.signal
           );

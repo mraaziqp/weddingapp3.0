@@ -1,6 +1,4 @@
 import { ImageResponse } from 'next/og';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 export const alt = "R&A's Wedding — The Union of Razia & Abduraziq";
 export const size = {
@@ -10,15 +8,10 @@ export const size = {
 export const contentType = 'image/png';
 
 export default function Image() {
-  // Load Bismillah PNG from local file system at build time to prevent Edge runtime network dependencies
-  let bismillahSrc = '';
-  try {
-    const bismillahPath = join(process.cwd(), 'public', 'bismillah.png');
-    const bismillahData = readFileSync(bismillahPath).toString('base64');
-    bismillahSrc = `data:image/png;base64,${bismillahData}`;
-  } catch (err) {
-    console.error('Failed to load local Bismillah PNG:', err);
-  }
+  // The Bismillah is set as text rather than loaded from public/bismillah.png.
+  // That file is not a PNG at all — it is a saved copy of the clipart site's
+  // web page — so embedding it as a base64 image put a broken graphic at the
+  // top of every WhatsApp and iMessage link preview of the invitation.
 
   return new ImageResponse(
     (
@@ -108,22 +101,25 @@ export default function Image() {
           }}
         />
 
-        {/* Bismillah Calligraphy (Using local base64 embedded PNG) */}
-        {bismillahSrc && (
-          // eslint-disable-next-line @next/next/no-img-element -- next/og's ImageResponse (Satori) requires plain <img>, next/image doesn't render here
-          <img
-            src={bismillahSrc}
-            style={{
-              width: '340px',
-              height: '75px',
-              marginBottom: '6px',
-              objectFit: 'contain',
-              // Use CSS filter to invert black calligraphy to deep forest green
-              filter: 'brightness(0.3) sepia(1) hue-rotate(80deg) saturate(2)',
-            }}
-            alt="Bismillah"
-          />
-        )}
+        {/* The Bismillah, in translation.
+            Not set in Arabic here: this card is rendered by Satori, whose
+            text shaping cannot handle the script's ligatures and fails the
+            build outright ("substFormat: 3 is not yet supported"). The
+            invitation card itself carries both, in a real browser. */}
+        <div
+          style={{
+            display: 'flex',
+            fontSize: '20px',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            marginBottom: '12px',
+            color: '#2e3b32',
+            fontWeight: 700,
+            textAlign: 'center',
+          }}
+        >
+          In The Name of Allah, The Most Gracious, The Most Merciful
+        </div>
 
         {/* Bismillah Subtitle */}
         <div

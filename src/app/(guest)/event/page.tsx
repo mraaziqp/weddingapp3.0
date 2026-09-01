@@ -3,6 +3,7 @@
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 
 import { GuestEventHub } from '@/components/guest-event-hub';
@@ -63,6 +64,11 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
   const [phase, setPhase] = useState<'enter' | 'exit'>('enter');
   const [introMusic, setIntroMusic] = useState<IntroMusic>('spark-rise');
   const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
+  // The welcome wears the same photograph as the save-the-date, so arriving at
+  // the venue looks like the invitation the guest has been carrying for weeks.
+  // Falls back to the bundled image, and keeps rendering if the config call
+  // fails — this screen must never block on the network.
+  const [backdrop, setBackdrop] = useState<string>('/couple-bg.jpg');
   const introAudioCtxRef = useRef<AudioContext | null>(null);
   // Read through a ref so the failsafe timer below doesn't re-arm every time
   // the parent re-renders and hands down a fresh onComplete.
@@ -85,6 +91,22 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
         dly: Math.random() * 4,
       }))
     );
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/std/config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        const image = data?.config?.siteBgImage || data?.config?.bgImage;
+        if (!cancelled && typeof image === 'string' && image) setBackdrop(image);
+      })
+      .catch(() => {
+        /* keep the bundled fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -183,8 +205,7 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center p-8 overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at 50% 35%, #124735 0%, #06221a 42%, #020706 100%)' }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center p-8 overflow-hidden bg-[#020706]"
       animate={phase === 'exit' ? { y: '-100%' } : { y: '0%' }}
       transition={{ duration: 1.0, ease: [0.76, 0, 0.24, 1] }}
       onAnimationComplete={() => { if (phase === 'exit') onComplete(); }}
@@ -196,18 +217,64 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
       aria-label="Skip the welcome animation"
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPhase('exit'); }}
     >
+      {/* ── Photographic backdrop ─────────────────────────────────────
+          A slow Ken Burns push. The scrims above it are doing real work:
+          the couple can swap this image from the save-the-date editor, so
+          the text has to stay legible over a photograph nobody has seen
+          yet — hence a dark base, a vertical gradient and a vignette
+          rather than relying on the picture being conveniently dim. */}
       <motion.div
-        className="absolute -top-28 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.26) 0%, rgba(212,175,55,0.02) 70%, transparent 100%)', filter: 'blur(20px)' }}
+        className="absolute inset-0 z-0"
+        initial={{ scale: 1.18, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ opacity: { duration: 1.6, ease: 'easeOut' }, scale: { duration: 14, ease: 'easeOut' } }}
+      >
+        <Image
+          src={backdrop}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      </motion.div>
+
+      {/* Deep emerald wash — ties the photo to the wedding palette */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none mix-blend-multiply"
+        style={{ background: 'radial-gradient(ellipse at 50% 35%, #124735 0%, #06221a 55%, #020706 100%)', opacity: 0.55 }}
+      />
+      {/* Legibility scrim, heaviest behind the text */}
+      <div
+        className="absolute inset-0 z-[2] pointer-events-none"
+        style={{ background: 'linear-gradient(180deg, rgba(2,7,6,0.62) 0%, rgba(2,7,6,0.18) 30%, rgba(2,7,6,0.38) 60%, rgba(2,7,6,0.88) 100%)' }}
+      />
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 z-[3] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(2,7,6,0.42) 80%, rgba(2,7,6,0.85) 100%)' }}
+      />
+      {/* Gold light bloom drifting above the monogram */}
+      <motion.div
+        className="absolute -top-28 left-1/2 z-[4] -translate-x-1/2 h-72 w-72 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.34) 0%, rgba(212,175,55,0.04) 70%, transparent 100%)', filter: 'blur(24px)' }}
         animate={{ x: [0, 14, -10, 0], y: [0, 12, -8, 0], scale: [1, 1.04, 0.96, 1] }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* A single slow sweep of light across the frame, once on entry */}
+      <motion.div
+        className="absolute inset-y-0 z-[5] w-1/3 pointer-events-none"
+        style={{ background: 'linear-gradient(105deg, transparent, rgba(246,231,183,0.14), transparent)' }}
+        initial={{ left: '-40%' }}
+        animate={{ left: '120%' }}
+        transition={{ duration: 2.6, delay: 0.7, ease: 'easeInOut' }}
       />
 
       {/* Gold dust particles */}
       {dustParticles.map(p => (
         <motion.div
           key={p.id}
-          className="absolute rounded-full bg-[#d4af37]"
+          className="absolute z-[6] rounded-full bg-[#d4af37]"
           style={{ width: p.w, height: p.h, left: `${p.left}%`, bottom: '-4px' }}
           animate={{ y: [0, p.animY], opacity: [0, 0.6, 0] }}
           transition={{ duration: p.dur, delay: p.dly, repeat: Infinity, ease: 'easeOut' }}
@@ -227,38 +294,80 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="space-y-6 z-10"
+            className="space-y-6 z-20 relative"
           >
+            {/* Bismillah — the invitation card opens this way, so the welcome
+                does too. Set as text in the same Amiri face the card uses
+                rather than as an image: public/bismillah.png is not actually a
+                PNG (it is a saved web page), and type scales cleanly to any
+                screen besides. */}
+            <motion.p
+              className="font-bold leading-none text-[#f6e7b7]/85 select-none text-2xl md:text-3xl"
+              style={{
+                fontFamily: "'Amiri', serif",
+                textShadow: '0 0 22px rgba(212,175,55,0.45), 0 2px 14px rgba(2,7,6,0.9)',
+              }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 1.1, ease: 'easeOut' }}
+            >
+              بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
+            </motion.p>
+
             {/* Monogram */}
             <motion.p
-              className="font-headline text-6xl md:text-7xl italic text-luxe-gradient"
+              className="font-headline text-7xl md:text-8xl italic text-luxe-gradient leading-none"
               initial={{ scale: 0.4, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.8, type: 'spring', stiffness: 120 }}
-              style={{ textShadow: '0 0 40px rgba(212,175,55,0.6), 0 0 80px rgba(212,175,55,0.2)' }}
+              transition={{ delay: 0.25, duration: 0.9, type: 'spring', stiffness: 110 }}
+              style={{ textShadow: '0 0 40px rgba(212,175,55,0.6), 0 0 90px rgba(212,175,55,0.28)' }}
             >
               R&amp;A
             </motion.p>
 
+            {/* Rule with a centred diamond, rather than a bare hairline */}
             <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: '160px' }}
-              transition={{ delay: 0.6, duration: 0.8, ease: 'easeOut' }}
-              className="mx-auto h-px bg-gradient-to-r from-transparent via-[#d4af37]/60 to-transparent"
-            />
+              className="mx-auto flex items-center justify-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.7 }}
+            >
+              <motion.span
+                className="block h-px bg-gradient-to-r from-transparent to-[#d4af37]/70"
+                initial={{ width: 0 }}
+                animate={{ width: 72 }}
+                transition={{ delay: 0.65, duration: 0.8, ease: 'easeOut' }}
+              />
+              <motion.span
+                className="block h-1.5 w-1.5 rotate-45 bg-[#d4af37]"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.05, duration: 0.4 }}
+                style={{ boxShadow: '0 0 10px rgba(212,175,55,0.8)' }}
+              />
+              <motion.span
+                className="block h-px bg-gradient-to-l from-transparent to-[#d4af37]/70"
+                initial={{ width: 0 }}
+                animate={{ width: 72 }}
+                transition={{ delay: 0.65, duration: 0.8, ease: 'easeOut' }}
+              />
+            </motion.div>
 
             <motion.h1
               className="font-headline text-3xl md:text-4xl italic text-luxe-gradient"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.8 }}
-              style={{ textShadow: '0 0 20px rgba(212,175,55,0.3)' }}
+              // Gold bloom for the letterforms, plus a dark drop so the line
+              // stays readable wherever the backdrop photograph is bright.
+              style={{ textShadow: '0 0 20px rgba(212,175,55,0.35), 0 2px 20px rgba(2,7,6,0.75)' }}
             >
               The day is finally here.
             </motion.h1>
 
             <motion.h2
-              className="font-headline text-2xl md:text-3xl italic text-[#f6e7b7]/80 leading-relaxed max-w-sm mx-auto"
+              className="font-headline text-2xl md:text-3xl italic text-[#f6e7b7]/90 leading-relaxed max-w-sm mx-auto"
+              style={{ textShadow: '0 2px 18px rgba(2,7,6,0.85)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.3, duration: 0.9 }}
@@ -271,7 +380,8 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
             </motion.h2>
 
             <motion.p
-              className="text-[#f6e7b7]/30 text-xs uppercase tracking-[0.4em]"
+              className="text-[#f6e7b7]/55 text-[11px] uppercase tracking-[0.42em]"
+              style={{ textShadow: '0 2px 12px rgba(2,7,6,0.9)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 2, duration: 0.8 }}
