@@ -12,9 +12,12 @@ const filters = ["All", "Ceremony", "Candid Vibes", "Dance Floor", "Speeches"];
 interface GalleryFeedProps {
   partyMode?: boolean;
   isMorningAfter?: boolean;
+  /** Bumped by the parent after an upload, to pull the wall again immediately
+   *  rather than leaving the guest waiting out the 20s poll for their own photo. */
+  refreshKey?: number;
 }
 
-export function GalleryFeed({ partyMode = false, isMorningAfter = false }: GalleryFeedProps) {
+export function GalleryFeed({ partyMode = false, isMorningAfter = false, refreshKey = 0 }: GalleryFeedProps) {
     const [activeFilter, setActiveFilter] = useState("All");
     const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
 
@@ -29,7 +32,8 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false }: Galle
         load();
         const id = setInterval(load, 20_000);
         return () => { cancelled = true; clearInterval(id); };
-    }, []);
+        // refreshKey re-runs this so a guest sees their own upload immediately.
+    }, [refreshKey]);
 
     // Text colours adapt to party mode dark background
     const headingColor  = partyMode ? '#f6e7b7' : '#1C1C1C';

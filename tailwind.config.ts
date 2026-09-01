@@ -1,4 +1,9 @@
 import type {Config} from 'tailwindcss';
+// Imported rather than require()d: this file is TypeScript, and Node now loads
+// it as an ES module, where `require` is not defined. That threw while
+// compiling any page's CSS — API routes kept working, so `next dev` looked
+// half-alive rather than broken.
+import tailwindcssAnimate from 'tailwindcss-animate';
 
 export default {
   darkMode: ['class'],
@@ -109,5 +114,5 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

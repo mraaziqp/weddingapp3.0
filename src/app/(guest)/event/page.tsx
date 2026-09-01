@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 
-import { GuestEventHub } from '@/components/guest-event-hub';
+import { GuestDashboard } from '@/components/guest-dashboard';
 import { LuxuryLoader } from '@/components/luxury-loader';
 import { lookupHouseholdByQr } from '@/lib/data';
 import type { Household } from '@/lib/types';
@@ -16,6 +16,22 @@ import {
   readExperienceSettings,
   type IntroMusic,
 } from '@/lib/experience-settings';
+
+/**
+ * Stand-in for someone who opened the site without an invite code.
+ *
+ * The dashboard needs a household to render its pass, and this branch has
+ * none — but a guest arriving without their link should still see the wall,
+ * the games and the wishes rather than a dead end. The name is what shows on
+ * the pass, so it is written to read as a welcome rather than as an error.
+ */
+const ANONYMOUS_HOUSEHOLD: Household = {
+  id: '',
+  name: 'Honoured VIP Guest',
+  address: '',
+  qrCode: '',
+  guests: [],
+};
 
 // ── Fireworks burst (CSS keyframe trigger) ────────────────────────────────
 interface SparkOffset { x: number; y: number }
@@ -485,7 +501,7 @@ function EventPageContent() {
   // hub as an anonymous guest — the wall and the games need no identity, and
   // an upload without one is already allowed, it just credits "A Guest".
   if (!guestId) {
-    return <GuestEventHub guestId="" />;
+    return <GuestDashboard household={household ?? ANONYMOUS_HOUSEHOLD} />;
   }
 
   // A code was supplied and did not resolve. That *is* a broken link, and the
@@ -519,7 +535,7 @@ function EventPageContent() {
       <AnimatePresence>
         {!introDone && <EventDayIntro household={household} onComplete={handleIntroComplete} />}
       </AnimatePresence>
-      {introDone && <GuestEventHub guestId={guestId} />}
+      {introDone && <GuestDashboard household={household} />}
     </>
   );
 }
