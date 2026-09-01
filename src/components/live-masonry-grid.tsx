@@ -6,7 +6,8 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import { useState } from "react";
-import type { WallItem } from "@/lib/media";
+import { isVideoItem, type WallItem } from "@/lib/media";
+import { CinematicGalleryLightbox } from "./cinematic-gallery-lightbox";
 
 // Generates a base64 gold blur placeholder so images "reveal" from a warm
 // champagne shimmer rather than a grey void.
@@ -30,15 +31,42 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 100 } },
 };
 
-const Polaroid = ({ item, className }: { item: WallItem; className?: string }) => {
+const Polaroid = ({
+    item,
+    className,
+    onClick,
+}: {
+    item: WallItem;
+    className?: string;
+    onClick?: () => void;
+}) => {
     const [isLiked, setIsLiked] = useState(false);
     
     return (
      <motion.div 
         variants={itemVariants} 
-        className={cn("break-inside-avoid-column p-2 pb-4 bg-white/90 rounded-sm shadow-lg rotate-[-2deg] transition-transform duration-300 hover:rotate-0 hover:scale-105", className)}
+        onClick={onClick}
+        className={cn("break-inside-avoid-column p-2 pb-4 bg-white/90 rounded-sm shadow-lg rotate-[-2deg] transition-transform duration-300 hover:rotate-0 hover:scale-105 cursor-pointer", className)}
     >
         <div className="relative">
+            {isVideoItem(item) ? (
+                <>
+                    <video
+                        src={item.imageUrl}
+                        className="w-full h-auto object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                    />
+                    {/* Play affordance — the tile opens the lightbox, which is
+                        where the clip actually plays with controls. */}
+                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                            <span className="ml-0.5 block h-0 w-0 border-y-[7px] border-l-[12px] border-y-transparent border-l-white" />
+                        </span>
+                    </span>
+                </>
+            ) : (
             <Image
                 src={item.imageUrl}
                 alt={item.description}
@@ -57,6 +85,7 @@ const Polaroid = ({ item, className }: { item: WallItem; className?: string }) =
                 blurDataURL={GOLD_BLUR_DATA_URL}
                 data-ai-hint={item.imageHint}
             />
+            )}
         </div>
         <div className="flex justify-between items-center pt-3 px-1">
             <p className="font-headline text-center text-lg italic text-black">{item.guestName}</p>
@@ -69,21 +98,36 @@ const Polaroid = ({ item, className }: { item: WallItem; className?: string }) =
 )};
 
 export function LiveMasonryGrid({ mediaItems }: { mediaItems: WallItem[] }) {
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
     return (
-        <motion.div 
-            className="columns-2 sm:columns-3 gap-4 space-y-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-        >
-            {mediaItems.map((item, i) => (
-                <Polaroid key={item.id} item={item} className={cn(
-                    i % 4 === 1 && "rotate-[3deg]",
-                    i % 4 === 2 && "rotate-[-4deg]",
-                    i % 4 === 3 && "rotate-[1deg]",
-                )}/>
-            ))}
-        </motion.div>
+        <>
+            <motion.div
+                className="columns-2 sm:columns-3 gap-4 space-y-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {mediaItems.map((item, i) => (
+                    <Polaroid
+                        key={item.id}
+                        item={item}
+                        onClick={() => setLightboxIndex(i)}
+                        className={cn(
+                            i % 4 === 1 && "rotate-[3deg]",
+                            i % 4 === 2 && "rotate-[-4deg]",
+                            i % 4 === 3 && "rotate-[1deg]",
+                        )}
+                    />
+                ))}
+            </motion.div>
+
+            <CinematicGalleryLightbox
+                items={mediaItems}
+                currentIndex={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onNavigate={setLightboxIndex}
+            />
+        </>
     );
 }

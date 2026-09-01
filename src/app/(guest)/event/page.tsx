@@ -58,6 +58,24 @@ function FireworkShot({ x, delay }: { x: number; delay: number }) {
   );
 }
 
+/**
+ * Gilded corner filigree. Four of these frame the welcome, which is what stops
+ * a full-bleed photograph reading like a stock background rather than a card.
+ */
+const CornerFlourish = ({ className }: { className: string }) => (
+  <svg
+    viewBox="0 0 100 100"
+    aria-hidden="true"
+    className={`absolute w-20 h-20 sm:w-28 sm:h-28 text-amber-400/40 pointer-events-none select-none z-[7] ${className}`}
+    fill="currentColor"
+  >
+    <path d="M0,0 L0,40 Q10,40 20,30 Q30,20 30,0 Z M0,0 L40,0 Q40,10 30,20 Q20,30 0,30 Z M12,12 Q25,2 45,6 Q35,25 25,35 Q15,45 6,45 Q2,25 12,12 Z M20,20 Q35,15 50,18 Q42,32 35,42 Q25,50 18,50 Q15,35 20,20 Z" />
+    <circle cx="8" cy="8" r="3" />
+    <circle cx="28" cy="8" r="2" />
+    <circle cx="8" cy="28" r="2" />
+  </svg>
+);
+
 // ── Cinematic "The day is finally here" intro ─────────────────────────────
 interface DustParticle { id: number; w: number; h: number; left: number; animY: number; dur: number; dly: number }
 const EventDayIntro = ({ household, onComplete }: { household: Household; onComplete: () => void }) => {
@@ -270,6 +288,11 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
         transition={{ duration: 2.6, delay: 0.7, ease: 'easeInOut' }}
       />
 
+      <CornerFlourish className="top-4 left-4" />
+      <CornerFlourish className="top-4 right-4 rotate-90" />
+      <CornerFlourish className="bottom-4 left-4 -rotate-90" />
+      <CornerFlourish className="bottom-4 right-4 rotate-180" />
+
       {/* Gold dust particles */}
       {dustParticles.map(p => (
         <motion.div
@@ -314,16 +337,30 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
               بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
             </motion.p>
 
-            {/* Monogram */}
-            <motion.p
-              className="font-headline text-7xl md:text-8xl italic text-luxe-gradient leading-none"
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.9, type: 'spring', stiffness: 110 }}
-              style={{ textShadow: '0 0 40px rgba(212,175,55,0.6), 0 0 90px rgba(212,175,55,0.28)' }}
-            >
-              R&amp;A
-            </motion.p>
+            {/* Monogram, ringed by a slowly turning gilded halo */}
+            <div className="relative flex items-center justify-center my-1">
+              <motion.div
+                aria-hidden="true"
+                className="absolute w-36 h-36 sm:w-44 sm:h-44 rounded-full border border-dashed border-amber-400/40 pointer-events-none"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+              />
+              <motion.div
+                aria-hidden="true"
+                className="absolute w-44 h-44 sm:w-52 sm:h-52 rounded-full border border-amber-500/20 pointer-events-none shadow-[0_0_35px_rgba(212,175,55,0.25)]"
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.p
+                className="relative font-headline text-7xl md:text-8xl italic text-luxe-gradient leading-none"
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.25, duration: 0.9, type: 'spring', stiffness: 110 }}
+                style={{ textShadow: '0 0 40px rgba(212,175,55,0.6), 0 0 90px rgba(212,175,55,0.28)' }}
+              >
+                R&amp;A
+              </motion.p>
+            </div>
 
             {/* Rule with a centred diamond, rather than a bare hairline */}
             <motion.div
@@ -388,6 +425,25 @@ const EventDayIntro = ({ household, onComplete }: { household: Household; onComp
             >
               September 6, 2026 · Tuscany in Rylands
             </motion.p>
+
+            {/* An explicit way in. Tapping anywhere already works, but nothing
+                on screen said so — a guest waiting politely for the animation
+                had no idea it was skippable. */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.2, duration: 0.6 }}
+              className="pt-3"
+            >
+              <button
+                type="button"
+                onClick={() => setPhase('exit')}
+                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f6e7b7] via-[#d4af37] to-[#c8a030] px-7 py-3 text-sm font-extrabold text-black shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all hover:scale-105 hover:shadow-[0_0_35px_rgba(212,175,55,0.6)]"
+              >
+                <span>Enter the celebration</span>
+                <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

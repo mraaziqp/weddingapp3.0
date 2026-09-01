@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
+import { AdminGalleryModerator } from "@/components/admin-gallery-moderator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -383,6 +384,11 @@ export default function DashboardPage() {
             </Card>
           </motion.div>
         )}
+
+        {/* LIVE MEMORIES & GALLERY MODERATION */}
+        <motion.div variants={itemVariants}>
+          <AdminGalleryModerator />
+        </motion.div>
 
         {/* ANALYTICS DASHBOARD */}
         <motion.div variants={itemVariants}>

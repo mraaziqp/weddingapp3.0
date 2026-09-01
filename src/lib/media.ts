@@ -19,7 +19,17 @@ export type WallItem = {
    *  reserve the right aspect ratio instead of assuming every photo is square. */
   width?: number;
   height?: number;
+  /** 'photo' | 'video' | 'voice'. The wall renders video with a player. */
+  mediaType?: string;
+  visibility?: string;
+  questTag?: string;
+  createdAt?: string;
 };
+
+/** True when this item should render in a <video> rather than an <img>. */
+export function isVideoItem(item: WallItem): boolean {
+  return item.mediaType === 'video';
+}
 
 /** Raw item shape returned by /api/media — mirrors DriveMedia. */
 type ApiMediaItem = {
@@ -29,6 +39,9 @@ type ApiMediaItem = {
   questTag: string | null;
   width: number | null;
   height: number | null;
+  kind?: string;
+  visibility?: string;
+  createdAt?: string;
 };
 
 export function toWallItem(m: ApiMediaItem): WallItem {
@@ -41,13 +54,37 @@ export function toWallItem(m: ApiMediaItem): WallItem {
     likes: 0,
     width: m.width ?? undefined,
     height: m.height ?? undefined,
+    mediaType: m.kind ?? 'photo',
+    visibility: m.visibility,
+    questTag: m.questTag ?? undefined,
+    createdAt: m.createdAt,
   };
 }
 
-/** Latest public guest photos, newest first. Safe to call from the browser. */
+/** Latest public guest photos and videos, newest first. Safe from the browser. */
 export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
   const res = await fetch(`/api/media?visibility=public&limit=${limit}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Could not load the wall (${res.status})`);
   const body = (await res.json()) as { items?: ApiMediaItem[] };
   return (body.items ?? []).map(toWallItem);
+}
+
+/**
+ * Removes a photo from the wall. Admin only.
+ *
+ * Authorisation is the admin session cookie the browser already holds — the
+ * key itself is never sent from client code and never appears in the bundle.
+ * The route moves the file to the Drive trash rather than destroying it, so a
+ * mistaken tap during the reception is recoverable for 30 days.
+ */
+export async function deleteMediaItem(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/media?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return data.ok !== false;
+  } catch (err) {
+    console.error('[deleteMediaItem] error:', err);
+    return false;
+  }
 }
