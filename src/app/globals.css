@@ -708,3 +708,27 @@
   }
 }
 
+/*
+ * iOS Safari zooms the page whenever a focused form control renders below
+ * 16px, and it never zooms back out — the guest is left scrolled sideways in
+ * a layout that no longer fits. The shared <Input>/<Textarea> already handle
+ * this with `text-base md:text-sm`; these rules cover the raw <input> and
+ * <select> elements scattered through the admin screens.
+ *
+ * Deliberately scoped to the classes that would land *under* 16px, so a
+ * control styled larger keeps the size it was given. This block is
+ * intentionally outside @layer: cascade layers beat specificity, so the same
+ * rule inside @layer base would lose to Tailwind's own .text-xs utility.
+ */
+@media (max-width: 767px) {
+  input.text-xs,
+  input.text-sm,
+  input.text-\[9px\],
+  input.text-\[10px\],
+  textarea.text-xs,
+  textarea.text-sm,
+  select.text-xs,
+  select.text-sm {
+    font-size: 16px;
+  }
+}

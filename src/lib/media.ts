@@ -24,6 +24,10 @@ export type WallItem = {
   visibility?: string;
   questTag?: string;
   createdAt?: string;
+  /** A note attached to the upload — the guest's own, or the couple's edit. */
+  caption?: string;
+  /** Soft-deleted by an admin: off the wall, still recoverable. */
+  hidden?: boolean;
 };
 
 /** True when this item should render in a <video> rather than an <img>. */
@@ -42,13 +46,17 @@ type ApiMediaItem = {
   kind?: string;
   visibility?: string;
   createdAt?: string;
+  caption?: string | null;
+  hidden?: boolean;
 };
 
 export function toWallItem(m: ApiMediaItem): WallItem {
   return {
     id: m.id,
     imageUrl: m.url,
-    description: m.questTag ? `${m.questTag} — a cherished memory` : 'A cherished memory',
+    description:
+      m.caption?.trim() ||
+      (m.questTag ? `${m.questTag} — a cherished memory` : 'A cherished memory'),
     imageHint: m.questTag ?? undefined,
     guestName: m.guestName ?? 'A Guest',
     likes: 0,
@@ -58,6 +66,8 @@ export function toWallItem(m: ApiMediaItem): WallItem {
     visibility: m.visibility,
     questTag: m.questTag ?? undefined,
     createdAt: m.createdAt,
+    caption: m.caption ?? undefined,
+    hidden: m.hidden ?? false,
   };
 }
 
@@ -77,6 +87,34 @@ export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
  * The route moves the file to the Drive trash rather than destroying it, so a
  * mistaken tap during the reception is recoverable for 30 days.
  */
+export type MediaEdit = {
+  caption?: string | null;
+  guestName?: string | null;
+  questTag?: string | null;
+  visibility?: 'public' | 'private';
+  hidden?: boolean;
+};
+
+/**
+ * Edits one item on the wall. Admin only, via the same session cookie as
+ * `deleteMediaItem`. Resolves to an error message on failure so the caller
+ * can show the couple what Drive objected to rather than a generic failure.
+ */
+export async function updateMediaItem(id: string, edit: MediaEdit): Promise<string | null> {
+  try {
+    const res = await fetch('/api/media', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...edit }),
+    });
+    if (res.ok) return null;
+    const data = await res.json().catch(() => ({}));
+    return data.error ?? `Update failed (${res.status})`;
+  } catch {
+    return 'Could not reach the server. Check your connection.';
+  }
+}
+
 export async function deleteMediaItem(id: string): Promise<boolean> {
   try {
     const res = await fetch(`/api/media?id=${encodeURIComponent(id)}`, { method: 'DELETE' });

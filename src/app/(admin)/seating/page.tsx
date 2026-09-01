@@ -14,7 +14,7 @@ export default function SeatingPage() {
   const [tables, setTables] = useState<Table[]>([]);
 
   return (
-    <div className="relative h-screen flex flex-col p-4 md:p-6 overflow-hidden font-sans">
+    <div className="relative h-[100dvh] flex flex-col p-4 md:p-6 overflow-hidden font-sans">
       {/* Background Animated Blobs for Premium Feel */}
       <div className="fixed inset-0 pointer-events-none z-[-1]">
         <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-blue-900/15 blur-[120px] mix-blend-screen animate-pulse duration-10000" />

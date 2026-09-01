@@ -17,45 +17,27 @@ const nextConfig: NextConfig = {
     '@opentelemetry/sdk-node',
   ],
 
+  // Both of these were `true`, which let a type error or a lint failure ship
+  // to production unnoticed — the build stayed green while the page broke in
+  // the browser. The suites pass clean, so the build now gates on them.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
+    // Guest media is served same-origin from /api/media/<id>/raw, so Drive
+    // needs no entry here. The Vercel Blob and Supabase hosts are gone with
+    // the stores they named — nothing in the code or the database still
+    // points at either, and every extra pattern is one more host that
+    // next/image will optimise on our behalf.
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
-      },
-      // Vercel Blob — legacy uploaded photos
-      {
-        protocol: 'https',
-        hostname: '*.public.blob.vercel.storage',
-        port: '',
-        pathname: '/**',
-      },
-      // Supabase Storage — wedding photos
-      {
-        protocol: 'https',
-        hostname: 'ljrzrlywesvpxnlbgrqr.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
       },
     ],
   },

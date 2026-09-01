@@ -1,30 +1,57 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Download, RefreshCw, Image as ImageIcon, Video, ShieldAlert, Search, CheckSquare, Square } from 'lucide-react';
+import {
+  Trash2, Download, RefreshCw, Image as ImageIcon, Video, ShieldAlert, Search,
+  CheckSquare, Square, Pencil, Eye, EyeOff, Loader2, X, Save,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { deleteMediaItem, toWallItem, isVideoItem, type WallItem } from '@/lib/media';
+import {
+  deleteMediaItem, updateMediaItem, toWallItem, isVideoItem,
+  type WallItem, type MediaEdit,
+} from '@/lib/media';
 
-const filterTabs = ['All', '📸 Photos', '🎥 Videos', '🎯 Quests'];
+const filterTabs = ['All', '📸 Photos', '🎥 Videos', '🎯 Quests', '🙈 Hidden'] as const;
+
+/** The fields the couple can change on one item. */
+type EditDraft = {
+  caption: string;
+  guestName: string;
+  questTag: string;
+  visibility: 'public' | 'private';
+};
+
+function draftFrom(item: WallItem): EditDraft {
+  return {
+    caption: item.caption ?? '',
+    guestName: item.guestName === 'A Guest' ? '' : item.guestName ?? '',
+    questTag: item.questTag ?? '',
+    visibility: item.visibility === 'private' ? 'private' : 'public',
+  };
+}
 
 export function AdminGalleryModerator() {
   const [items, setItems] = useState<WallItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<WallItem | null>(null);
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [draft, setDraft] = useState<EditDraft | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     try {
       setLoading(true);
       // `visibility=all` spans the Live Wall and the private Vault, which is
-      // what the couple moderates. The route checks the admin cookie for it.
+      // what the couple moderates. The route checks the admin cookie for it,
+      // and includes already-hidden items so they can be brought back.
       const res = await fetch('/api/media?visibility=all&limit=250', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Gallery load failed (${res.status})`);
       const data = await res.json();
@@ -34,11 +61,86 @@ export function AdminGalleryModerator() {
     } finally {
       setLoading(false);
     }
+  }, [toast]);
+
+  useEffect(() => { loadMedia(); }, [loadMedia]);
+
+  // Close the lightbox on Escape — on a laptop at the reception desk that is
+  // the reflex, and trapping the couple in a modal mid-party is unforgivable.
+  useEffect(() => {
+    if (!selectedItem) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeLightbox(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItem]);
+
+  const openLightbox = (item: WallItem) => {
+    setSelectedItem(item);
+    setDraft(null);
   };
 
-  // Mount-only: the gallery loads once and refreshes via the Refresh button.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadMedia(); }, []);
+  const closeLightbox = () => {
+    setSelectedItem(null);
+    setDraft(null);
+  };
+
+  /** Writes one change through to Drive and mirrors it into local state. */
+  const applyEdit = async (id: string, edit: MediaEdit, successTitle: string) => {
+    setBusyId(id);
+    const error = await updateMediaItem(id, edit);
+    setBusyId(null);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Could not save', description: error });
+      return false;
+    }
+
+    const patch: Partial<WallItem> = {};
+    if (edit.caption !== undefined) patch.caption = edit.caption?.trim() || undefined;
+    if (edit.guestName !== undefined) patch.guestName = edit.guestName?.trim() || 'A Guest';
+    if (edit.questTag !== undefined) patch.questTag = edit.questTag?.trim() || undefined;
+    if (edit.visibility !== undefined) patch.visibility = edit.visibility;
+    if (edit.hidden !== undefined) patch.hidden = edit.hidden;
+    // Keep the caption line in step with the wall's own precedence rule.
+    if (edit.caption !== undefined || edit.questTag !== undefined) {
+      const caption = patch.caption ?? undefined;
+      const tag = edit.questTag !== undefined ? patch.questTag : undefined;
+      patch.description = caption || (tag ? `${tag} — a cherished memory` : 'A cherished memory');
+    }
+
+    setItems(prev => prev.map(i => (i.id === id ? { ...i, ...patch } : i)));
+    setSelectedItem(prev => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+    toast({ title: successTitle });
+    return true;
+  };
+
+  const saveDraft = async () => {
+    if (!selectedItem || !draft) return;
+    setIsSaving(true);
+    const ok = await applyEdit(
+      selectedItem.id,
+      {
+        caption: draft.caption,
+        guestName: draft.guestName,
+        questTag: draft.questTag,
+        visibility: draft.visibility,
+      },
+      '✏️ Changes saved'
+    );
+    setIsSaving(false);
+    if (ok) setDraft(null);
+  };
+
+  const toggleHidden = (item: WallItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const next = !item.hidden;
+    applyEdit(
+      item.id,
+      { hidden: next },
+      next ? '🙈 Hidden from the wall' : '👁️ Back on the wall'
+    );
+  };
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,32 +152,25 @@ export function AdminGalleryModerator() {
     });
   };
 
-  const selectAll = () => {
-    if (selectedIds.size === filteredItems.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredItems.map(i => i.id)));
-    }
-  };
-
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected photos/videos from database and gallery?`)) return;
+    if (!confirm(`Move ${selectedIds.size} selected items to the trash? They stay recoverable in Google Drive for 30 days.`)) return;
 
     setIsBatchDeleting(true);
     try {
-      const idsToDelete = Array.from(selectedIds);
-      let successCount = 0;
-      for (const id of idsToDelete) {
-        const ok = await deleteMediaItem(id);
-        if (ok) successCount++;
-      }
+      const ids = Array.from(selectedIds);
+      const results = await Promise.all(ids.map(id => deleteMediaItem(id)));
+      const removed = new Set(ids.filter((_, i) => results[i]));
+      const failed = ids.length - removed.size;
 
-      setItems(prev => prev.filter(i => !selectedIds.has(i.id)));
+      setItems(prev => prev.filter(i => !removed.has(i.id)));
       setSelectedIds(new Set());
       toast({
-        title: `🗑️ ${successCount} items deleted`,
-        description: 'Selected photos/videos removed permanently.',
+        title: `🗑️ ${removed.size} item${removed.size === 1 ? '' : 's'} moved to trash`,
+        description: failed
+          ? `${failed} could not be removed — try again.`
+          : 'Recoverable from Google Drive for 30 days.',
+        variant: failed ? 'destructive' : undefined,
       });
     } catch {
       toast({ variant: 'destructive', title: 'Error during batch delete' });
@@ -86,42 +181,41 @@ export function AdminGalleryModerator() {
 
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this image/video from the gallery & database?')) return;
+    if (!confirm('Move this to the trash? It stays recoverable in Google Drive for 30 days.')) return;
 
     setDeletingId(id);
     try {
-      const ok = await deleteMediaItem(id);
-      if (ok) {
-        setItems(prev => prev.filter(item => item.id !== id));
-        if (selectedItem?.id === id) setSelectedItem(null);
-        setSelectedIds(prev => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
-        toast({
-          title: '🗑️ Deleted successfully',
-          description: 'The photo/video was removed from the live wall and database.',
-        });
-      } else {
-        throw new Error('Deletion failed');
-      }
+      if (!(await deleteMediaItem(id))) throw new Error('Deletion failed');
+      setItems(prev => prev.filter(item => item.id !== id));
+      if (selectedItem?.id === id) closeLightbox();
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      toast({
+        title: '🗑️ Moved to trash',
+        description: 'Off the live wall, and recoverable from Google Drive for 30 days.',
+      });
     } catch {
-      toast({ variant: 'destructive', title: 'Failed to delete photo' });
+      toast({ variant: 'destructive', title: 'Failed to delete' });
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleDownload = async (url: string, name: string, e?: React.MouseEvent) => {
+  const handleDownload = async (item: WallItem, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
-      const res = await fetch(url);
+      const res = await fetch(item.imageUrl);
       const blob = await res.blob();
+      // Drive serves these without a file extension, so the type from the
+      // blob is the only thing that names the download correctly.
+      const ext = (blob.type.split('/')[1] || 'jpg').replace('quicktime', 'mov');
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = objectUrl;
-      a.download = name || 'wedding-media.jpg';
+      a.download = `wedding-${item.id}.${ext}`;
       a.click();
       URL.revokeObjectURL(objectUrl);
       toast({ title: 'Download started' });
@@ -131,31 +225,45 @@ export function AdminGalleryModerator() {
   };
 
   const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return items.filter(item => {
-      // Drive serves every file from /api/media/<id>/raw with no extension,
-      // so sniffing the URL never matches — mediaType is what tells them apart.
       const isVid = isVideoItem(item);
       if (activeFilter === '📸 Photos' && isVid) return false;
       if (activeFilter === '🎥 Videos' && !isVid) return false;
-      if (activeFilter === '🎯 Quests' && !item.questTag && !item.description?.toLowerCase().includes('quest')) return false;
+      if (activeFilter === '🎯 Quests' && !item.questTag) return false;
+      if (activeFilter === '🙈 Hidden' && !item.hidden) return false;
 
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const nameMatch = item.guestName?.toLowerCase().includes(query);
-        const descMatch = item.description?.toLowerCase().includes(query);
-        const tagMatch = item.questTag?.toLowerCase().includes(query);
-        if (!nameMatch && !descMatch && !tagMatch) return false;
+      if (query) {
+        return Boolean(
+          item.guestName?.toLowerCase().includes(query) ||
+          item.caption?.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query) ||
+          item.questTag?.toLowerCase().includes(query)
+        );
       }
-
       return true;
     });
   }, [items, activeFilter, searchQuery]);
 
-  const photoCount = items.filter(i => !isVideoItem(i)).length;
-  const videoCount = items.length - photoCount;
+  const selectAll = () => {
+    setSelectedIds(prev =>
+      prev.size === filteredItems.length ? new Set() : new Set(filteredItems.map(i => i.id))
+    );
+  };
+
+  const { photoCount, videoCount, hiddenCount } = useMemo(() => {
+    let photos = 0, videos = 0, hidden = 0;
+    for (const i of items) {
+      if (isVideoItem(i)) videos++; else photos++;
+      if (i.hidden) hidden++;
+    }
+    return { photoCount: photos, videoCount: videos, hiddenCount: hidden };
+  }, [items]);
+
+  const allSelected = filteredItems.length > 0 && selectedIds.size === filteredItems.length;
 
   return (
-    <div className="rounded-3xl bg-black/40 border border-amber-500/25 p-6 backdrop-blur-2xl shadow-2xl space-y-6 text-white">
+    <div className="rounded-3xl bg-black/40 border border-amber-500/25 p-4 sm:p-6 backdrop-blur-2xl shadow-2xl space-y-5 text-white">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
@@ -166,37 +274,38 @@ export function AdminGalleryModerator() {
             📸 Live Memories &amp; Gallery Moderation
           </h3>
           <p className="text-xs text-white/60 mt-1">
-            Delete any unwanted photos/videos in 1 click or download high-res originals.
+            Tap any item to edit its caption and credit, hide it from the wall, or remove it.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-amber-300">
-            {items.length} total ({photoCount} 📸 • {videoCount} 🎥)
+            {items.length} total ({photoCount} 📸 • {videoCount} 🎥{hiddenCount ? ` • ${hiddenCount} 🙈` : ''})
           </div>
           <Button
             onClick={loadMedia}
             disabled={loading}
             size="sm"
             variant="outline"
-            className="rounded-full border-amber-500/30 bg-white/5 hover:bg-amber-500/20 text-amber-300 text-xs font-bold"
+            className="min-h-[44px] rounded-full border-amber-500/30 bg-white/5 hover:bg-amber-500/20 text-amber-300 text-xs font-bold"
           >
             <RefreshCw size={14} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
       </div>
 
-      {/* Filter and Batch Tools */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-1">
-        {/* Category tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1">
+      {/* Filters and batch tools */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* -mx-1/px-1 keeps the focus ring of the first chip from being clipped
+            by the scroll container on narrow phones. */}
+        <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {filterTabs.map(tab => (
             <Button
               key={tab}
               size="sm"
               variant={activeFilter === tab ? 'default' : 'outline'}
               onClick={() => setActiveFilter(tab)}
-              className={`rounded-full text-xs font-bold transition-all ${
+              className={`min-h-[40px] shrink-0 rounded-full text-xs font-bold transition-all ${
                 activeFilter === tab
                   ? 'bg-amber-400 text-black border-amber-400 font-extrabold shadow-md'
                   : 'border-white/15 text-white/70 bg-white/5 hover:bg-white/10'
@@ -207,18 +316,19 @@ export function AdminGalleryModerator() {
           ))}
         </div>
 
-        {/* Search & Batch delete buttons */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-2.5 md:justify-end">
           {filteredItems.length > 0 && (
             <>
               <Button
                 onClick={selectAll}
                 size="sm"
                 variant="outline"
-                className="rounded-full border-white/15 bg-white/5 text-xs text-white/80"
+                className="min-h-[44px] rounded-full border-white/15 bg-white/5 text-xs text-white/80"
               >
-                {selectedIds.size === filteredItems.length ? <CheckSquare size={13} className="mr-1 text-amber-400" /> : <Square size={13} className="mr-1" />}
-                {selectedIds.size === filteredItems.length ? 'Deselect All' : 'Select All'}
+                {allSelected
+                  ? <CheckSquare size={13} className="mr-1 text-amber-400" />
+                  : <Square size={13} className="mr-1" />}
+                {allSelected ? 'Deselect All' : 'Select All'}
               </Button>
 
               {selectedIds.size > 0 && (
@@ -226,23 +336,27 @@ export function AdminGalleryModerator() {
                   onClick={handleBatchDelete}
                   disabled={isBatchDeleting}
                   size="sm"
-                  className="rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md"
+                  className="min-h-[44px] rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md"
                 >
-                  <Trash2 size={13} className="mr-1" />
-                  {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
+                  {isBatchDeleting
+                    ? <Loader2 size={13} className="mr-1 animate-spin" />
+                    : <Trash2 size={13} className="mr-1" />}
+                  {isBatchDeleting ? 'Deleting…' : `Delete Selected (${selectedIds.size})`}
                 </Button>
               )}
             </>
           )}
 
           <div className="relative w-full sm:w-52">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            {/* text-base: iOS Safari zooms the whole page when a focused input
+                is under 16px, which throws the dashboard layout sideways. */}
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search guest name..."
-              className="w-full rounded-full bg-white/10 border border-white/15 pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-amber-400"
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search name, caption or tag…"
+              className="w-full min-h-[44px] rounded-full bg-white/10 border border-white/15 pl-8 pr-3 py-1.5 text-base sm:text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-amber-400"
             />
           </div>
         </div>
@@ -258,80 +372,76 @@ export function AdminGalleryModerator() {
         <div className="text-center py-14 bg-white/5 rounded-2xl border border-white/10 p-6 space-y-2">
           <ImageIcon className="mx-auto text-amber-400/40" size={36} />
           <p className="font-headline italic text-lg text-white">
-            {searchQuery ? 'No matching media found' : 'No photos or videos uploaded yet'}
+            {searchQuery || activeFilter !== 'All' ? 'Nothing matches that filter' : 'No photos or videos uploaded yet'}
           </p>
           <p className="text-xs text-white/50">Guest uploads from the camera or live wall will appear here.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-          {filteredItems.map((item) => {
-            const isVideo =
-              item.imageUrl?.startsWith('data:video') ||
-              /\.(mp4|webm|mov)$/i.test(item.imageUrl || '') ||
-              item.mediaType === 'video';
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-3.5">
+          {filteredItems.map(item => {
+            const isVideo = isVideoItem(item);
             const isSelected = selectedIds.has(item.id);
 
             return (
               <div
                 key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className={`group relative rounded-2xl overflow-hidden bg-white/5 border transition-all cursor-pointer shadow-md aspect-square flex items-center justify-center ${
+                onClick={() => openLightbox(item)}
+                className={`group relative rounded-2xl overflow-hidden bg-white/5 border transition-all cursor-pointer shadow-md aspect-square ${
                   isSelected ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white/10 hover:border-amber-400/60'
-                }`}
+                } ${item.hidden ? 'opacity-55' : ''}`}
               >
                 {isVideo ? (
                   <video
                     src={item.imageUrl}
                     className="w-full h-full object-cover"
                     muted
+                    playsInline
+                    preload="metadata"
                   />
                 ) : (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={item.imageUrl}
-                    alt="Uploaded thumbnail"
+                    alt={item.caption || `Upload from ${item.guestName}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     loading="lazy"
+                    decoding="async"
                   />
                 )}
 
-                {/* Checkbox toggle on top left */}
                 <button
                   type="button"
-                  onClick={(e) => toggleSelect(item.id, e)}
-                  className={`absolute top-2 left-2 p-1.5 rounded-lg backdrop-blur-md transition-all z-20 ${
-                    isSelected ? 'bg-amber-400 text-black shadow-lg' : 'bg-black/60 text-white/70 hover:text-white'
+                  onClick={e => toggleSelect(item.id, e)}
+                  className={`absolute top-1.5 left-1.5 grid h-9 w-9 place-items-center rounded-lg backdrop-blur-md transition-all z-20 ${
+                    isSelected ? 'bg-amber-400 text-black shadow-lg' : 'bg-black/60 text-white/80 hover:text-white'
                   }`}
-                  title="Select for batch action"
+                  aria-label={isSelected ? 'Deselect' : 'Select for batch action'}
                 >
-                  {isSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                  {isSelected ? <CheckSquare size={15} /> : <Square size={15} />}
                 </button>
 
-                {/* Video icon badge */}
+                <button
+                  type="button"
+                  onClick={e => toggleHidden(item, e)}
+                  disabled={busyId === item.id}
+                  className="absolute top-1.5 right-1.5 grid h-9 w-9 place-items-center rounded-lg bg-black/60 text-white/80 backdrop-blur-md hover:text-white transition-all z-20 disabled:opacity-50"
+                  aria-label={item.hidden ? 'Show on the wall' : 'Hide from the wall'}
+                >
+                  {busyId === item.id
+                    ? <Loader2 size={15} className="animate-spin" />
+                    : item.hidden ? <EyeOff size={15} className="text-red-300" /> : <Eye size={15} />}
+                </button>
+
                 {isVideo && (
-                  <div className="absolute top-2 left-10 bg-black/70 rounded-full p-1 text-amber-300 z-10">
+                  <div className="absolute bottom-11 right-1.5 rounded-full bg-black/70 p-1 text-amber-300 z-10">
                     <Video size={12} />
                   </div>
                 )}
 
-                {/* Direct 1-Click Delete Button on top right */}
-                <button
-                  type="button"
-                  onClick={(e) => handleDelete(item.id, e)}
-                  disabled={deletingId === item.id}
-                  className="absolute top-2 right-2 p-2 rounded-full bg-red-600/90 text-white hover:bg-red-700 hover:scale-110 transition-all shadow-lg z-20"
-                  title="Delete from Live Gallery & Database"
-                >
-                  <Trash2 size={13} />
-                </button>
-
-                {/* Guest name tag caption overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10">
-                  <p className="text-[10px] font-bold text-white truncate">
-                    {item.guestName || 'Guest'}
-                  </p>
-                  <p className="text-[8px] text-amber-300/80 truncate">
-                    {item.description || 'Live capture'}
+                  <p className="text-[10px] font-bold text-white truncate">{item.guestName}</p>
+                  <p className="text-[9px] text-amber-300/80 truncate">
+                    {item.hidden ? 'Hidden from wall' : item.caption || item.questTag || 'Live capture'}
                   </p>
                 </div>
               </div>
@@ -340,78 +450,196 @@ export function AdminGalleryModerator() {
         </div>
       )}
 
-      {/* Lightbox / Action Modal */}
+      {/* Lightbox and editor */}
       <AnimatePresence>
         {selectedItem && (
-          <div
-            onClick={() => setSelectedItem(null)}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeLightbox}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-4"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-2xl w-full bg-[#111] rounded-3xl overflow-hidden border border-amber-500/30 p-5 space-y-4 shadow-2xl"
+              exit={{ scale: 0.94, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="relative my-auto w-full max-w-2xl rounded-3xl border border-amber-500/30 bg-[#111] p-4 sm:p-5 shadow-2xl space-y-4"
+              style={{ marginBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
             >
-              <div className="max-h-[65vh] rounded-2xl overflow-hidden flex items-center justify-center bg-black">
-                {selectedItem.imageUrl?.startsWith('data:video') || /\.(mp4|webm|mov)$/i.test(selectedItem.imageUrl || '') ? (
+              <button
+                type="button"
+                onClick={closeLightbox}
+                className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-black/70 text-white/70 hover:text-white"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex max-h-[45vh] items-center justify-center overflow-hidden rounded-2xl bg-black">
+                {isVideoItem(selectedItem) ? (
                   <video
                     src={selectedItem.imageUrl}
                     controls
-                    autoPlay
                     playsInline
-                    className="max-h-[65vh] w-auto mx-auto object-contain"
+                    preload="metadata"
+                    className="max-h-[45vh] w-auto mx-auto object-contain"
                   />
                 ) : (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={selectedItem.imageUrl}
-                    alt="Full preview"
-                    className="max-h-[65vh] w-auto mx-auto object-contain rounded-xl"
+                    alt={selectedItem.caption || 'Full preview'}
+                    className="max-h-[45vh] w-auto mx-auto object-contain rounded-xl"
                   />
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                <div className="text-center sm:text-left">
-                  <p className="font-headline italic text-lg font-bold text-[#f6e7b7]">
-                    Uploaded by: {selectedItem.guestName || 'Wedding Guest'}
-                  </p>
-                  <p className="text-xs text-white/50">{selectedItem.description}</p>
-                </div>
+              {draft ? (
+                <div className="space-y-3">
+                  <FieldLabel>Credited to</FieldLabel>
+                  <input
+                    value={draft.guestName}
+                    onChange={e => setDraft({ ...draft, guestName: e.target.value })}
+                    maxLength={80}
+                    placeholder="A Guest"
+                    className="w-full min-h-[44px] rounded-xl border border-white/15 bg-white/10 px-3 text-base text-white placeholder:text-white/35 focus:border-amber-400 focus:outline-none"
+                  />
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => handleDownload(selectedItem.imageUrl, `wedding-${selectedItem.id}.jpg`)}
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full border-amber-500/30 bg-white/5 text-amber-300 hover:bg-amber-500/20 text-xs"
-                  >
-                    <Download size={14} className="mr-1.5" /> Download
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(selectedItem.id)}
-                    disabled={deletingId === selectedItem.id}
-                    size="sm"
-                    className="rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-lg"
-                  >
-                    <Trash2 size={14} className="mr-1.5" /> Delete Photo
-                  </Button>
-                  <Button
-                    onClick={() => setSelectedItem(null)}
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-full text-white/70 hover:text-white text-xs"
-                  >
-                    Close
-                  </Button>
+                  <FieldLabel>Caption</FieldLabel>
+                  <textarea
+                    value={draft.caption}
+                    onChange={e => setDraft({ ...draft, caption: e.target.value })}
+                    maxLength={280}
+                    rows={2}
+                    placeholder="Say something about this moment…"
+                    className="w-full resize-y rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-base text-white placeholder:text-white/35 focus:border-amber-400 focus:outline-none"
+                  />
+                  <p className="text-right text-[10px] text-white/40">{draft.caption.length}/280</p>
+
+                  <FieldLabel>Tag</FieldLabel>
+                  <input
+                    value={draft.questTag}
+                    onChange={e => setDraft({ ...draft, questTag: e.target.value })}
+                    maxLength={60}
+                    placeholder="e.g. First Dance"
+                    className="w-full min-h-[44px] rounded-xl border border-white/15 bg-white/10 px-3 text-base text-white placeholder:text-white/35 focus:border-amber-400 focus:outline-none"
+                  />
+
+                  <FieldLabel>Where it shows</FieldLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['public', 'private'] as const).map(value => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, visibility: value })}
+                        className={`min-h-[44px] rounded-xl border px-3 text-xs font-bold transition-all ${
+                          draft.visibility === value
+                            ? 'border-amber-400 bg-amber-400 text-black'
+                            : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
+                        }`}
+                      >
+                        {value === 'public' ? 'Live Wall' : 'Private Vault'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                    <Button
+                      onClick={() => setDraft(null)}
+                      variant="ghost"
+                      className="min-h-[44px] rounded-full text-white/70 hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={saveDraft}
+                      disabled={isSaving}
+                      className="min-h-[44px] rounded-full bg-[#d4af37] font-bold text-black hover:bg-[#c49f2f]"
+                    >
+                      {isSaving
+                        ? <Loader2 size={15} className="mr-1.5 animate-spin" />
+                        : <Save size={15} className="mr-1.5" />}
+                      {isSaving ? 'Saving…' : 'Save changes'}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="pr-10 text-center sm:text-left">
+                    <p className="font-headline text-lg font-bold italic text-[#f6e7b7]">
+                      {selectedItem.guestName}
+                    </p>
+                    <p className="text-xs text-white/55">{selectedItem.description}</p>
+                    <div className="mt-2 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+                      <Chip>{selectedItem.visibility === 'private' ? 'Private Vault' : 'Live Wall'}</Chip>
+                      {selectedItem.questTag && <Chip>{selectedItem.questTag}</Chip>}
+                      {selectedItem.hidden && <Chip tone="danger">Hidden</Chip>}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <Button
+                      onClick={() => setDraft(draftFrom(selectedItem))}
+                      className="min-h-[44px] rounded-full bg-[#d4af37] text-xs font-bold text-black hover:bg-[#c49f2f]"
+                    >
+                      <Pencil size={14} className="mr-1.5" /> Edit
+                    </Button>
+                    <Button
+                      onClick={() => toggleHidden(selectedItem)}
+                      disabled={busyId === selectedItem.id}
+                      variant="outline"
+                      className="min-h-[44px] rounded-full border-white/15 bg-white/5 text-xs text-white/80"
+                    >
+                      {selectedItem.hidden
+                        ? <><Eye size={14} className="mr-1.5" /> Show</>
+                        : <><EyeOff size={14} className="mr-1.5" /> Hide</>}
+                    </Button>
+                    <Button
+                      onClick={() => handleDownload(selectedItem)}
+                      variant="outline"
+                      className="min-h-[44px] rounded-full border-amber-500/30 bg-white/5 text-xs text-amber-300 hover:bg-amber-500/20"
+                    >
+                      <Download size={14} className="mr-1.5" /> Save
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(selectedItem.id)}
+                      disabled={deletingId === selectedItem.id}
+                      className="min-h-[44px] rounded-full bg-red-600 text-xs font-bold text-white shadow-lg hover:bg-red-700"
+                    >
+                      {deletingId === selectedItem.id
+                        ? <Loader2 size={14} className="mr-1.5 animate-spin" />
+                        : <Trash2 size={14} className="mr-1.5" />}
+                      Delete
+                    </Button>
+                  </div>
+                </>
+              )}
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">{children}</p>
+  );
+}
+
+function Chip({ children, tone }: { children: React.ReactNode; tone?: 'danger' }) {
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+        tone === 'danger'
+          ? 'border-red-500/30 bg-red-500/20 text-red-300'
+          : 'border-white/15 bg-white/5 text-white/60'
+      }`}
+    >
+      {children}
+    </span>
   );
 }

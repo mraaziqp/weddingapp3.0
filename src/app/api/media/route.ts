@@ -3,9 +3,10 @@ import {
   listMedia,
   countMedia,
   trashMedia,
-  setMediaVisibility,
+  updateMedia,
   isDriveConfigured,
   type MediaVisibility,
+  type MediaPatch,
 } from '@/lib/google-drive';
 import { isAuthorizedAdminRequest } from '@/lib/admin-auth';
 
@@ -57,6 +58,10 @@ export async function GET(req: NextRequest) {
   try {
     const result = await listMedia({
       visibility,
+      // An admin view has to show what it has already hidden, otherwise
+      // hiding an item is a one-way door: it drops out of the only list the
+      // couple can moderate from and can never be brought back.
+      includeHidden: visibility !== 'public',
       questTag: params.get('questTag'),
       guestId: params.get('guestId'),
       limit,
@@ -87,25 +92,79 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-/** PATCH /api/media — admin moves a photo between the Live Wall and the Vault. */
+/**
+ * PATCH /api/media — admin edits one item on the wall.
+ *
+ * Accepts any subset of { caption, guestName, questTag, visibility, hidden }.
+ * Omitted keys are left alone, so the couple can retag a photo without
+ * disturbing who it is credited to.
+ */
+const CAPTION_MAX = 280;
+const NAME_MAX = 80;
+const TAG_MAX = 60;
+
 export async function PATCH(req: NextRequest) {
   if (!isAuthorizedAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let body: Record<string, unknown>;
   try {
-    const { id, visibility } = await req.json();
-    if (!id || typeof id !== 'string') {
-      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-    }
-    if (visibility !== 'public' && visibility !== 'private') {
-      return NextResponse.json({ error: 'visibility must be public or private' }, { status: 400 });
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Malformed request' }, { status: 400 });
+  }
+
+  const id = typeof body.id === 'string' ? body.id.trim() : '';
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+  const patch: MediaPatch = {};
+
+  // Length caps are enforced here rather than only in the form: Drive rejects
+  // the whole file update once appProperties exceed their quota, so an
+  // over-long caption would fail the write instead of being trimmed.
+  const text = (value: unknown, max: number, field: string): string | null | undefined => {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    if (typeof value !== 'string') throw new Error(`${field} must be text`);
+    if (value.length > max) throw new Error(`${field} must be ${max} characters or fewer`);
+    return value;
+  };
+
+  try {
+    const caption = text(body.caption, CAPTION_MAX, 'Caption');
+    if (caption !== undefined) patch.caption = caption;
+
+    const guestName = text(body.guestName, NAME_MAX, 'Name');
+    if (guestName !== undefined) patch.guestName = guestName;
+
+    const questTag = text(body.questTag, TAG_MAX, 'Tag');
+    if (questTag !== undefined) patch.questTag = questTag;
+
+    if (body.visibility !== undefined) {
+      if (body.visibility !== 'public' && body.visibility !== 'private') {
+        throw new Error('visibility must be public or private');
+      }
+      patch.visibility = body.visibility;
     }
 
-    await setMediaVisibility(id, visibility);
+    if (body.hidden !== undefined) {
+      if (typeof body.hidden !== 'boolean') throw new Error('hidden must be true or false');
+      patch.hidden = body.hidden;
+    }
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 400 });
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+  }
+
+  try {
+    await updateMedia(id, patch);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[Media] visibility change failed:', err);
+    console.error('[Media] update failed:', err);
     return NextResponse.json({ error: 'Could not update that photo' }, { status: 502 });
   }
 }

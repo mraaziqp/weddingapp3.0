@@ -29,7 +29,7 @@
 
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 
 const REDIRECT_PORT = 53682;
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
@@ -51,7 +51,10 @@ if (!clientId || !clientSecret) {
   process.exit(1);
 }
 
-const state = Math.random().toString(36).slice(2);
+// Overridable so the caller can know the URL before the script runs — useful
+// when the browser cannot be launched for the user and the link has to be
+// handed over by hand.
+const state = process.env.OAUTH_STATE || Math.random().toString(36).slice(2);
 const authUrl =
   'https://accounts.google.com/o/oauth2/v2/auth?' +
   new URLSearchParams({
@@ -83,11 +86,31 @@ if (!tokens.refresh_token) {
   process.exit(1);
 }
 
-console.log('\n  ✓ Authorised. Add this line to .env.local:\n');
-console.log(`GOOGLE_REFRESH_TOKEN=${tokens.refresh_token}\n`);
-console.log('  (And add the same value to your Vercel project env vars.)\n');
+// Written straight into .env.local rather than printed for someone to copy. A
+// refresh token that exists only in terminal scrollback is one closed window
+// away from having to redo the whole consent flow, and it should not be passed
+// around by hand anyway.
+persistToken(tokens.refresh_token);
+
+console.log('\n  ✓ Authorised. GOOGLE_REFRESH_TOKEN written to .env.local.');
+console.log('  Push the same value to your host, e.g.');
+console.log('    vercel env add GOOGLE_REFRESH_TOKEN production\n');
 
 // ── helpers ───────────────────────────────────────────────────────────────
+
+/** Upserts the refresh token into .env.local, leaving every other line alone. */
+function persistToken(token) {
+  const file = '.env.local';
+  const line = `GOOGLE_REFRESH_TOKEN=${token}`;
+  let contents = existsSync(file) ? readFileSync(file, 'utf8') : '';
+
+  if (/^GOOGLE_REFRESH_TOKEN=.*$/m.test(contents)) {
+    contents = contents.replace(/^GOOGLE_REFRESH_TOKEN=.*$/m, line);
+  } else {
+    contents = `${contents.replace(/\s*$/, '')}\n${line}\n`;
+  }
+  writeFileSync(file, contents);
+}
 
 function loadEnvFiles() {
   for (const file of ['.env.local', '.env']) {
@@ -102,10 +125,18 @@ function loadEnvFiles() {
 }
 
 function openBrowser(url) {
-  const cmd =
-    process.platform === 'win32' ? 'start' : process.platform === 'darwin' ? 'open' : 'xdg-open';
   try {
-    spawn(cmd, [url], { shell: process.platform === 'win32', detached: true, stdio: 'ignore' });
+    if (process.platform === 'win32') {
+      // The URL must be quoted, and `start` needs an empty title argument
+      // before it. Without the quotes cmd.exe treats every `&` in the query
+      // string as a command separator, so the browser receives only
+      // `...?client_id=...` and Google rejects it with
+      // "Required parameter is missing: response_type".
+      spawn('cmd', ['/c', 'start', '""', `"${url}"`], { detached: true, stdio: 'ignore' });
+      return;
+    }
+    const cmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
+    spawn(cmd, [url], { detached: true, stdio: 'ignore' });
   } catch {
     /* the URL is printed above; the user can open it by hand */
   }
@@ -149,8 +180,8 @@ function waitForCode(expectedState) {
     // Don't leave a listening socket around forever if the user walks away.
     setTimeout(() => {
       server.close();
-      reject(new Error('Timed out waiting for authorisation (5 minutes).'));
-    }, 5 * 60_000).unref();
+      reject(new Error('Timed out waiting for authorisation (9 minutes).'));
+    }, 9 * 60_000).unref();
   });
 }
 

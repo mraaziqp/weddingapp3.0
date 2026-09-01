@@ -37,9 +37,18 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
+    const isPartial = file.status === 206;
+
     const headers = new Headers({
       'Content-Type': file.mimeType,
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      // A partial body must never be shared by a CDN. Vercel's edge caches on
+      // the URL alone — it does not vary on Range — so caching a 206 lets a
+      // slice of the file be replayed to someone who asked for the whole
+      // thing, and the edge also reports the hit back as a plain 200. Both
+      // break <video> seeking on iOS, which always requests ranges.
+      'Cache-Control': isPartial
+        ? 'private, no-store'
+        : 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       // Media is shown inline on the wall, never offered as a download here.
       'Content-Disposition': 'inline',

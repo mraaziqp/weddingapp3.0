@@ -91,7 +91,7 @@ export function EventDashboardLayout({
       </header>
 
       {/* ── Content ────────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex-1 overflow-hidden pb-24">
+      <div className="relative z-10 flex-1 overflow-hidden">
         {/*
           Deliberately NOT `mode="wait"`. That holds the incoming tab until the
           outgoing one finishes animating out, which makes the switch depend on
@@ -109,7 +109,7 @@ export function EventDashboardLayout({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction * -32 }}
             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute inset-0 overflow-y-auto overscroll-contain"
+            className="absolute inset-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))]"
           >
             {children}
           </motion.div>

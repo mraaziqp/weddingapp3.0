@@ -36,6 +36,11 @@ export const viewport: Viewport = {
   themeColor: '#d4af37',
   width: 'device-width',
   initialScale: 1,
+  // Required for env(safe-area-inset-*) to report anything but 0 on iOS.
+  // Without it every safe-area guard in this app silently collapses, and the
+  // bottom nav ends up under the home indicator on any notched iPhone — while
+  // `black-translucent` above also runs the header under the status bar.
+  viewportFit: 'cover',
   // Pinch-zoom stays enabled. This was maximumScale: 1 / userScalable: false,
   // which is a WCAG 1.4.4 failure and a real problem for this guest list in
   // particular — older relatives reading an invitation, a seating chart and a

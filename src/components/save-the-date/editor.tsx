@@ -495,7 +495,7 @@ export function SaveTheDateEditor() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] rounded-2xl overflow-hidden border border-white/10">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] rounded-2xl overflow-hidden border border-white/10">
       <TopBar
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}

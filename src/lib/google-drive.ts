@@ -756,14 +756,48 @@ export async function trashMedia(fileId: string): Promise<void> {
  * Drive merges `appProperties` on PATCH, so writing this one key leaves
  * guestId, questTag and the rest untouched.
  */
-export async function setMediaHidden(fileId: string, hidden: boolean): Promise<void> {
+export type MediaPatch = {
+  caption?: string | null;
+  guestName?: string | null;
+  questTag?: string | null;
+  visibility?: MediaVisibility;
+  hidden?: boolean;
+};
+
+/**
+ * Edits the metadata on one item. The single write primitive behind every
+ * admin change to the wall.
+ *
+ * Drive merges `appProperties` rather than replacing the map, so only the
+ * keys named here are touched. It stores every value as a string and has no
+ * null type — clearing a field means writing `null`, which deletes the key,
+ * which is why the empty string is normalised to `null` below. Without that,
+ * clearing a caption would store the literal `""` and the item would keep
+ * rendering an empty caption row forever.
+ */
+export async function updateMedia(fileId: string, patch: MediaPatch): Promise<void> {
+  const appProperties: Record<string, string | null> = {};
+
+  if (patch.caption !== undefined) appProperties.caption = patch.caption?.trim() || null;
+  if (patch.guestName !== undefined) appProperties.guestName = patch.guestName?.trim() || null;
+  if (patch.questTag !== undefined) appProperties.questTag = patch.questTag?.trim() || null;
+  if (patch.visibility !== undefined) appProperties.visibility = patch.visibility;
+  // Drive stores appProperties as strings; there is no boolean type.
+  if (patch.hidden !== undefined) appProperties.hidden = patch.hidden ? 'true' : 'false';
+
+  if (Object.keys(appProperties).length === 0) return;
+
   await driveJson(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=id`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    // Drive stores appProperties as strings; there is no boolean type.
-    body: JSON.stringify({ appProperties: { hidden: hidden ? 'true' : 'false' } }),
+    body: JSON.stringify({ appProperties }),
   });
   invalidateListCache();
+}
+
+/** Soft-deletes an item: hidden from guests, still recoverable by the couple. */
+export async function setMediaHidden(fileId: string, hidden: boolean): Promise<void> {
+  await updateMedia(fileId, { hidden });
 }
 
 /** Flips a photo between the Live Wall and the private Vault. */
@@ -771,10 +805,5 @@ export async function setMediaVisibility(
   fileId: string,
   visibility: MediaVisibility
 ): Promise<void> {
-  await driveJson(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=id`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ appProperties: { visibility } }),
-  });
-  invalidateListCache();
+  await updateMedia(fileId, { visibility });
 }
