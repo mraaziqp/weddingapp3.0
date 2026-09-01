@@ -1,5 +1,17 @@
-# Settings to manage and configure a Firebase App Hosting backend.
+# Settings for a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
+#
+# ⚠️  THIS IS NOT THE PRODUCTION DEPLOYMENT.
+#
+# www.raziaraaziq.co.za is served by Vercel (project weddingapp3-0, building
+# from `main`). Vercel never reads this file, so nothing set here reaches
+# production — the live environment variables live in
+# Vercel → Settings → Environment Variables. See "Deployment" in README.md.
+#
+# Firebase is still used for Firestore itself (firebase.json, firestore.rules),
+# just not for hosting. This file is kept for the App Hosting path and is
+# corrected below so it is accurate if it is ever used, but changing it has no
+# effect on the live site.
 #
 # ⚠️  EVERY `secret:` BELOW MUST EXIST IN GOOGLE CLOUD SECRET MANAGER BEFORE
 #     THE NEXT DEPLOY. A rollout referencing a secret that does not exist
