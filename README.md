@@ -21,6 +21,42 @@ Example fiancée seating access:
 
 This also means the site root `/` defaults to `/event`, not the admin dashboard.
 
+## Deployment — Vercel
+
+`www.raziaraaziq.co.za` is served by **Vercel** (project `weddingapp3-0`),
+building from `main`. Pushing to `main` deploys.
+
+`apphosting.yaml` is *not* the production config — Vercel never reads it.
+Firebase is still the database (Firestore), just not the host.
+
+### Required environment variables
+
+Set these in **Vercel → Settings → Environment Variables → Production**, then
+redeploy. Every one is server-side; none belongs in the repo.
+
+| Variable | Without it |
+|---|---|
+| `FIREBASE_SERVICE_ACCOUNT_B64` | The Admin SDK cannot start. `/api/data` returns 500, RSVPs and the guest list are unreachable, and every config read falls back to its defaults — which is how the site ends up pinned to whatever the default landing page is. |
+| `GOOGLE_CLIENT_ID` | Drive is unconfigured. |
+| `GOOGLE_CLIENT_SECRET` | Drive is unconfigured. |
+| `GOOGLE_REFRESH_TOKEN` | Drive is unconfigured — `/api/media` answers `{"configured": false}`, the gallery stays empty and photo/video upload has nowhere to write. Generate with `npm run drive:auth`. |
+| `ADMIN_ACCESS_KEY` | No admin access. `EVENT_SESSION_SECRET` also falls back to this. |
+| `EVENT_PIN` | Guests cannot join `/event-hub`. |
+| `EVENT_SESSION_SECRET` | Event sessions fall back to signing with the admin key, so rotating that key signs every guest out mid-party. |
+
+Optional: `ADMIN_ACCESS_KEYS`, `FAMILY_ACCESS_KEY_BRIDE`,
+`FAMILY_ACCESS_KEY_GROOM`, `GDRIVE_*` folder overrides,
+`GOOGLE_GENAI_API_KEY`.
+
+### Checking a deployment from the outside
+
+Both stores fail *quietly* by design — the pages degrade rather than crash,
+which is right on a wedding day and is exactly why a missing variable can go
+unnoticed. These two calls say whether the deployment is actually wired up:
+
+    curl -s https://www.raziaraaziq.co.za/api/media?limit=1     # "configured": true
+    curl -s -X POST https://www.raziaraaziq.co.za/api/data       -H 'Content-Type: application/json' -d '{"op":"fetchMenuItems"}'   # 200, not 500
+
 ## Scripts
 
 - `npm run dev` - start development server

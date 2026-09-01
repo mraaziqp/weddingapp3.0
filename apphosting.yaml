@@ -1,32 +1,137 @@
-# Settings to manage and configure a Firebase App Hosting backend.
+# Settings for a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
+#
+# ⚠️  THIS IS NOT THE PRODUCTION DEPLOYMENT.
+#
+# www.raziaraaziq.co.za is served by Vercel (project weddingapp3-0, building
+# from `main`). Vercel never reads this file, so nothing set here reaches
+# production — the live environment variables live in
+# Vercel → Settings → Environment Variables. See "Deployment" in README.md.
+#
+# Firebase is still used for Firestore itself (firebase.json, firestore.rules),
+# just not for hosting. This file is kept for the App Hosting path and is
+# corrected below so it is accurate if it is ever used, but changing it has no
+# effect on the live site.
+#
+# ⚠️  EVERY `secret:` BELOW MUST EXIST IN GOOGLE CLOUD SECRET MANAGER BEFORE
+#     THE NEXT DEPLOY. A rollout referencing a secret that does not exist
+#     fails. See "Creating the secrets" at the bottom of this file.
+#
+# This file previously declared the Supabase and Neon variables and nothing
+# else. Both were retired when the data layer moved to Firestore, and nothing
+# in src/ reads them any more — while the variables the app actually depends on
+# were never added. The result in production was silent rather than loud:
+#
+#   - No FIREBASE_SERVICE_ACCOUNT_B64, so the Admin SDK could not initialise.
+#     /api/data returned 500, and /api/std/config fell back to its DEFAULTS —
+#     which include redirectToStd: true. The site therefore kept landing on the
+#     Save the Date envelope, and switching that off in the dashboard could
+#     never persist, because the write failed too.
+#
+#   - No GOOGLE_* credentials, so isDriveConfigured() was false and the media
+#     store was simply absent: /api/media answered {"configured": false}, the
+#     gallery stayed empty and photo upload had nothing to write to.
+#
+# Neither failed loudly, because both paths are written to degrade rather than
+# crash — which is right for a wedding day, and is exactly why this went
+# unnoticed. Keep this file in step with the env vars in src/.
 
 runConfig:
   maxInstances: 1
 
 env:
-  - variable: ADMIN_ACCESS_KEY
-    value: razia-abdu-2026
-  - variable: ADMIN_ACCESS_KEYS
-    value: razia-abdu-2026
-  - variable: FAMILY_ACCESS_KEY_BRIDE
-    value: razia-family-2026
-  - variable: FAMILY_ACCESS_KEY_GROOM
-    value: abduraziq-family-2026
-  - variable: NEXT_PUBLIC_SUPABASE_URL
-    value: https://ljrzrlywesvpxnlbgrqr.supabase.co
-  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqcnpybHl3ZXN2cHhubGJncnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5Mjc5NDgsImV4cCI6MjA5MzUwMzk0OH0.vSUwv_pP5AtT1CDBQqWSLYKt-CioFRfc7Mbx3jZvR30
+  # ── Public site config ────────────────────────────────────────────────
+  # NEXT_PUBLIC_* are inlined by the compiler, so they must be present at
+  # BUILD as well as RUNTIME or they end up undefined in the browser bundle.
   - variable: NEXT_PUBLIC_SITE_URL
     value: https://www.raziaraaziq.co.za
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_ADMIN_URL
     value: https://www.raziaraaziq.co.za/admin
-  # SUPABASE_SERVICE_ROLE_KEY and DATABASE_URL contain credentials — store both
-  # in Google Cloud Secret Manager, not as plain values here:
-  #   gcloud secrets create supabase-service-role-key --data-file=- (then paste the key)
-  #   gcloud secrets create database-url --data-file=- (then paste the Neon connection string)
-  # OR use Firebase Console > App Hosting > your backend > Environment variables > Add.
-  - variable: SUPABASE_SERVICE_ROLE_KEY
-    secret: supabase-service-role-key
-  - variable: DATABASE_URL
-    secret: database-url
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # ── Firestore (the database) ──────────────────────────────────────────
+  # Base64 of the service-account JSON. Without this nothing reads or writes:
+  # no RSVPs, no guest list, no config, and the site falls back to defaults.
+  - variable: FIREBASE_SERVICE_ACCOUNT_B64
+    secret: firebase-service-account-b64
+    availability:
+      - RUNTIME
+
+  # ── Google Drive (the media store) ────────────────────────────────────
+  # Guest photos and videos live in the couple's own Drive. All three are
+  # required together; isDriveConfigured() is false unless every one is set,
+  # and the gallery and uploader are inert until then.
+  - variable: GOOGLE_CLIENT_ID
+    secret: google-client-id
+    availability:
+      - RUNTIME
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: google-client-secret
+    availability:
+      - RUNTIME
+  - variable: GOOGLE_REFRESH_TOKEN
+    secret: google-refresh-token
+    availability:
+      - RUNTIME
+
+  # ── Admin access ──────────────────────────────────────────────────────
+  # These were plain values in this file, in a public repository, which handed
+  # anyone who read it the dashboard, the guest list and the private vault.
+  # Rotate them when moving them here — a leaked key stays leaked in the git
+  # history until the value itself changes.
+  - variable: ADMIN_ACCESS_KEY
+    secret: admin-access-key
+    availability:
+      - RUNTIME
+  - variable: ADMIN_ACCESS_KEYS
+    secret: admin-access-keys
+    availability:
+      - RUNTIME
+  - variable: FAMILY_ACCESS_KEY_BRIDE
+    secret: family-access-key-bride
+    availability:
+      - RUNTIME
+  - variable: FAMILY_ACCESS_KEY_GROOM
+    secret: family-access-key-groom
+    availability:
+      - RUNTIME
+
+  # ── Entertainment evening (the /event-hub side event) ─────────────────
+  # EVENT_SESSION_SECRET falls back to ADMIN_ACCESS_KEY if unset, but set it
+  # explicitly: sharing them means rotating the admin key signs every guest
+  # out of the hub mid-party.
+  - variable: EVENT_PIN
+    secret: event-pin
+    availability:
+      - RUNTIME
+  - variable: EVENT_SESSION_SECRET
+    secret: event-session-secret
+    availability:
+      - RUNTIME
+
+# ── Creating the secrets ────────────────────────────────────────────────
+# Run these once, from the project directory, before the next deploy. Each
+# prompts for the value on stdin; press Ctrl-D (or Ctrl-Z, Enter on Windows)
+# when done. `firebase apphosting:secrets:set` also grants the backend access,
+# which `gcloud secrets create` on its own does not.
+#
+#   firebase apphosting:secrets:set firebase-service-account-b64
+#   firebase apphosting:secrets:set google-client-id
+#   firebase apphosting:secrets:set google-client-secret
+#   firebase apphosting:secrets:set google-refresh-token
+#   firebase apphosting:secrets:set admin-access-key
+#   firebase apphosting:secrets:set admin-access-keys
+#   firebase apphosting:secrets:set family-access-key-bride
+#   firebase apphosting:secrets:set family-access-key-groom
+#   firebase apphosting:secrets:set event-pin
+#   firebase apphosting:secrets:set event-session-secret
+#
+# The Drive values come from `npm run drive:auth` (see README). The Firebase
+# one is the service-account JSON, base64 encoded:
+#
+#   node -e "console.log(require('fs').readFileSync('key.json').toString('base64'))"
