@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Film, Sparkles, Lock, Globe, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { OverlayPortal } from '@/components/overlay-portal';
 import { useToast } from '@/hooks/use-toast';
 import { uploadOne } from '@/lib/bulk-upload';
 import { cn } from '@/lib/utils';
@@ -224,6 +225,7 @@ export function MultiMediaUploaderModal({
   };
 
   return (
+    <OverlayPortal>
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-xl">
@@ -486,5 +488,6 @@ export function MultiMediaUploaderModal({
         </div>
       )}
     </AnimatePresence>
+    </OverlayPortal>
   );
 }

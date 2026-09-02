@@ -80,6 +80,13 @@ export type DriveMedia = {
   kind: MediaKind;
   /** A short note the guest attached to the upload. */
   caption: string | null;
+  /**
+   * The album this belongs to — "Watna & Mendhi", "Engagement", and so on.
+   * A plain label rather than a real Drive subfolder: every listing query is
+   * already scoped by parent folder, so moving files between subfolders would
+   * break the one query that finds them all. Null means the main wall.
+   */
+  album: string | null;
   /** Soft-deleted by an admin. Hidden from guests, still recoverable. */
   hidden: boolean;
 };
@@ -309,6 +316,7 @@ function toDriveMedia(f: DriveFile): DriveMedia {
     height: f.imageMediaMetadata?.height ?? null,
     kind: props.kind === 'voice' || props.kind === 'video' ? props.kind : 'photo',
     caption: props.caption || null,
+    album: props.album || null,
     hidden: props.hidden === 'true',
   };
 }
@@ -545,6 +553,8 @@ export type ListMediaOptions = {
   visibility?: MediaVisibility | 'all';
   questTag?: string | null;
   guestId?: string | null;
+  /** An album label, or '__none__' for everything not filed into one. */
+  album?: string | null;
   limit?: number;
   pageToken?: string;
   /** Which celebration's folder to read. Defaults to the wedding. */
@@ -601,6 +611,7 @@ async function listMediaUncached(
     visibility = 'public',
     questTag,
     guestId,
+    album,
     limit = 60,
     pageToken,
     scope = 'wedding',
@@ -617,6 +628,11 @@ async function listMediaUncached(
   }
   if (guestId) {
     clauses.push(`appProperties has { key='guestId' and value='${escapeQ(guestId)}' }`);
+  }
+  // Drive's query language cannot express "this key is absent", so unfiled
+  // items are filtered after mapping, the same way hidden ones are.
+  if (album && album !== '__none__') {
+    clauses.push(`appProperties has { key='album' and value='${escapeQ(album)}' }`);
   }
 
   // Drive's query language has no negation for appProperties — there is no
@@ -637,7 +653,8 @@ async function listMediaUncached(
   );
 
   const mapped = (res.files ?? []).map(toDriveMedia);
-  const visible = includeHidden ? mapped : mapped.filter(m => !m.hidden);
+  const filed = album === '__none__' ? mapped.filter(m => !m.album) : mapped;
+  const visible = includeHidden ? filed : filed.filter(m => !m.hidden);
 
   return {
     items: visible.slice(0, limit),
@@ -757,6 +774,7 @@ export async function trashMedia(fileId: string): Promise<void> {
  * guestId, questTag and the rest untouched.
  */
 export type MediaPatch = {
+  album?: string | null;
   caption?: string | null;
   guestName?: string | null;
   questTag?: string | null;
@@ -778,6 +796,7 @@ export type MediaPatch = {
 export async function updateMedia(fileId: string, patch: MediaPatch): Promise<void> {
   const appProperties: Record<string, string | null> = {};
 
+  if (patch.album !== undefined) appProperties.album = patch.album?.trim() || null;
   if (patch.caption !== undefined) appProperties.caption = patch.caption?.trim() || null;
   if (patch.guestName !== undefined) appProperties.guestName = patch.guestName?.trim() || null;
   if (patch.questTag !== undefined) appProperties.questTag = patch.questTag?.trim() || null;

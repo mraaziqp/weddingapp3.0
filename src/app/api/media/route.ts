@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       includeHidden: visibility !== 'public',
       questTag: params.get('questTag'),
       guestId: params.get('guestId'),
+      album: params.get('album'),
       limit,
       pageToken: params.get('pageToken') ?? undefined,
     });
@@ -102,6 +103,7 @@ export async function DELETE(req: NextRequest) {
 const CAPTION_MAX = 280;
 const NAME_MAX = 80;
 const TAG_MAX = 60;
+const ALBUM_MAX = 60;
 
 export async function PATCH(req: NextRequest) {
   if (!isAuthorizedAdminRequest(req)) {
@@ -140,6 +142,9 @@ export async function PATCH(req: NextRequest) {
 
     const questTag = text(body.questTag, TAG_MAX, 'Tag');
     if (questTag !== undefined) patch.questTag = questTag;
+
+    const album = text(body.album, ALBUM_MAX, 'Album');
+    if (album !== undefined) patch.album = album;
 
     if (body.visibility !== undefined) {
       if (body.visibility !== 'public' && body.visibility !== 'private') {

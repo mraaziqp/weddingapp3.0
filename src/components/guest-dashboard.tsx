@@ -27,6 +27,7 @@ import type { Household, TimelineEvent } from '@/lib/types';
 import { DEFAULT_INVITATION_CONFIG, InvitationConfig } from '@/lib/invitation-config';
 import { GalleryFeed } from './guest-hub/gallery-feed';
 import { MultiMediaUploaderModal } from './multi-media-uploader-modal';
+import { YourTableCard } from '@/components/your-table-card';
 import { CaptureView } from './guest-hub/capture-view';
 import { WellWishesWall } from './well-wishes-wall';
 import { Skeleton } from './ui/skeleton';
@@ -484,6 +485,9 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                     <LiveCountdown targetDate={config.weddingDate} />
                   </div>
                 </div>
+
+                {/* Their table, once the couple has imported the seating chart. */}
+                <YourTableCard householdId={household.id} />
 
                 {/* ── Evening Celebration & Games Spotlight ── */}
                 <div className="bg-gradient-to-r from-[#1b2a22] via-[#0d1f17] to-[#1b2a22] border border-[#d4af37]/40 rounded-3xl p-5 sm:p-6 shadow-xl text-white">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Download, Heart, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,25 @@ export function CinematicGalleryLightbox({
     }
   };
 
+  // Rendered into document.body rather than in place. `position: fixed` is
+  // resolved against the nearest ancestor that establishes a containing block,
+  // and the wall sits inside a card with `backdrop-filter: blur()` — which does
+  // exactly that. In place, this overlay inherited that card's box: it measured
+  // 862×9801 starting 2551px above the fold, so the centred photo landed far
+  // below the viewport and the guest saw nothing but the dark backdrop, with
+  // the page unable to scroll underneath it.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Hold the page still while the lightbox is up, so a scroll gesture moves the
+  // photo's own container rather than the wall behind it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [isOpen]);
+
   const handleDownload = async (url: string, name: string) => {
     try {
       const res = await fetch(url);
@@ -99,7 +119,9 @@ export function CinematicGalleryLightbox({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && currentItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 sm:p-6 select-none">
@@ -224,6 +246,7 @@ export function CinematicGalleryLightbox({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

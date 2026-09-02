@@ -15,6 +15,8 @@ import { readFileSync } from 'node:fs';
 const load = p => import(pathToFileURL(resolve(p)).href);
 const { csvField, toCsv } = await load('src/lib/csv.ts');
 const { rateLimit } = await load('src/lib/rate-limit.ts');
+const { parseSeatingText, normalizeTableName, normalizeName, matchGuestsToSeats } =
+  await load('src/lib/seating-import.ts');
 
 let passed = 0;
 const failures = [];
@@ -145,6 +147,105 @@ check('server route ceiling is under the platform cap',
   routeCeiling / 1048576 < PLATFORM_CAP_MB, true);
 check('client never sends more than the route will accept',
   bulkCeiling <= routeCeiling, true);
+
+
+section('seating PDF — grouped layout');
+{
+  const parsed = parseSeatingText([
+    'Seating Chart',
+    'Table 1',
+    'Gadija Khan',
+    'Nafisa Khan',
+    'Table 2',
+    'Khaalid Parker',
+    'Page 1 of 2',
+    'Table 3 \u2014 Groom Work',
+    'Rania Parker, Razeen Parker',
+  ].join('\n'));
+  check('layout detected', parsed.layout, 'grouped');
+  check('tables found', parsed.tables.map(t => t.name),
+    ['Table 1', 'Table 2', 'Table 3 \u2014 Groom Work']);
+  check('names grouped under their table', parsed.tables[0].guests, ['Gadija Khan', 'Nafisa Khan']);
+  check('page furniture dropped', parsed.tables[1].guests, ['Khaalid Parker']);
+  check('comma-separated names split', parsed.tables[2].guests, ['Rania Parker', 'Razeen Parker']);
+}
+
+section('seating PDF — per-line layout');
+{
+  const parsed = parseSeatingText([
+    'Name                Table',
+    'Gadija Khan ........ 1',
+    'Khaalid Parker - Table 2',
+    'Rania Parker\t2',
+  ].join('\n'));
+  check('layout detected', parsed.layout, 'per-line');
+  check('column heading ignored', parsed.tables.map(t => t.name), ['Table 1', 'Table 2']);
+  check('dot leaders stripped', parsed.tables[0].guests, ['Gadija Khan']);
+  check('both table spellings agree', parsed.tables[1].guests, ['Khaalid Parker', 'Rania Parker']);
+}
+
+section('seating PDF — table naming');
+check('bare number', normalizeTableName('7'), 'Table 7');
+check('zero padded', normalizeTableName('Table 04'), 'Table 4');
+check('number word', normalizeTableName('three'), 'Table 3');
+check('named table title-cased', normalizeTableName('top table'), 'Top Table');
+check('label kept', normalizeTableName('Table 3 Family'), 'Table 3 \u2014 Family');
+
+section('seating PDF — unparseable input');
+{
+  const parsed = parseSeatingText('a scanned image leaves no text behind\n');
+  check('no tables invented', parsed.tables, []);
+  check('layout reported as none', parsed.layout, 'none');
+  check('warns the couple', parsed.warnings.length > 0, true);
+}
+
+section('seating PDF — name matching');
+{
+  const guests = [
+    { id: 'g1', firstName: 'Gadija', lastName: 'Khan' },
+    { id: 'g2', firstName: 'Nafisa ', lastName: 'Khan' },
+    { id: 'g3', firstName: 'Khaalid', lastName: 'Parker' },
+    { id: 'g4', firstName: 'Zainab', lastName: 'Adams' },
+  ];
+  const result = matchGuestsToSeats([
+    { name: 'Table 1', guests: ['Gadija Khan', 'Mrs N. Khan', 'Zainab'] },
+    { name: 'Table 2', guests: ['Someone Unknown'] },
+  ], guests);
+
+  const by = n => result.assignments.find(a => a.parsedName === n);
+  check('exact match', [by('Gadija Khan').guestId, by('Gadija Khan').match], ['g1', 'exact']);
+  check('title and initial match', [by('Mrs N. Khan').guestId, by('Mrs N. Khan').match], ['g2', 'initial']);
+  check('bare first name match', [by('Zainab').guestId, by('Zainab').match], ['g4', 'first-name']);
+  check('unknown name left unmatched', by('Someone Unknown').guestId, null);
+  check('counts', [result.matched, result.unmatched], [3, 1]);
+  check('guest never seated is reported', result.unseated.map(g => g.id), ['g3']);
+}
+
+section('seating PDF — matching is never ambiguous');
+{
+  const twins = [
+    { id: 'a', firstName: 'Fatima', lastName: 'Parker' },
+    { id: 'b', firstName: 'Fatima', lastName: 'Parker' },
+  ];
+  const result = matchGuestsToSeats([{ name: 'Table 1', guests: ['Fatima Parker'] }], twins);
+  check('duplicate names are not guessed', result.assignments[0].guestId, null);
+  check('both stay unseated', result.unseated.length, 2);
+}
+
+section('seating PDF — one guest cannot hold two seats');
+{
+  const guests = [{ id: 'g1', firstName: 'Gadija', lastName: 'Khan' }];
+  const result = matchGuestsToSeats([
+    { name: 'Table 1', guests: ['Gadija Khan'] },
+    { name: 'Table 9', guests: ['Gadija Khan'] },
+  ], guests);
+  check('only the first seat binds', result.assignments.map(a => a.guestId), ['g1', null]);
+}
+
+section('seating PDF — name normalisation');
+check('accents folded', normalizeName('Zo\u00eb  M\u00fcller'), 'zoe muller');
+check('title stripped', normalizeName('Sheikh Yusuf'), 'yusuf');
+check('trailing space tolerated', normalizeName('Nafisa '), 'nafisa');
 
 console.log(`\n${'═'.repeat(60)}`);
 if (failures.length) {

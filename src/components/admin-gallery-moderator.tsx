@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Download, RefreshCw, Image as ImageIcon, Video, ShieldAlert, Search,
-  CheckSquare, Square, Pencil, Eye, EyeOff, Loader2, X, Save,
+  CheckSquare, Square, Pencil, Eye, EyeOff, Loader2, X, Save, FolderPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { OverlayPortal } from '@/components/overlay-portal';
 import { useToast } from '@/hooks/use-toast';
 import {
   deleteMediaItem, updateMediaItem, toWallItem, isVideoItem,
@@ -20,6 +21,7 @@ type EditDraft = {
   caption: string;
   guestName: string;
   questTag: string;
+  album: string;
   visibility: 'public' | 'private';
 };
 
@@ -28,6 +30,7 @@ function draftFrom(item: WallItem): EditDraft {
     caption: item.caption ?? '',
     guestName: item.guestName === 'A Guest' ? '' : item.guestName ?? '',
     questTag: item.questTag ?? '',
+    album: item.album ?? '',
     visibility: item.visibility === 'private' ? 'private' : 'public',
   };
 }
@@ -44,6 +47,7 @@ export function AdminGalleryModerator() {
   const [draft, setDraft] = useState<EditDraft | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [isFiling, setIsFiling] = useState(false);
   const { toast } = useToast();
 
   const loadMedia = useCallback(async () => {
@@ -100,6 +104,7 @@ export function AdminGalleryModerator() {
     if (edit.caption !== undefined) patch.caption = edit.caption?.trim() || undefined;
     if (edit.guestName !== undefined) patch.guestName = edit.guestName?.trim() || 'A Guest';
     if (edit.questTag !== undefined) patch.questTag = edit.questTag?.trim() || undefined;
+    if (edit.album !== undefined) patch.album = edit.album?.trim() || undefined;
     if (edit.visibility !== undefined) patch.visibility = edit.visibility;
     if (edit.hidden !== undefined) patch.hidden = edit.hidden;
     // Keep the caption line in step with the wall's own precedence rule.
@@ -124,6 +129,7 @@ export function AdminGalleryModerator() {
         caption: draft.caption,
         guestName: draft.guestName,
         questTag: draft.questTag,
+        album: draft.album,
         visibility: draft.visibility,
       },
       '✏️ Changes saved'
@@ -232,6 +238,9 @@ export function AdminGalleryModerator() {
       if (activeFilter === '🎥 Videos' && !isVid) return false;
       if (activeFilter === '🎯 Quests' && !item.questTag) return false;
       if (activeFilter === '🙈 Hidden' && !item.hidden) return false;
+      if (activeFilter === '📁 Unfiled' && item.album) return false;
+      if (activeFilter.startsWith('📁 ') && activeFilter !== '📁 Unfiled'
+          && item.album !== activeFilter.slice(3)) return false;
 
       if (query) {
         return Boolean(
@@ -249,6 +258,37 @@ export function AdminGalleryModerator() {
     setSelectedIds(prev =>
       prev.size === filteredItems.length ? new Set() : new Set(filteredItems.map(i => i.id))
     );
+  };
+
+  const albums = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const i of items) if (i.album) counts.set(i.album, (counts.get(i.album) ?? 0) + 1);
+    return [...counts.entries()].map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [items]);
+
+  /** Files every selected item under one album — the bulk-tidy action. */
+  const fileSelectedInto = async (album: string | null) => {
+    if (selectedIds.size === 0) return;
+    setIsFiling(true);
+    const ids = [...selectedIds];
+    const errors = await Promise.all(ids.map(id => updateMediaItem(id, { album })));
+    const failed = errors.filter(Boolean).length;
+
+    setItems(prev => prev.map(i =>
+      selectedIds.has(i.id) ? { ...i, album: album?.trim() || undefined } : i));
+    setSelectedIds(new Set());
+    setIsFiling(false);
+    toast({
+      title: album ? `📁 Moved to ${album}` : '📤 Removed from album',
+      description: failed ? `${failed} could not be moved.` : `${ids.length - failed} items updated.`,
+      variant: failed ? 'destructive' : undefined,
+    });
+  };
+
+  const promptNewAlbum = () => {
+    const name = window.prompt('Name this album (e.g. Watna & Mendhi, Engagement)')?.trim();
+    if (name) fileSelectedInto(name.slice(0, 60));
   };
 
   const { photoCount, videoCount, hiddenCount } = useMemo(() => {
@@ -299,7 +339,8 @@ export function AdminGalleryModerator() {
         {/* -mx-1/px-1 keeps the focus ring of the first chip from being clipped
             by the scroll container on narrow phones. */}
         <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {filterTabs.map(tab => (
+          {[...filterTabs, ...(albums.length || items.some(i => !i.album) ? ['📁 Unfiled'] : []),
+            ...albums.map(a => `📁 ${a.name}`)].map(tab => (
             <Button
               key={tab}
               size="sm"
@@ -330,6 +371,43 @@ export function AdminGalleryModerator() {
                   : <Square size={13} className="mr-1" />}
                 {allSelected ? 'Deselect All' : 'Select All'}
               </Button>
+
+              {selectedIds.size > 0 && (
+                <>
+                  <select
+                    aria-label="File selected items into an album"
+                    disabled={isFiling}
+                    value=""
+                    onChange={e => {
+                      const v = e.target.value;
+                      if (v === '__new__') promptNewAlbum();
+                      else if (v === '__clear__') fileSelectedInto(null);
+                      else if (v) fileSelectedInto(v);
+                      e.target.value = '';
+                    }}
+                    className="min-h-[44px] rounded-full border border-white/15 bg-white/10 px-3 text-base text-white sm:text-xs"
+                  >
+                    <option value="">Move {selectedIds.size} to…</option>
+                    {albums.map(a => (
+                      <option key={a.name} value={a.name}>{a.name}</option>
+                    ))}
+                    <option value="__new__">+ New album…</option>
+                    <option value="__clear__">Remove from album</option>
+                  </select>
+                  <Button
+                    onClick={promptNewAlbum}
+                    disabled={isFiling}
+                    size="sm"
+                    variant="outline"
+                    className="min-h-[44px] rounded-full border-amber-500/30 bg-white/5 text-xs text-amber-300"
+                  >
+                    {isFiling
+                      ? <Loader2 size={13} className="mr-1 animate-spin" />
+                      : <FolderPlus size={13} className="mr-1" />}
+                    New album
+                  </Button>
+                </>
+              )}
 
               {selectedIds.size > 0 && (
                 <Button
@@ -441,7 +519,7 @@ export function AdminGalleryModerator() {
                 <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10">
                   <p className="text-[10px] font-bold text-white truncate">{item.guestName}</p>
                   <p className="text-[9px] text-amber-300/80 truncate">
-                    {item.hidden ? 'Hidden from wall' : item.caption || item.questTag || 'Live capture'}
+                    {item.hidden ? 'Hidden from wall' : item.album || item.caption || item.questTag || 'Live capture'}
                   </p>
                 </div>
               </div>
@@ -451,6 +529,7 @@ export function AdminGalleryModerator() {
       )}
 
       {/* Lightbox and editor */}
+      <OverlayPortal>
       <AnimatePresence>
         {selectedItem && (
           <motion.div
@@ -527,6 +606,19 @@ export function AdminGalleryModerator() {
                     className="w-full min-h-[44px] rounded-xl border border-white/15 bg-white/10 px-3 text-base text-white placeholder:text-white/35 focus:border-amber-400 focus:outline-none"
                   />
 
+                  <FieldLabel>Album</FieldLabel>
+                  <input
+                    value={draft.album}
+                    onChange={e => setDraft({ ...draft, album: e.target.value })}
+                    maxLength={60}
+                    list="album-names"
+                    placeholder="Watna & Mendhi, Engagement, …"
+                    className="w-full min-h-[44px] rounded-xl border border-white/15 bg-white/10 px-3 text-base text-white placeholder:text-white/35 focus:border-amber-400 focus:outline-none"
+                  />
+                  <datalist id="album-names">
+                    {albums.map(a => <option key={a.name} value={a.name} />)}
+                  </datalist>
+
                   <FieldLabel>Where it shows</FieldLabel>
                   <div className="grid grid-cols-2 gap-2">
                     {(['public', 'private'] as const).map(value => (
@@ -574,6 +666,7 @@ export function AdminGalleryModerator() {
                     <p className="text-xs text-white/55">{selectedItem.description}</p>
                     <div className="mt-2 flex flex-wrap justify-center gap-1.5 sm:justify-start">
                       <Chip>{selectedItem.visibility === 'private' ? 'Private Vault' : 'Live Wall'}</Chip>
+                      {selectedItem.album && <Chip>📁 {selectedItem.album}</Chip>}
                       {selectedItem.questTag && <Chip>{selectedItem.questTag}</Chip>}
                       {selectedItem.hidden && <Chip tone="danger">Hidden</Chip>}
                     </div>
@@ -620,6 +713,7 @@ export function AdminGalleryModerator() {
           </motion.div>
         )}
       </AnimatePresence>
+      </OverlayPortal>
     </div>
   );
 }

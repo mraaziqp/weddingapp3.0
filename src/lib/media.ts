@@ -28,6 +28,8 @@ export type WallItem = {
   caption?: string;
   /** Soft-deleted by an admin: off the wall, still recoverable. */
   hidden?: boolean;
+  /** The album it is filed under — "Watna & Mendhi", "Engagement", … */
+  album?: string;
 };
 
 /** True when this item should render in a <video> rather than an <img>. */
@@ -48,6 +50,7 @@ type ApiMediaItem = {
   createdAt?: string;
   caption?: string | null;
   hidden?: boolean;
+  album?: string | null;
 };
 
 export function toWallItem(m: ApiMediaItem): WallItem {
@@ -68,12 +71,24 @@ export function toWallItem(m: ApiMediaItem): WallItem {
     createdAt: m.createdAt,
     caption: m.caption ?? undefined,
     hidden: m.hidden ?? false,
+    album: m.album ?? undefined,
   };
 }
 
 /** Latest public guest photos and videos, newest first. Safe from the browser. */
-export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
-  const res = await fetch(`/api/media?visibility=public&limit=${limit}`, { cache: 'no-store' });
+export type Album = { name: string; count: number };
+
+/** Albums that currently hold at least one public item, with their counts. */
+export async function fetchAlbums(): Promise<{ albums: Album[]; unfiled: number; total: number }> {
+  const res = await fetch('/api/media/albums', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Could not load albums (${res.status})`);
+  const body = await res.json();
+  return { albums: body.albums ?? [], unfiled: body.unfiled ?? 0, total: body.total ?? 0 };
+}
+
+export async function fetchPublicWallItems(limit = 60, album?: string): Promise<WallItem[]> {
+  const query = album ? `&album=${encodeURIComponent(album)}` : '';
+  const res = await fetch(`/api/media?visibility=public&limit=${limit}${query}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Could not load the wall (${res.status})`);
   const body = (await res.json()) as { items?: ApiMediaItem[] };
   return (body.items ?? []).map(toWallItem);
@@ -88,6 +103,7 @@ export async function fetchPublicWallItems(limit = 60): Promise<WallItem[]> {
  * mistaken tap during the reception is recoverable for 30 days.
  */
 export type MediaEdit = {
+  album?: string | null;
   caption?: string | null;
   guestName?: string | null;
   questTag?: string | null;

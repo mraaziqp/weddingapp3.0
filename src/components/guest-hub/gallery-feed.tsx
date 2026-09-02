@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Camera } from 'lucide-react';
 import { LiveMasonryGrid } from "../live-masonry-grid";
-import { fetchPublicWallItems, WallItem } from "@/lib/media";
+import { fetchPublicWallItems, fetchAlbums, WallItem, type Album } from "@/lib/media";
 import { Button } from "../ui/button";
 
-const filters = ["All", "Ceremony", "Candid Vibes", "Dance Floor", "Speeches"];
+const ALL = "All";
 
 interface GalleryFeedProps {
   partyMode?: boolean;
@@ -18,21 +18,41 @@ interface GalleryFeedProps {
 }
 
 export function GalleryFeed({ partyMode = false, isMorningAfter = false, refreshKey = 0 }: GalleryFeedProps) {
-    const [activeFilter, setActiveFilter] = useState("All");
+    // These chips used to be a fixed, decorative list that filtered nothing.
+    // They are now the real albums the couple has filed photos into, so the
+    // Watna & Mendhi and engagement sets are one tap apart.
+    const [activeFilter, setActiveFilter] = useState(ALL);
+    const [albums, setAlbums] = useState<Album[]>([]);
     const [mediaItems, setMediaItems] = useState<WallItem[]>([]);
+    // Listing 60 files out of Drive takes a few seconds on a cold function.
+    // Without this the wall rendered "No memories yet" for that whole window,
+    // which reads as a broken gallery rather than a loading one.
+    const [hasLoaded, setHasLoaded] = useState(false);
 
     // Real guest uploads — refreshed every 20s so new captures appear live.
+    // Filtering goes back to the server rather than slicing the loaded page,
+    // so an album with more photos than one page still shows all of them.
     useEffect(() => {
         let cancelled = false;
+        setHasLoaded(false);
         const load = () => {
-            fetchPublicWallItems(60)
+            fetchPublicWallItems(60, activeFilter === ALL ? undefined : activeFilter)
                 .then(items => { if (!cancelled) setMediaItems(items); })
-                .catch(() => {});
+                .catch(() => {})
+                .finally(() => { if (!cancelled) setHasLoaded(true); });
         };
         load();
         const id = setInterval(load, 20_000);
         return () => { cancelled = true; clearInterval(id); };
         // refreshKey re-runs this so a guest sees their own upload immediately.
+    }, [refreshKey, activeFilter]);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetchAlbums()
+            .then(r => { if (!cancelled) setAlbums(r.albums); })
+            .catch(() => {});
+        return () => { cancelled = true; };
     }, [refreshKey]);
 
     // Text colours adapt to party mode dark background
@@ -122,10 +142,10 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false, refresh
             </AnimatePresence>
 
             {/* Filter chips — hidden in morning-after mode */}
-            {!isMorningAfter && (
+            {!isMorningAfter && albums.length > 0 && (
               <div className="pb-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="flex gap-2 w-max">
-                      {filters.map(filter => (
+                      {[ALL, ...albums.map(a => a.name)].map(filter => (
                           <Button
                               key={filter}
                               variant={activeFilter === filter ? "default" : "outline"}
@@ -139,20 +159,38 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false, refresh
                               }
                           >
                               {filter}
+                              {filter !== ALL && (
+                                <span className="ml-1.5 opacity-60">
+                                  {albums.find(a => a.name === filter)?.count}
+                                </span>
+                              )}
                           </Button>
                       ))}
                   </div>
               </div>
             )}
             
-            {mediaItems.length === 0 ? (
+            {!hasLoaded ? (
+                <div
+                    className="flex flex-col items-center justify-center py-16 text-center"
+                    style={{ color: subtitleColor }}
+                >
+                    <div
+                        className="mb-3 h-9 w-9 animate-spin rounded-full border-2 border-t-transparent"
+                        style={{ borderColor: '#d4af37', borderTopColor: 'transparent' }}
+                    />
+                    <p className="font-headline italic text-xl" style={{ color: headingColor }}>
+                        Loading the memories…
+                    </p>
+                </div>
+            ) : mediaItems.length === 0 ? (
                 <div
                     className="flex flex-col items-center justify-center py-16 text-center"
                     style={{ color: subtitleColor }}
                 >
                     <Camera size={36} className="mb-3 opacity-60" />
                     <p className="font-headline italic text-xl" style={{ color: headingColor }}>
-                        No memories yet
+                        {activeFilter === ALL ? 'No memories yet' : `Nothing in ${activeFilter} yet`}
                     </p>
                     <p className="text-sm mt-1">Snap the first photo with the disposable camera!</p>
                 </div>

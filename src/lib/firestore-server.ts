@@ -980,3 +980,127 @@ export async function fetchRsvpMessages(): Promise<{
 
   return { byGuest, byHousehold };
 }
+
+// ── Seating ─────────────────────────────────────────────────────────────
+
+export type SeatingTable = { name: string; guestNames: string[] };
+
+export type SeatingPlan = {
+  tables: SeatingTable[];
+  /** Where a guest id resolves to their table label, for the personal card. */
+  seatByGuestId: Record<string, string>;
+  importedAt: string | null;
+  sourceFileName: string | null;
+};
+
+/**
+ * Replaces the whole seating plan in one batch.
+ *
+ * A seating chart is only ever meaningful as a complete document — a partial
+ * write would leave some guests pointing at tables that no longer exist — so
+ * the previous plan is cleared in the same batch that writes the new one.
+ */
+export async function saveSeatingPlan(input: {
+  tables: SeatingTable[];
+  seatByGuestId: Record<string, string>;
+  sourceFileName?: string | null;
+}): Promise<{ tables: number; seated: number }> {
+  const db = adminDb();
+  const batch = db.batch();
+  const collection = db.collection(COLLECTIONS.tables);
+
+  const existing = await collection.get();
+  for (const doc of existing.docs) batch.delete(doc.ref);
+
+  const importedAt = new Date().toISOString();
+  input.tables.forEach((table, i) => {
+    batch.set(collection.doc(`table-${i + 1}`), {
+      name: table.name,
+      guest_names: table.guestNames,
+      sort_order: i,
+      imported_at: importedAt,
+      source_file_name: input.sourceFileName ?? null,
+    });
+  });
+
+  // Each guest carries their own table label so the guest dashboard needs one
+  // document read, not a scan of the whole chart.
+  const guests = await db.collection(COLLECTIONS.guests).get();
+  for (const doc of guests.docs) {
+    const seat = input.seatByGuestId[doc.id] ?? null;
+    if ((doc.data().table_id ?? null) !== seat) {
+      batch.update(doc.ref, { table_id: seat });
+    }
+  }
+
+  await batch.commit();
+  return {
+    tables: input.tables.length,
+    seated: Object.keys(input.seatByGuestId).length,
+  };
+}
+
+export async function fetchSeatingPlan(): Promise<SeatingPlan> {
+  const [tableRows, guestRows] = await Promise.all([
+    readAll(COLLECTIONS.tables),
+    readAll(COLLECTIONS.guests),
+  ]);
+
+  const tables = tableRows
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(t => ({ name: t.name as string, guestNames: (t.guest_names ?? []) as string[] }));
+
+  const seatByGuestId: Record<string, string> = {};
+  for (const g of guestRows) {
+    if (g.table_id) seatByGuestId[g.id] = g.table_id;
+  }
+
+  return {
+    tables,
+    seatByGuestId,
+    importedAt: (tableRows[0]?.imported_at as string) ?? null,
+    sourceFileName: (tableRows[0]?.source_file_name as string) ?? null,
+  };
+}
+
+/** Every guest, flattened, for matching parsed names against the real list. */
+export async function fetchGuestDirectory(): Promise<
+  { id: string; firstName: string; lastName: string; householdId: string }[]
+> {
+  const guests = await readAll(COLLECTIONS.guests);
+  return guests.map(g => ({
+    id: g.id,
+    firstName: g.first_name ?? '',
+    lastName: g.last_name ?? '',
+    householdId: g.household_id ?? '',
+  }));
+}
+
+/**
+ * The seat for one household: their table, and who else is on it.
+ *
+ * Returns the table of whichever member is seated — a household is seated
+ * together in practice, and showing "your table" beats showing nothing when
+ * only one member matched the imported chart.
+ */
+export async function fetchSeatForHousehold(householdId: string): Promise<{
+  tableName: string;
+  tableMates: string[];
+} | null> {
+  const db = adminDb();
+  const guests = await db
+    .collection(COLLECTIONS.guests)
+    .where('household_id', '==', householdId)
+    .get();
+
+  const seated = guests.docs.map(d => d.data().table_id).find(Boolean);
+  if (!seated) return null;
+
+  const tables = await readAll(COLLECTIONS.tables);
+  const table = tables.find(t => t.name === seated);
+
+  return {
+    tableName: seated as string,
+    tableMates: ((table?.guest_names ?? []) as string[]).slice(0, 24),
+  };
+}

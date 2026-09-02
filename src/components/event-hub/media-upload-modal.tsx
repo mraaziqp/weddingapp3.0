@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Loader2, Send, Mic, Square, Type, Image as ImageIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { OverlayPortal } from '@/components/overlay-portal';
 import { SCAVENGER_TASKS, findTask } from '@/lib/event-config';
 import { postNote, uploadEventPhoto, uploadVoiceMemo } from '@/lib/event-client';
 import type { EventProgress } from '@/lib/event-client';
@@ -119,6 +120,7 @@ export function MediaUploadModal({
   }, [note, onNotePosted, reset, onClose]);
 
   return (
+    <OverlayPortal>
     <AnimatePresence>
       {open && (
         <>
@@ -269,6 +271,7 @@ export function MediaUploadModal({
         </>
       )}
     </AnimatePresence>
+    </OverlayPortal>
   );
 }
 
