@@ -7,11 +7,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+type WishTag = 'Advice' | 'Memory' | 'Toast' | 'Blessing';
+const TAGS: { id: WishTag; emoji: string }[] = [
+  { id: 'Advice', emoji: '💡' },
+  { id: 'Memory', emoji: '📸' },
+  { id: 'Toast', emoji: '🥂' },
+  { id: 'Blessing', emoji: '🤲' },
+];
+
+// The <Input>/<Textarea> primitives resolve their background from the
+// shared theme's CSS variables, which the root layout sets for a permanent
+// `dark` class — correct for the admin/event screens, but on this light
+// guest card it rendered as a near-black field on cream. Every field here
+// overrides that explicitly rather than relying on the shared default.
+const FIELD_CLASS =
+  'border-[#E6DCCF] bg-[#FAF7F2] text-[#2D2824] placeholder:text-[#2D2824]/35 ' +
+  'focus-visible:ring-2 focus-visible:ring-[#C5A059]/40 focus-visible:ring-offset-0';
 
 interface Wish {
   id: string;
   name: string | null;
   message: string;
+  tag: WishTag | null;
   created_at: string;
 }
 
@@ -37,6 +56,7 @@ export function WellWishesWall({ defaultName }: { defaultName?: string }) {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState(defaultName ?? '');
   const [message, setMessage] = useState('');
+  const [tag, setTag] = useState<WishTag | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -60,12 +80,13 @@ export function WellWishesWall({ defaultName }: { defaultName?: string }) {
       const res = await fetch('/api/well-wishes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message }),
+        body: JSON.stringify({ name, message, tag }),
       });
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
       setWishes(prev => [data.wish, ...prev]);
       setMessage('');
+      setTag(null);
       toast({ title: '💛 Thank you!', description: 'Your message is now on the wall for everyone to see.' });
     } catch {
       toast({ variant: 'destructive', title: 'Could not post your message', description: 'Please try again.' });
@@ -92,15 +113,36 @@ export function WellWishesWall({ defaultName }: { defaultName?: string }) {
           onChange={e => setName(e.target.value)}
           placeholder="Your name (optional)"
           maxLength={60}
-          className="border-[#d4af37]/20"
+          className={FIELD_CLASS}
         />
         <Textarea
           value={message}
           onChange={e => setMessage(e.target.value)}
           placeholder="Share your excitement, a memory, or some advice for the newlyweds…"
           maxLength={500}
-          className="border-[#d4af37]/20 min-h-20 resize-none"
+          className={cn(FIELD_CLASS, 'min-h-20 resize-none')}
         />
+
+        {/* Optional sentiment — purely a label for browsing the wall later,
+            never required, so it can't get in the way of just saying hello. */}
+        <div className="flex flex-wrap gap-1.5">
+          {TAGS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTag(prev => (prev === t.id ? null : t.id))}
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                tag === t.id
+                  ? 'border-[#C5A059] bg-[#C5A059]/15 text-[#6B4F1B]'
+                  : 'border-[#E6DCCF] bg-[#FAF7F2] text-[#2D2824]/60 hover:border-[#C5A059]/50'
+              )}
+            >
+              {t.emoji} {t.id}
+            </button>
+          ))}
+        </div>
+
         <div className="flex justify-end">
           <Button
             type="submit"
@@ -131,6 +173,11 @@ export function WellWishesWall({ defaultName }: { defaultName?: string }) {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-xl bg-[#faf5e8] border border-[#d4af37]/10 p-3.5"
               >
+                {wish.tag && (
+                  <span className="mb-1.5 inline-block rounded-full bg-[#C5A059]/15 px-2 py-0.5 text-[10px] font-semibold text-[#6B4F1B]">
+                    {TAGS.find(t => t.id === wish.tag)?.emoji} {wish.tag}
+                  </span>
+                )}
                 <p className="text-sm text-[#1C1C1C]/85 leading-relaxed whitespace-pre-line">{wish.message}</p>
                 <div className="mt-1.5 flex items-center justify-between">
                   <p className="text-xs font-semibold text-[#d4af37]">{wish.name || 'A guest'}</p>

@@ -142,9 +142,12 @@ export type BudgetItem = {
 };
 
 /** A guestbook message on the well-wishes wall. */
+export type WellWishTag = 'Advice' | 'Memory' | 'Toast' | 'Blessing';
+
 export type WellWish = {
   id: string;
   name: string | null;
   message: string;
+  tag: WellWishTag | null;
   created_at: string | null;
 };

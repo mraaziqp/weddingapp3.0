@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic';
 
 const MAX_NAME_LEN = 60;
 const MAX_MESSAGE_LEN = 500;
+const VALID_TAGS = new Set(['Advice', 'Memory', 'Toast', 'Blessing']);
 
 export async function GET() {
   try {
@@ -44,12 +45,16 @@ export async function POST(req: NextRequest) {
     const name = typeof body.name === 'string' ? body.name.trim().slice(0, MAX_NAME_LEN) : '';
     const message =
       typeof body.message === 'string' ? body.message.trim().slice(0, MAX_MESSAGE_LEN) : '';
+    const tag =
+      typeof body.tag === 'string' && VALID_TAGS.has(body.tag)
+        ? (body.tag as 'Advice' | 'Memory' | 'Toast' | 'Blessing')
+        : null;
 
     if (!message) {
       return NextResponse.json({ error: 'A message is required' }, { status: 400 });
     }
 
-    const wish = await addWellWish(name || null, message);
+    const wish = await addWellWish(name || null, message, tag);
     return NextResponse.json({ ok: true, wish });
   } catch (err) {
     console.error('[Well Wishes] POST error:', err);

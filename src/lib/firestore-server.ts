@@ -636,11 +636,16 @@ export async function fetchWellWishes(max = 200): Promise<WellWish[]> {
     id: d.id,
     name: d.data().name ?? null,
     message: d.data().message,
+    tag: d.data().tag ?? null,
     created_at: toIso(d.data().created_at),
   }));
 }
 
-export async function addWellWish(name: string | null, message: string): Promise<WellWish> {
+export async function addWellWish(
+  name: string | null,
+  message: string,
+  tag: WellWish['tag'] = null
+): Promise<WellWish> {
   const id = `wish-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   // created_at is a real client timestamp rather than serverTimestamp() so the
   // value can be returned immediately — serverTimestamp() resolves to null on
@@ -649,9 +654,10 @@ export async function addWellWish(name: string | null, message: string): Promise
   await adminDb().collection(COLLECTIONS.wellWishes).doc(id).set({
     name: name || null,
     message,
+    tag: tag || null,
     created_at: Timestamp.fromDate(createdAt),
   });
-  return { id, name: name || null, message, created_at: createdAt.toISOString() };
+  return { id, name: name || null, message, tag, created_at: createdAt.toISOString() };
 }
 
 export async function deleteWellWish(id: string): Promise<void> {

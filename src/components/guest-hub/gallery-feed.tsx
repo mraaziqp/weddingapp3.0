@@ -117,28 +117,13 @@ export function GalleryFeed({ partyMode = false, isMorningAfter = false, refresh
                     </Button>
                   </motion.div>
                 </motion.div>
-              ) : (
-                /* ── Normal header ───────────────────────────────── */
-                <motion.header
-                  key="normal-header"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center mb-6"
-                >
-                  <h1
-                    className="font-headline text-3xl font-bold italic"
-                    style={{ color: headingColor, transition: 'color 2.5s ease' }}
-                  >
-                    Live Memory Wall
-                  </h1>
-                  <p
-                    className="tracking-wide mt-1 text-sm"
-                    style={{ color: subtitleColor, transition: 'color 2.5s ease' }}
-                  >
-                    Photos &amp; videos from the celebration
-                  </p>
-                </motion.header>
-              )}
+              ) : null}
+              {/*
+                No "normal" header here any more — this feed only ever mounts
+                inside the dashboard's own gallery tab, which already renders
+                "Live Memory Wall" and its own Add Photo button right above.
+                The repeated title read as a mistake, not as emphasis.
+              */}
             </AnimatePresence>
 
             {/* Filter chips — hidden in morning-after mode */}

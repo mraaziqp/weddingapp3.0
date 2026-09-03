@@ -23,6 +23,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import type { Household, TimelineEvent } from '@/lib/types';
 import { DEFAULT_INVITATION_CONFIG, InvitationConfig } from '@/lib/invitation-config';
 import { GalleryFeed } from './guest-hub/gallery-feed';
@@ -305,11 +306,19 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
 
   const copyBankingDetails = () => {
     const details = `Razia & Abduraziq Wedding Registry\nBank: Standard Bank\nAccount Name: Abduraziq & Razia\nAccount Number: 10182938475\nBranch Code: 051001\nReference: ${household.name}`;
-    navigator.clipboard.writeText(details).then(() => {
-      setIsCopied(true);
-      toast({ title: 'Banking Details Copied!', description: 'Details copied to clipboard for your convenience.' });
-      setTimeout(() => setIsCopied(false), 3000);
-    });
+    navigator.clipboard.writeText(details).then(
+      () => {
+        setIsCopied(true);
+        toast({ title: 'Banking Details Copied!', description: 'Details copied to clipboard for your convenience.' });
+        setTimeout(() => setIsCopied(false), 3000);
+      },
+      // The Clipboard API can reject — no permission, or an insecure/older
+      // browser context — and this call had no failure path at all, so a
+      // guest would tap Copy and get no feedback whatsoever, good or bad.
+      () => {
+        toast({ variant: 'destructive', title: 'Could not copy', description: 'Please copy the details above by hand.' });
+      }
+    );
   };
 
   const attendingGuests = household.guests?.filter(g => g.isAttending !== false && g.rsvpStatus !== 'Regret') ?? [];
@@ -881,7 +890,12 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
 
                     <Button
                       onClick={copyBankingDetails}
-                      className="w-full mt-3 rounded-xl bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] text-black font-bold hover:shadow-md text-xs h-10"
+                      className={cn(
+                        'w-full mt-3 rounded-xl font-bold hover:shadow-md text-xs h-10 transition-colors duration-300',
+                        isCopied
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-gradient-to-r from-[#e9cf8a] via-[#d4af37] to-[#b98a2e] text-black'
+                      )}
                     >
                       {isCopied ? '✓ Banking Details Copied!' : '📋 Copy Banking Details'}
                     </Button>

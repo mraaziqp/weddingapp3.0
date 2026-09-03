@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye, Heart, Check } from 'lucide-react';
+import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye, Heart, Check, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
 import { uploadOne } from '@/lib/bulk-upload';
@@ -111,6 +111,78 @@ function writeJson(key: string, value: unknown) {
   } catch {
     /* a nicety, not a requirement */
   }
+}
+
+/**
+ * Renders a shot into a keepsake polaroid frame — a wide off-white border,
+ * the photo itself, and "Razia & Abduraziq" plus today's date stamped into
+ * the caption strip — and saves it to the guest's own device.
+ *
+ * Built directly on canvas rather than through the DOM-node rasterizer this
+ * app uses for the wedding-pass card (see download-card.ts): that path walks
+ * a live, already-laid-out DOM subtree, which is the right tool for a card
+ * built from real markup, but this has nothing to walk — just one already-
+ * decoded image and two lines of static text, which a canvas draws directly
+ * without any of that machinery.
+ */
+async function downloadPolaroid(imageSrc: string): Promise<void> {
+  const img = new window.Image();
+  // No `crossOrigin` here: the source is always a same-tab `blob:` URL from
+  // the shot just taken, which needs none — and setting it anyway made the
+  // load fail outright when checked against a live same-origin image.
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('Could not load the photo'));
+    img.src = imageSrc;
+  });
+
+  const W = 900;
+  const BORDER = 54;
+  const CAPTION_H = 190;
+  const photoH = W - BORDER * 2;
+  const H = photoH + BORDER + CAPTION_H;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.fillStyle = '#fdfbf7';
+  ctx.fillRect(0, 0, W, H);
+
+  // Cover-fit the photo into its square, center-cropping whichever axis
+  // overhangs — the same behaviour as the on-screen preview's object-cover.
+  const side = W - BORDER * 2;
+  const scale = Math.max(side / img.width, side / img.height);
+  const sw = side / scale;
+  const sh = side / scale;
+  const sx = (img.width - sw) / 2;
+  const sy = (img.height - sh) / 2;
+  ctx.drawImage(img, sx, sy, sw, sh, BORDER, BORDER, side, side);
+
+  const captionTop = BORDER + photoH;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#2D2824';
+  ctx.font = 'italic 700 44px Georgia, "Times New Roman", serif';
+  ctx.fillText('Razia & Abduraziq', W / 2, captionTop + 82);
+
+  const stamp = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  }).replace(/\//g, '.');
+  ctx.font = '600 26px Georgia, "Times New Roman", serif';
+  ctx.fillStyle = '#8a6f1f';
+  ctx.fillText(stamp, W / 2, captionTop + 130);
+
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+  if (!blob) return;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ra-wedding-polaroid-${Date.now()}.jpg`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function FilmCounter({ shotsLeft, total }: { shotsLeft: number; total: number }) {
@@ -688,9 +760,25 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
               You captured all {TOTAL_SHOTS} shots! Head to the gallery to see your beautiful memories.
             </p>
             {recentShots.length > 0 && (
-              <div className="mt-2">
+              <div className="mt-2 space-y-3">
                 <p className="text-[10px] text-white/25 uppercase tracking-widest mb-3">Your last shots</p>
                 <FilmStrip shots={recentShots} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-500/30 bg-white/5 text-amber-300 hover:bg-amber-500/10"
+                  onClick={async () => {
+                    try {
+                      await downloadPolaroid(recentShots[recentShots.length - 1]);
+                      toast({ title: '📷 Polaroid saved', description: 'Check your downloads for your keepsake copy.' });
+                    } catch {
+                      toast({ variant: 'destructive', title: 'Could not save the polaroid' });
+                    }
+                  }}
+                >
+                  <Download size={13} className="mr-1.5" /> Save last shot as a polaroid
+                </Button>
               </div>
             )}
           </motion.div>
@@ -828,7 +916,7 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
                 setTimeout(() => setPolaroidVisible(false), 2200);
               }}
             >
-              <div className="w-40 bg-white p-2.5 pb-8 shadow-2xl rounded-sm border border-black/10">
+              <div className="relative w-40 bg-white p-2.5 pb-8 shadow-2xl rounded-sm border border-black/10">
                 <motion.div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-200">
                   <Image src={polaroidSrc} alt="Captured" fill sizes="160px" className="object-cover" />
                   <motion.div
@@ -849,6 +937,30 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
                 >
                   {localVisibility === 'public' ? '🌍 Shared Wall' : '🔒 Vault'}
                 </motion.p>
+
+                {/* Keepsake download — a step out of the eject animation's
+                    pointer-events-none, so a tap here doesn't need to land
+                    inside the ~2s auto-dismiss window's exact geometry. */}
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  onClick={async e => {
+                    e.stopPropagation();
+                    try {
+                      await downloadPolaroid(polaroidSrc);
+                      toast({ title: '📷 Polaroid saved', description: 'Check your downloads for your keepsake copy.' });
+                    } catch {
+                      toast({ variant: 'destructive', title: 'Could not save the polaroid' });
+                    }
+                  }}
+                  className="pointer-events-auto absolute -right-2 -top-2 grid h-8 w-8 place-items-center rounded-full bg-amber-400 text-black shadow-lg"
+                  aria-label="Download as a polaroid keepsake"
+                  title="Download as a polaroid keepsake"
+                >
+                  <Download size={14} />
+                </motion.button>
               </div>
             </motion.div>
           )}
