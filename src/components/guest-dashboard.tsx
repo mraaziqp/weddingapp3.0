@@ -455,8 +455,21 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
 
       {/* ── Main Tab Content Container ── */}
       <main className="relative z-10 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-12 overscroll-y-contain [-webkit-overflow-scrolling:touch]">
-        <div className="max-w-4xl mx-auto w-full px-4 pt-4 sm:pt-6">
-          <AnimatePresence mode="wait">
+        <div className="grid max-w-4xl mx-auto w-full px-4 pt-4 sm:pt-6">
+          {/*
+            Deliberately NOT `mode="wait"`. That holds the incoming tab until
+            the outgoing one finishes animating out, which makes the switch
+            depend on an animation frame actually firing — and a phone in low-
+            power mode, or a tab the browser has throttled, may not deliver
+            one. Reproduced directly: the nav correctly flips to the tapped
+            tab and stays there, but the previous tab's content never leaves
+            the screen, so the guest is stuck looking at a stale tab that
+            neither scrolls where they expect nor shows what they tapped for.
+            Same rAF-throttling failure the wedding intro and the event hub's
+            own tab switcher already guard against — crossfading instead means
+            the new tab mounts immediately, regardless of the old one's exit.
+          */}
+          <AnimatePresence>
             {/* ─────────────────────────────────────────────────────────────
                 TAB 1: VIP PASS & ITINERARY
             ───────────────────────────────────────────────────────────── */}
@@ -467,7 +480,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="space-y-6"
+                className="space-y-6 [grid-area:1/1]"
               >
                 {/* Welcome Greeting & Live Countdown */}
                 <div className="text-center space-y-2">
@@ -729,7 +742,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-4"
+                className="space-y-4 [grid-area:1/1]"
               >
                 <div className="flex items-center justify-between bg-white/75 backdrop-blur-md p-4 rounded-2xl border border-[#d4af37]/25 shadow-sm">
                   <div>
@@ -761,7 +774,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.3 }}
-                className="h-[calc(100dvh-170px)] sm:h-[690px] max-w-xl mx-auto w-full rounded-3xl overflow-hidden shadow-2xl border border-[#d4af37]/35"
+                className="h-[calc(100dvh-170px)] sm:h-[690px] max-w-xl mx-auto w-full rounded-3xl overflow-hidden shadow-2xl border border-[#d4af37]/35 [grid-area:1/1]"
               >
                 <CaptureView
                   guestId={household.qrCode || household.id}
@@ -781,7 +794,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-xl mx-auto"
+                className="max-w-xl mx-auto [grid-area:1/1]"
               >
                 <GamesView onSelectQuest={handleSelectQuest} completedQuests={completedQuests} />
               </motion.div>
@@ -797,7 +810,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-xl mx-auto"
+                className="max-w-xl mx-auto [grid-area:1/1]"
               >
                 <WellWishesWall defaultName={household.name} />
               </motion.div>
@@ -813,7 +826,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-xl mx-auto space-y-6"
+                className="max-w-xl mx-auto space-y-6 [grid-area:1/1]"
               >
                 <div className="bg-white/85 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-[#d4af37]/30 shadow-xl text-center space-y-5">
                   <div className="w-14 h-14 rounded-full bg-[#d4af37]/20 flex items-center justify-center mx-auto shadow-inner">
