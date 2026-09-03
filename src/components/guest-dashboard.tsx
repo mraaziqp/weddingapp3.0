@@ -316,7 +316,20 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col relative text-[#1C1C1C] transition-colors duration-700 select-none"
+      // Fixed to exactly one viewport, not just a minimum — the shared guest
+      // layout this mounts inside only sets `min-h-[100dvh]` on its own
+      // <main>, which doesn't cap height. Left at `min-h-screen`, this root
+      // grew with its content instead of being clipped to the screen, so the
+      // `overflow-y-auto` region below never actually had anything to
+      // overflow (its scrollHeight equalled its clientHeight) and the whole
+      // page scrolled at the document level instead — through markup that
+      // sets `overscroll-behavior: contain` and `-webkit-overflow-scrolling:
+      // touch` for an element that isn't the true scroll container, which is
+      // the known iOS Safari combination that swallows a touch-scroll gesture
+      // rather than handing it up to the document. Pinning the height here
+      // makes the inner <main> the one real scroll container regardless of
+      // what the ancestor does.
+      className="h-[100dvh] w-full flex flex-col relative text-[#1C1C1C] transition-colors duration-700 select-none"
       style={{
         background: partyMode
           ? 'radial-gradient(ellipse at 50% 20%, #032b1e 0%, #021a12 55%, #010a07 100%)'

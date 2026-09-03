@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye } from 'lucide-react';
+import { Film, Zap, ZapOff, RotateCcw, Shield, Globe, Sliders, Eye, Heart, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { compressImageFile, withTimeout, UploadTimeoutError } from '@/lib/image-utils';
 import { uploadOne } from '@/lib/bulk-upload';
@@ -21,39 +21,97 @@ interface DisposableCameraUIProps {
   onUploadComplete: (blob?: unknown) => void;
 }
 
+type FilterCategory = 'signature' | 'film' | 'vivid' | 'mono' | 'warm';
+
 interface FilterPreset {
   id: string;
   name: string;
   css: string;
+  /** 'normal' has none — it is always pinned first, outside every category. */
+  category?: FilterCategory;
 }
+
+const CATEGORY_META: Record<FilterCategory, { label: string; emoji: string }> = {
+  signature: { label: 'R&A Signature', emoji: '✨' },
+  film: { label: 'Film & Vintage', emoji: '🎞️' },
+  vivid: { label: 'Vivid & Bold', emoji: '🌈' },
+  mono: { label: 'Black & White', emoji: '🖤' },
+  warm: { label: 'Moody & Warm', emoji: '🍂' },
+};
+const CATEGORY_ORDER: FilterCategory[] = ['signature', 'film', 'vivid', 'mono', 'warm'];
 
 const FILTER_PRESETS: FilterPreset[] = [
   { id: 'normal', name: 'Normal', css: 'none' },
-  { id: 'vintage-70s', name: '1970s Gold', css: 'sepia(0.4) contrast(1.15) saturate(1.3) brightness(0.95)' },
-  { id: 'noir', name: 'Noir Cinema', css: 'grayscale(1) contrast(1.4) brightness(0.9)' },
-  { id: 'polaroid', name: 'Polaroid', css: 'contrast(0.9) brightness(1.1) saturate(1.05) sepia(0.15) hue-rotate(5deg)' },
-  { id: 'summer', name: 'Summer Sun', css: 'saturate(1.45) brightness(1.05) sepia(0.1) hue-rotate(-5deg)' },
-  { id: 'cyber', name: 'Cyber Neon', css: 'hue-rotate(60deg) saturate(1.8) contrast(1.2)' },
-  { id: 'vhs', name: 'Old VHS', css: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' },
-  { id: 'rose', name: 'Warm Rose', css: 'hue-rotate(-25deg) saturate(1.25) contrast(1.05)' },
-  { id: 'forest', name: 'Forest Green', css: 'hue-rotate(30deg) saturate(1.1) contrast(1.1) brightness(0.95)' },
-  { id: 'lomo-red', name: 'Lomo Red', css: 'hue-rotate(-20deg) saturate(1.6) contrast(1.2) brightness(0.9)' },
-  { id: 'dreamy', name: 'Dreamy Pastel', css: 'saturate(0.6) brightness(1.15) blur(0.5px)' },
-  { id: 'golden', name: 'Golden Hour', css: 'sepia(0.35) hue-rotate(-15deg) saturate(1.4) brightness(1.05)' },
-  { id: 'deep-noir', name: 'Deep Noir', css: 'grayscale(1) contrast(1.6) brightness(0.75)' },
-  { id: 'kodak', name: 'Vintage Kodak', css: 'sepia(0.3) contrast(0.9) saturate(1.2) brightness(1.1) hue-rotate(-10deg)' },
-  { id: 'faded', name: 'Faded Film', css: 'contrast(0.8) brightness(1.1) saturate(0.7) sepia(0.2)' },
-  { id: 'chrome', name: 'Cool Chrome', css: 'grayscale(0.5) contrast(1.3) saturate(0.8) brightness(0.95) hue-rotate(180deg)' },
-  { id: 'amber', name: 'Warm Amber', css: 'sepia(0.25) hue-rotate(-5deg) saturate(1.3) brightness(0.98)' },
-  { id: 'mint', name: 'Mint Fresh', css: 'hue-rotate(160deg) saturate(1.2) contrast(1.05) brightness(1.02)' },
-  { id: 'cinema', name: 'Cinematic', css: 'contrast(1.25) saturate(0.9) brightness(0.95) sepia(0.1)' },
-  { id: 'desert', name: 'Desert Sand', css: 'sepia(0.3) hue-rotate(-10deg) saturate(0.9) contrast(1.1) brightness(1.05)' },
-  { id: 'neon-glow', name: 'Neon Glow', css: 'saturate(1.8) hue-rotate(45deg) contrast(1.3) brightness(1.1)' },
-  { id: 'blush', name: 'Blush Pink', css: 'hue-rotate(-40deg) saturate(1.3) contrast(1.05) brightness(1.02)' },
-  { id: 'moody-blue', name: 'Moody Blue', css: 'hue-rotate(200deg) saturate(1.1) contrast(1.15) brightness(0.92)' },
-  { id: 'retro-fade', name: 'Retro Fade', css: 'contrast(0.85) brightness(1.2) saturate(0.75) sepia(0.25)' },
-  { id: 'crisp-bw', name: 'Crisp B&W', css: 'grayscale(1) contrast(1.5) brightness(1.05)' },
+
+  // R&A Signature — tuned to this wedding's own gold-and-ivory palette (the
+  // #d4af37 gold that runs through the whole site) and the evening reception
+  // at Tuscany in Rylands, rather than a generic Instagram-style preset.
+  { id: 'ra-gold', name: 'R&A Gold', category: 'signature', css: 'sepia(0.25) saturate(1.35) contrast(1.08) brightness(1.04) hue-rotate(-8deg)' },
+  { id: 'ivory-romance', name: 'Ivory Romance', category: 'signature', css: 'brightness(1.12) contrast(0.92) saturate(0.85) sepia(0.18)' },
+  { id: 'nikkah-glow', name: 'Nikkah Glow', category: 'signature', css: 'brightness(1.08) contrast(1.05) saturate(1.2) sepia(0.12) hue-rotate(3deg)' },
+  { id: 'rylands-night', name: 'Rylands Night', category: 'signature', css: 'contrast(1.2) brightness(0.9) saturate(1.15) sepia(0.15) hue-rotate(-6deg)' },
+  { id: 'tuscany-sunset', name: 'Tuscany Sunset', category: 'signature', css: 'sepia(0.3) saturate(1.4) hue-rotate(-12deg) contrast(1.1)' },
+
+  // Film & Vintage
+  { id: 'vintage-70s', name: '1970s Gold', category: 'film', css: 'sepia(0.4) contrast(1.15) saturate(1.3) brightness(0.95)' },
+  { id: 'polaroid', name: 'Polaroid', category: 'film', css: 'contrast(0.9) brightness(1.1) saturate(1.05) sepia(0.15) hue-rotate(5deg)' },
+  { id: 'vhs', name: 'Old VHS', category: 'film', css: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' },
+  { id: 'kodak', name: 'Vintage Kodak', category: 'film', css: 'sepia(0.3) contrast(0.9) saturate(1.2) brightness(1.1) hue-rotate(-10deg)' },
+  { id: 'faded', name: 'Faded Film', category: 'film', css: 'contrast(0.8) brightness(1.1) saturate(0.7) sepia(0.2)' },
+  { id: 'retro-fade', name: 'Retro Fade', category: 'film', css: 'contrast(0.85) brightness(1.2) saturate(0.75) sepia(0.25)' },
+  { id: 'cinema', name: 'Cinematic', category: 'film', css: 'contrast(1.25) saturate(0.9) brightness(0.95) sepia(0.1)' },
+  { id: 'dreamy', name: 'Dreamy Pastel', category: 'film', css: 'saturate(0.6) brightness(1.15) blur(0.5px)' },
+
+  // Vivid & Bold
+  { id: 'summer', name: 'Summer Sun', category: 'vivid', css: 'saturate(1.45) brightness(1.05) sepia(0.1) hue-rotate(-5deg)' },
+  { id: 'cyber', name: 'Cyber Neon', category: 'vivid', css: 'hue-rotate(60deg) saturate(1.8) contrast(1.2)' },
+  { id: 'lomo-red', name: 'Lomo Red', category: 'vivid', css: 'hue-rotate(-20deg) saturate(1.6) contrast(1.2) brightness(0.9)' },
+  { id: 'neon-glow', name: 'Neon Glow', category: 'vivid', css: 'saturate(1.8) hue-rotate(45deg) contrast(1.3) brightness(1.1)' },
+  { id: 'mint', name: 'Mint Fresh', category: 'vivid', css: 'hue-rotate(160deg) saturate(1.2) contrast(1.05) brightness(1.02)' },
+  { id: 'blush', name: 'Blush Pink', category: 'vivid', css: 'hue-rotate(-40deg) saturate(1.3) contrast(1.05) brightness(1.02)' },
+  { id: 'rose', name: 'Warm Rose', category: 'vivid', css: 'hue-rotate(-25deg) saturate(1.25) contrast(1.05)' },
+
+  // Black & White
+  { id: 'noir', name: 'Noir Cinema', category: 'mono', css: 'grayscale(1) contrast(1.4) brightness(0.9)' },
+  { id: 'deep-noir', name: 'Deep Noir', category: 'mono', css: 'grayscale(1) contrast(1.6) brightness(0.75)' },
+  { id: 'crisp-bw', name: 'Crisp B&W', category: 'mono', css: 'grayscale(1) contrast(1.5) brightness(1.05)' },
+  { id: 'chrome', name: 'Cool Chrome', category: 'mono', css: 'grayscale(0.5) contrast(1.3) saturate(0.8) brightness(0.95) hue-rotate(180deg)' },
+
+  // Moody & Warm
+  { id: 'forest', name: 'Forest Green', category: 'warm', css: 'hue-rotate(30deg) saturate(1.1) contrast(1.1) brightness(0.95)' },
+  { id: 'golden', name: 'Golden Hour', category: 'warm', css: 'sepia(0.35) hue-rotate(-15deg) saturate(1.4) brightness(1.05)' },
+  { id: 'amber', name: 'Warm Amber', category: 'warm', css: 'sepia(0.25) hue-rotate(-5deg) saturate(1.3) brightness(0.98)' },
+  { id: 'moody-blue', name: 'Moody Blue', category: 'warm', css: 'hue-rotate(200deg) saturate(1.1) contrast(1.15) brightness(0.92)' },
+  { id: 'desert', name: 'Desert Sand', category: 'warm', css: 'sepia(0.3) hue-rotate(-10deg) saturate(0.9) contrast(1.1) brightness(1.05)' },
 ];
+
+const FILTERS_BY_ID = new Map(FILTER_PRESETS.map(p => [p.id, p]));
+
+// Everything a guest picks in the camera lives here, scoped to this device —
+// a shared phone at a table doesn't inherit the last guest's taste.
+const FAVORITES_KEY = 'wedu-camera-favorite-filters';
+const LAST_FILTER_KEY = 'wedu-camera-last-filter';
+const LAST_SLIDERS_KEY = 'wedu-camera-last-sliders';
+
+function readJson<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    // Private browsing can throw on read/write; the camera should still work.
+    return fallback;
+  }
+}
+
+function writeJson(key: string, value: unknown) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* a nicety, not a requirement */
+  }
+}
 
 function FilmCounter({ shotsLeft, total }: { shotsLeft: number; total: number }) {
   const used = total - shotsLeft;
@@ -87,6 +145,82 @@ function FilmStrip({ shots }: { shots: string[] }) {
           <Image src={src} alt={`shot ${i + 1}`} width={40} height={40} className="object-cover w-full h-full" />
         </motion.div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * One filter option — its own live camera preview underneath the actual
+ * filter it applies, not a text label standing in for what it looks like.
+ */
+function FilterTile({
+  preset, isSelected, isFavorite, previewFrameUrl, onSelect, onToggleFavorite, size = 'md',
+}: {
+  preset: FilterPreset;
+  isSelected: boolean;
+  isFavorite: boolean;
+  previewFrameUrl: string | null;
+  onSelect: () => void;
+  onToggleFavorite: (e: React.MouseEvent) => void;
+  size?: 'sm' | 'md';
+}) {
+  const dim = size === 'sm' ? 'w-12 h-12' : 'w-16 h-16';
+  return (
+    // A <div> with a button role, not a real <button>: the favourite toggle
+    // below is its own genuine <button>, and a <button> can never legally
+    // contain another — browsers silently reparent the inner one out of the
+    // outer during HTML parsing, which broke both tap targets at once.
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+      className="flex shrink-0 cursor-pointer select-none flex-col items-center gap-1"
+    >
+      <div
+        className={cn(
+          dim,
+          'relative overflow-hidden rounded-2xl border-2 shadow-md transition-all',
+          isSelected ? 'border-amber-400 shadow-[0_0_12px_rgba(245,166,35,0.5)] scale-105' : 'border-white/10'
+        )}
+      >
+        {previewFrameUrl ? (
+          // A plain <img>, not next/image: the source is an in-memory data:
+          // URL refreshed several times a second, which next/image's
+          // optimizer has nothing to do with and would only add latency to.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewFrameUrl}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ filter: preset.css }}
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ filter: preset.css, background: 'linear-gradient(135deg,#3a3a3a,#1a1a1a)' }} />
+        )}
+
+        {isSelected && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+            <Check size={16} className="text-white drop-shadow" strokeWidth={3} />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          aria-label={isFavorite ? `Remove ${preset.name} from favourites` : `Favourite ${preset.name}`}
+          className="absolute right-0.5 top-0.5 grid h-5 w-5 place-items-center rounded-full bg-black/50 backdrop-blur-sm"
+        >
+          <Heart size={10} className={isFavorite ? 'fill-red-500 text-red-500' : 'text-white/70'} />
+        </button>
+      </div>
+      <span className={cn(
+        'max-w-[4.2rem] truncate text-center text-[9px] uppercase tracking-wide',
+        isSelected ? 'font-bold text-amber-300' : 'text-white/55'
+      )}>
+        {preset.name}
+      </span>
     </div>
   );
 }
@@ -125,14 +259,63 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     return url;
   };
 
-  // Filters & Custom sliders states
+  // Filters & Custom sliders states. The starting filter and, if it was a
+  // custom one, its exact slider values are read from localStorage below —
+  // a returning guest gets their own look back rather than "Normal" every
+  // time they reopen the camera.
   const [selectedFilterId, setSelectedFilterId] = useState<string>('normal');
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>('signature');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [showSliderStudio, setShowSliderStudio] = useState<boolean>(false);
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
   const [saturation, setSaturation] = useState<number>(100);
   const [sepia, setSepia] = useState<number>(0);
   const [hue, setHue] = useState<number>(0);
+
+  // One-time restore of this guest's last filter, its custom sliders (if
+  // that's what they had open) and their favourited presets.
+  useEffect(() => {
+    const lastId = readJson<string | null>(LAST_FILTER_KEY, null);
+    if (lastId === 'custom' || (lastId && FILTERS_BY_ID.has(lastId))) {
+      setSelectedFilterId(lastId);
+      if (lastId !== 'normal') setActiveCategory(FILTERS_BY_ID.get(lastId)?.category ?? 'signature');
+    }
+    const savedSliders = readJson<{ brightness: number; contrast: number; saturation: number; sepia: number; hue: number } | null>(LAST_SLIDERS_KEY, null);
+    if (savedSliders) {
+      setBrightness(savedSliders.brightness);
+      setContrast(savedSliders.contrast);
+      setSaturation(savedSliders.saturation);
+      setSepia(savedSliders.sepia);
+      setHue(savedSliders.hue);
+    }
+    setFavoriteIds(readJson<string[]>(FAVORITES_KEY, []));
+    // Mount-only: this is a one-time restore, not a sync loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleFavorite = useCallback((id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setFavoriteIds(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      writeJson(FAVORITES_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const selectFilter = useCallback((preset: FilterPreset) => {
+    setSelectedFilterId(preset.id);
+    setShowSliderStudio(false);
+    writeJson(LAST_FILTER_KEY, preset.id);
+    if (preset.category) setActiveCategory(preset.category);
+  }, []);
+
+  // A live, low-res snapshot of the current camera frame, refreshed a couple
+  // of times a second. Each filter tile applies its own CSS to this same
+  // image, so a guest sees their *own* face through every option — the
+  // wedding's actual filter picker, not a stock photo standing in for one.
+  const [previewFrameUrl, setPreviewFrameUrl] = useState<string | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Local visibility toggle (Shared Live Wall vs Private Vault)
   const [localVisibility, setLocalVisibility] = useState<'public' | 'private'>(initialVisibility);
@@ -183,6 +366,36 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
+
+  // Refreshes the shared live-preview thumbnail. A single small canvas draw,
+  // reused by every filter tile via its own CSS `filter`, rather than
+  // decoding the camera stream once per tile — 25+ live video elements on a
+  // guest's phone mid-reception is not a fight worth picking with their
+  // battery.
+  useEffect(() => {
+    if (!hasCamera) return;
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    canvas.width = 72;
+    canvas.height = 72;
+
+    const tick = () => {
+      const video = videoRef.current;
+      if (!video || !video.videoWidth) return;
+      // Center-crop to a square so every tile's preview matches its shape.
+      const size = Math.min(video.videoWidth, video.videoHeight);
+      const sx = (video.videoWidth - size) / 2;
+      const sy = (video.videoHeight - size) / 2;
+      ctx.drawImage(video, sx, sy, size, size, 0, 0, 72, 72);
+      setPreviewFrameUrl(canvas.toDataURL('image/jpeg', 0.55));
+    };
+
+    tick();
+    const id = window.setInterval(tick, 700);
+    return () => window.clearInterval(id);
+  }, [hasCamera]);
 
   const captureFrame = useCallback(async (): Promise<File | null> => {
     if (!videoRef.current || !canvasRef.current) return null;
@@ -351,12 +564,21 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
     }
   }, [isFlashing]);
 
+  // Only worth saving once Studio is actually the active filter — otherwise
+  // every idle drag of a slider a guest never applies would overwrite a
+  // custom look they already saved.
+  useEffect(() => {
+    if (selectedFilterId !== 'custom') return;
+    writeJson(LAST_SLIDERS_KEY, { brightness, contrast, saturation, sepia, hue });
+  }, [selectedFilterId, brightness, contrast, saturation, sepia, hue]);
+
   const isBusy = isUploading || isAnimating;
   const outOfFilm = shotsLeft <= 0 && !isUploading;
 
   return (
     <div className="flex h-full w-full flex-col bg-[#141517] text-white relative overflow-hidden rounded-t-3xl border border-white/10 shadow-2xl p-1 bg-[url('https://www.transparenttextures.com/patterns/leather-bags.png')]">
       <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={previewCanvasRef} className="hidden" />
       <input
         type="file"
         accept="image/*,video/*"
@@ -584,11 +806,11 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
           )}
         </div>
 
-        {/* Custom filter name indicator */}
+        {/* Active filter name indicator */}
         <div className="absolute top-3 right-3 z-20 pointer-events-none">
           <Badge variant="outline" className="bg-black/70 border-white/10 text-white/60 py-1 text-[9px] uppercase tracking-wider">
             <Eye size={10} className="mr-1 inline text-amber-500" />
-            {selectedFilterId === 'custom' ? 'Custom Studio' : FILTER_PRESETS.find(p => p.id === selectedFilterId)?.name}
+            {selectedFilterId === 'custom' ? 'Custom Studio' : FILTERS_BY_ID.get(selectedFilterId)?.name}
           </Badge>
         </div>
 
@@ -634,45 +856,94 @@ export function DisposableCameraUI({ guestId, visibility: initialVisibility, que
       </div>
 
       {/* ── FILTER & SLIDERS CONTROLS ─────────────────────────────────────────── */}
-      <div className="px-3 space-y-3 relative z-20">
-        
-        {/* Scrollable preset list with preview thumbnails */}
-        <div className="flex gap-2 overflow-x-auto pb-1.5 pt-1.5 scrollbar-none">
-          {FILTER_PRESETS.map((preset) => (
+      <div className="px-3 space-y-2.5 relative z-20">
+
+        {/* Favourites — only appears once a guest has actually picked some,
+            so the strip stays uncluttered for everyone's first shot. */}
+        {favoriteIds.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+            <span className="flex shrink-0 items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-amber-400/70">
+              <Heart size={10} className="fill-current" /> Yours
+            </span>
+            {favoriteIds
+              .map(id => FILTERS_BY_ID.get(id))
+              .filter((p): p is FilterPreset => Boolean(p))
+              .map(preset => (
+                <FilterTile
+                  key={`fav-${preset.id}`}
+                  preset={preset}
+                  size="sm"
+                  isSelected={selectedFilterId === preset.id}
+                  isFavorite
+                  previewFrameUrl={previewFrameUrl}
+                  onSelect={() => selectFilter(preset)}
+                  onToggleFavorite={e => toggleFavorite(preset.id, e)}
+                />
+              ))}
+          </div>
+        )}
+
+        {/* Category tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+          <button
+            onClick={() => selectFilter(FILTERS_BY_ID.get('normal')!)}
+            className={cn(
+              'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all',
+              selectedFilterId === 'normal'
+                ? 'border-white/60 bg-white/15 text-white'
+                : 'border-white/10 bg-white/5 text-white/50 hover:text-white/80'
+            )}
+          >
+            Normal
+          </button>
+          {CATEGORY_ORDER.map(cat => (
             <button
-              key={preset.id}
-              onClick={() => {
-                setSelectedFilterId(preset.id);
-                setShowSliderStudio(false);
-              }}
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
               className={cn(
-                "flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs",
-                selectedFilterId === preset.id 
-                  ? 'bg-amber-500 border-amber-400 text-black font-bold shadow-[0_0_10px_rgba(245,166,35,0.3)]' 
-                  : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all',
+                activeCategory === cat && selectedFilterId !== 'custom'
+                  ? 'border-amber-400 bg-amber-500 text-black shadow-[0_0_10px_rgba(245,166,35,0.35)]'
+                  : 'border-white/10 bg-white/5 text-white/50 hover:text-white/80'
               )}
             >
-              <span className="text-[10px] uppercase tracking-wider">{preset.name}</span>
+              <span>{CATEGORY_META[cat].emoji}</span> {CATEGORY_META[cat].label}
             </button>
           ))}
-          
           <button
             onClick={() => {
               setSelectedFilterId('custom');
-              setShowSliderStudio(prev => !prev);
+              writeJson(LAST_FILTER_KEY, 'custom');
+              setShowSliderStudio(prev => (selectedFilterId === 'custom' ? !prev : true));
             }}
             className={cn(
-              "flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs",
-              selectedFilterId === 'custom' 
-                ? 'bg-amber-500 border-amber-400 text-black font-bold shadow-[0_0_10px_rgba(245,166,35,0.3)]' 
-                : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+              'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all',
+              selectedFilterId === 'custom'
+                ? 'border-amber-400 bg-amber-500 text-black shadow-[0_0_10px_rgba(245,166,35,0.35)]'
+                : 'border-white/10 bg-white/5 text-white/50 hover:text-white/80'
             )}
           >
-            <span className="text-[10px] uppercase tracking-wider flex items-center gap-1">
-              <Sliders size={10} /> Studio {selectedFilterId === 'custom' && showSliderStudio ? 'Open' : ''}
-            </span>
+            <Sliders size={10} /> Studio
           </button>
         </div>
+
+        {/* Live-preview tiles for the active category — each one shows this
+            guest's own face through that filter, not a stock swatch. */}
+        {selectedFilterId !== 'custom' && (
+          <div className="flex gap-2.5 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none">
+            {FILTER_PRESETS.filter(p => p.category === activeCategory).map(preset => (
+              <FilterTile
+                key={preset.id}
+                preset={preset}
+                isSelected={selectedFilterId === preset.id}
+                isFavorite={favoriteIds.includes(preset.id)}
+                previewFrameUrl={previewFrameUrl}
+                onSelect={() => selectFilter(preset)}
+                onToggleFavorite={e => toggleFavorite(preset.id, e)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Hidden Custom filter studio sliders */}
         <AnimatePresence>
