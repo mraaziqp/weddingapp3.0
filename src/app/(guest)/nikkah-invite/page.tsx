@@ -21,7 +21,7 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
   const isNavyRoyal = config.theme === 'navy-royal';
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden" data-print-hide>
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" data-print-hide>
       <motion.div style={{ y: parallaxY }} className="absolute inset-[-12%]">
         {isNavyRoyal ? (
           <div 

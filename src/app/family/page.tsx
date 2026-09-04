@@ -20,7 +20,7 @@ export default function FamilyLandingPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050705] px-4 py-10">
-      <div className="fixed inset-0 -z-20 h-full w-full bg-[radial-gradient(circle_at_20%_10%,rgba(212,175,55,0.12),transparent_40%),linear-gradient(160deg,#0a0f0c,#050705)]" />
+      <div className="pointer-events-none fixed inset-0 -z-20 h-full w-full bg-[radial-gradient(circle_at_20%_10%,rgba(212,175,55,0.12),transparent_40%),linear-gradient(160deg,#0a0f0c,#050705)]" />
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

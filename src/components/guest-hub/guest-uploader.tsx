@@ -209,7 +209,7 @@ export function GuestUploader({ guestId, visibility, questTag, onUploaded }: Pro
         }}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-5 pb-4 [-webkit-overflow-scrolling:touch]">
         <div className="mx-auto w-full max-w-md space-y-4">
           <header className="text-center">
             <h2 className="font-headline text-2xl italic text-[#d4af37]">Share your night</h2>

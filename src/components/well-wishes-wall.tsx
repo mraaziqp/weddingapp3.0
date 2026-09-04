@@ -164,7 +164,7 @@ export function WellWishesWall({ defaultName }: { defaultName?: string }) {
       ) : wishes.length === 0 ? (
         <p className="text-center text-sm text-[#1C1C1C]/40 py-4">Be the first to leave a well wish!</p>
       ) : (
-        <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-80 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
           <AnimatePresence initial={false}>
             {wishes.map(wish => (
               <motion.div

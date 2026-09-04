@@ -140,7 +140,7 @@ export function MediaUploadModal({
             role="dialog"
             aria-modal="true"
             aria-label="Add a memory"
-            className="fixed inset-x-0 bottom-0 z-[100] max-h-[92dvh] overflow-y-auto rounded-t-3xl border-t border-[#d4af37]/30 bg-[#FAF9F6]"
+            className="fixed inset-x-0 bottom-0 z-[100] max-h-[92dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-[#d4af37]/30 bg-[#FAF9F6] [-webkit-overflow-scrolling:touch]"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-[#FAF9F6]/95 px-5 py-3 backdrop-blur">

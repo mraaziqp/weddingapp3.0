@@ -30,7 +30,7 @@ function Backdrop({ config, parallaxY }: { config: InvitationConfig; parallaxY: 
   const isNavyRoyal = config.theme === 'navy-royal';
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden" data-print-hide>
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" data-print-hide>
       <motion.div style={{ y: parallaxY }} className="absolute inset-[-12%]">
         {isNavyRoyal ? (
           <div 
@@ -1025,7 +1025,7 @@ export default function InvitationPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-48 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
                         {householdGuests.map((g) => {
                           const status = guestRsvps[g.id] || 'Accepted';
                           return (

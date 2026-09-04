@@ -953,7 +953,7 @@ export function GuestDashboard({ household, config: configProp, initialTab = 'pa
               <Clock className="text-[#d4af37]" size={22} /> Wedding Day Schedule
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 pt-2">
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto overscroll-contain pr-1 pt-2 [-webkit-overflow-scrolling:touch]">
             {timelineEvents === null ? (
               <p className="text-sm text-[#1C1C1C]/50 text-center py-6">Loading timeline…</p>
             ) : timelineEvents.length === 0 ? (

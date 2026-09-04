@@ -94,8 +94,16 @@
     background-size: 180% 180%, 180% 180%, 180% 180%, 180% 180%, 180% 180%, 220% 220%;
     background-attachment: fixed;
     animation: auroraDrift 34s ease-in-out infinite;
-    /* Prevent iOS rubber-band scroll on the envelope page */
-    overscroll-behavior: none;
+    /*
+     * `overscroll-behavior: none` here — a comment naming one page ("the
+     * envelope page") applied to every page in the app — killed the native
+     * rubber-band bounce everywhere, which is a large part of what makes
+     * scrolling feel alive rather than stiff on iOS. `contain` keeps the
+     * actual goal (an inner scroll running out never chains into the
+     * browser's own pull-to-refresh / back-swipe gesture) without giving up
+     * the bounce within the page itself.
+     */
+    overscroll-behavior-y: contain;
   }
 
   /* Fine film-grain layered over the aurora so gradients never look banded/flat */

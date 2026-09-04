@@ -537,7 +537,7 @@ export function AdminGalleryModerator() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeLightbox}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-4"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-4 [-webkit-overflow-scrolling:touch]"
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0 }}

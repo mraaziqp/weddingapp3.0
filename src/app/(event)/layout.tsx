@@ -31,7 +31,7 @@ export default function EventLayout({
         'min-h-[100dvh]'
       )}
     >
-      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.16),transparent_36%),radial-gradient(circle_at_86%_8%,rgba(185,106,142,0.13),transparent_32%),linear-gradient(155deg,#fffdfa_0%,#fbf7ef_48%,#f5efe3_100%)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(circle_at_18%_12%,rgba(212,175,55,0.16),transparent_36%),radial-gradient(circle_at_86%_8%,rgba(185,106,142,0.13),transparent_32%),linear-gradient(155deg,#fffdfa_0%,#fbf7ef_48%,#f5efe3_100%)]" />
       <main className="min-h-[100dvh]">{children}</main>
     </div>
   );
